@@ -303,4 +303,4 @@ return(Out);
 
 //********************************call the disassemble function to disassemble the binary instructions and display the output********************************
 
-WScript.echo(Disassemble(Code));
+alert(Disassemble(Code));
