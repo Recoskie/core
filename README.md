@@ -1,4 +1,4 @@
 X86-64-bit-JS-Disassembler
 ==========================
 
-This version only supports 8 binary operation codes also does not support REX prefix.
+supports all first byte operations except does not support REX prefix fully yet and not all operands are supported yet.
