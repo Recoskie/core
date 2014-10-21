@@ -9,11 +9,12 @@ var t=binary.split(",");for(var i=0;i<t.length;Code[i]=parseInt(t[i],2),i++);
 
 var Pos=0;
 
-RAMS=["BYTE PTR [","WORD PTR [","DWORD PTR [","QWORD PTR ["];
+PTRS=["BYTE PTR [","WORD PTR [","DWORD PTR [","QWORD PTR ["];
 
 var REG=
 [
 ["AL","CL","DL","BL","AH","CH","DH","BH"],
+["AX","CX","DX","BX","SP","BP","SI","DI"],
 ["EAX","ECX","EDX","EBX","ESP","EBP","ESI","EDI"],
 ["RAX","RCX","RDX","RBX","RSP","RBP","RSI","RDI"],
 ["ES","CS","SS","DS"]
@@ -35,127 +36,48 @@ function ReadInput(n,p)
 //p=0 returned number starts with no plus sing
 //****************************************************************
 
-var h="";
-t="";
+var h="";t="";
 
-//return nothing
+//return nuthing
 
-if(n==0)
-{
-return("");
-}
+if(n==0){return("");}
 
 //read byte
 
-if(n==1)
-{
-h=Code[Pos].toString(16);
-
-if(h.length==1)
-{
-h="0"+h;
-}
-
-Pos++;
-}
+if(n==1){h=Code[Pos].toString(16);if(h.length==1){h="0"+h;};Pos++;}
 
 //read 32 bit number
 
-if(n==2)
-{
-Pos+=3;
-
-for(var i=0;i<4;i++,Pos--)
-{
-
-h=Code[Pos].toString(16);
-
-if(h.length==1)
-{
-t+="0"+h;
-}
-else
-{
-t+=h;
-}
-
-}
-
-h=t;
-Pos+=5;
-}
+if(n==2){Pos+=3;for(var i=0;i<4;i++,Pos--){h=Code[Pos].toString(16);
+if(h.length==1){t+="0"+h;}else{t+=h;}};h=t;Pos+=5;}
 
 //return the output
 
-if(p)
-{
-return("+"+h.toUpperCase());
-}
-else
-{
-return(h.toUpperCase());
-}
+if(p){return("+"+h.toUpperCase());}else{return(h.toUpperCase());}}
 
-}
+//********************************decode the Operands for the ModRM********************************
+
+function DecodeModRM(Data,size){var output1="",output2="",ModR_M=ModRM(Data[Pos]);
+output2=REG[size][ModR_M[1]];if(ModR_M[0]==3){output1=REG[size][ModR_M[2]];}
+else{if(ModR_M[0]==0&ModR_M[2]==5){output1=PTRS[size]+ReadInput(2,0)+"]";}
+else{output1+=PTRS[size];if(ModR_M[2]==4){MulM_M=ModRM(Data[Pos]);
+output1+=REG[3][MulM_M[2]];if(MulM_M[1]!=4){output1+="+"+REG[3][MulM_M[1]]+Shift[MulM_M[0]];}}
+else{output1+=REG[3][ModR_M[2]];};output1+=ReadInput(ModR_M[0],1)+"]";}}
+return([output1,output2]);}
 
 //********************************decode the operation code********************************
 
 function DeOP(v)
 {
-//v<=0x40 check if operation codes is within range of the first 8 binary instruction
-//(v%8)<=5 check if operation is not setting straight input and the reverse bit
+if((v%8)<=5&v<=0x40){OPType=0;OP=(v>>3)&0x07;Input=(v>>2)&0x01;Flip=(v>>1)&0x01;
+Force=v&0x01;Pos+=1;return([OPType,OP,Input,Flip,Force]);}
 
-if((v%8)<=5&v<=0x40)
-{
-OPType=0;
-
-//00 (000)=op 000 if right shift three 00000 (000)=op the 0x07 is 00000111 reads only the opcode
-
-OP=(v>>3)&0x07;
-
-//if right shift 2 and 0x01=00000001 then bit tow is read for settings
-
-Input=(v>>2)&0x01;
-
-//reads reverse bit
-
-Flip=(v>>1)&0x01;
-
-//reads the force "8 bit" bit
-
-RegSize=v&0x01;
-
-//moves one position though code
-
-Pos+=1;
-
-//return the parts of the byte for the operation
-
-return([OPType,OP,Input,Flip,RegSize]);
-}
-
-//else useing operations I did not cover yet
-
-else
-{
-Pos+=1;
-return([-1]);
-}
-
+else{Pos+=1;return([-1]);} //unrecognized operation code
 }
 
 //********************************decode the Mod_R_M byte********************************
 
-function ModRM(v)
-{
-Mode=(v>>6)&0x3;
-R=(v>>3)&0x07;
-M=v&0x07;
-
-Pos+=1;
-
-return([Mode,R,M]);
-}
+function ModRM(v){Mode=(v>>6)&0x3;R=(v>>3)&0x07;M=v&0x07;Pos+=1;return([Mode,R,M]);}
 
 //********************************Decode an operation********************************
 
@@ -163,160 +85,51 @@ function Decode(Data)
 {
 var out="";
 
+var OpSize=2; //set Operation size default 32
+
 var OPC=DeOP(Data[Pos]);
 
-//useing operatios not covered yet
+//using operations not covered yet
 
 if(OPC==-1){return("???\r\n");}
 
 //chech operation code type if "ModR_M"
 
-if(OPC[0]==0)
+else if(OPC[0]==0)
 {
-//decode operation code
+
+//check if force 8 bit is 0
+
+if(OPC[4]==0){OpSize=0;}
+
+//get operation code
 
 out=OP0[OPC[1]]+" ";
 
-//check if stright input operation
+//check if straight input
 
 if(OPC[2]==1)
 {
-out+=REG[OPC[4]][0]+","+ReadInput(OPC[4]+1,0);
-}
-
-//else the operation is not an straight input then it is MOD_R_M
-
-else
-{
-//decode the Mod R M byte
-
-var ModR_M=ModRM(Data[Pos]);
-
-//check if mode is register with register
-
-if(ModR_M[0]==3)
-{
-//check the reverse bit
-
-if(OPC[3]==0)
-{
-
-out+=REG[OPC[4]][ModR_M[2]]+","+REG[OPC[4]][ModR_M[1]];
-
-}
-else
-{
-
-out+=REG[OPC[4]][ModR_M[1]]+","+REG[OPC[4]][ModR_M[2]];
-
-}
-
-}
-
-//else it is an old Reg and Memory operation
-
-else
-{
-
-//if mode is 0 and Memory Reg is RBP straight input ram address number Displacement
-
-if(ModR_M[0]==0&ModR_M[2]==5)
-{
-
-//check reverse bit
-
-if(OPC[3]==0)
-{
-out+=RAMS[OPC[4]*2]+ReadInput(2,0)+"],"+REG[OPC[4]][ModR_M[1]];
-}
-else
-{
-out+=REG[OPC[4]][ModR_M[1]]+","+RAMS[OPC[4]*2]+ReadInput(2,0)+"]";
-}
-
-}
-
-//check if RSP if so decode the next "ModRM"
-
-if(ModR_M[2]==4)
-{
-
-MulM_M=ModRM(Data[Pos]);
-
-//check reverse bit
-
-if(OPC[3]==0)
-{
-
-//check if MEM 2 is RSP for RSP Displacement
-
-if(MulM_M[1]==5)
-{
-
-out+=RAMS[OPC[4]*2]+REG[2][MulM_M[2]]+"+"+REG[2][MulM_M[1]]+Shift[MulM_M[0]]+ReadInput(ModR_M[0],1)+"],"+REG[OPC[4]][ModR_M[1]];
-
+out+=REG[OpSize][0]+",";
+if(OPC[4]==0){out+=ReadInput(1,0);}else{out+=ReadInput(2,0);}
 }
 
 else
 {
 
-out+=RAMS[OPC[4]*2]+REG[2][MulM_M[2]]+ReadInput(ModR_M[0],1)+"],"+REG[OPC[4]][ModR_M[1]];
+//get the decoding of the operands
 
+oprands=DecodeModRM(Data,OpSize);
+
+//flip the oprands if flip bit is set
+
+if(OPC[3]==1){out+=oprands[1]+","+oprands[0];}
+else{out+=oprands[0]+","+oprands[1];}
 }
 
 }
 
-//else it is reversed
-
-else
-{
-
-if(MulM_M[1]==5)
-{
-
-out+=REG[OPC[4]][ModR_M[1]]+","+RAMS[OPC[4]*2]+REG[2][MulM_M[2]]+"+"+REG[2][MulM_M[1]]+Shift[MulM_M[0]]+ReadInput(ModR_M[0],1)+"]";
-
-}
-
-else
-{
-
-out+=REG[OPC[4]][ModR_M[1]]+","+RAMS[OPC[4]*2]+REG[2][MulM_M[2]]+ReadInput(ModR_M[0],1)+"]";
-
-}
-
-}
-
-}
-
-//else there is no RSP register displacement or any displacements
-
-else
-{
-
-//check if it is not Reversed
-
-if(OPC[3]==0)
-{
-out+=RAMS[OPC[4]*2]+REG[2][ModR_M[2]]+ReadInput(ModR_M[0],1)+"],"+REG[OPC[4]][ModR_M[1]];
-}
-
-//else it is reversed
-
-else
-{
-out+=REG[OPC[4]][ModR_M[1]]+","+RAMS[OPC[4]*2]+REG[2][ModR_M[2]]+ReadInput(ModR_M[0],1)+"]";
-}
-
-}
-
-}
-
-}
-
-}
-
-//finally return the decoded instruction
+//return the decoded instruction
 
 return(out+"\r\n");
 }
