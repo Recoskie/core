@@ -9,7 +9,7 @@ var t=binary.split(",");for(var i=0;i<t.length;Code[i]=parseInt(t[i],2),i++);
 
 var invalid="Op-code is not an valid 64 bit instruction!";
 var tb="Tow Byte Instructions not Supported yet!"
-var n="Op-code Not Supported yet!";
+var fpu="Float Point unit Not Supported yet!";
 
 var opcodes=
 [
@@ -21,32 +21,54 @@ var opcodes=
 "SUB ","SUB ","SUB ","SUB ","SUB ","SUB ",invalid,invalid,
 "XOR ","XOR ","XOR ","XOR ","XOR ","XOR ",invalid,invalid,
 "CMP ","CMP ","CMP ","CMP ","CMP ","CMP ",invalid,invalid,
+
     "",    "",    "",    "",    "",    "",   "",   "", //rex prefix
     "",    "",    "",    "",    "",    "",   "",   "", //rex prefix
+
 "PUSH ",   "",    "",    "",    "",    "",   "",   "", //register selection is the last 3 bits of op-code
 "POP ",    "",    "",    "",    "",    "",   "",   "", //register selection is the last 3 bits of op-code
-invalid ,invalid,invalid,"MOVSXD",
+
+invalid ,invalid,invalid,
+
+"MOVSXD ",
+
 "", //FS segment override
 "", //GS segment override
+
 invalid,invalid,
+
 "PUSH ","IMUL ","PUSH ","IMUL ",
 "INS ","INS ","OUTS ","OUTS ", //input output to hardware
 "JO ","JNO ","JB ","JAE ","JE ","JNE ","JBE ","JA ","JS ", //conditional jumps
 "JNS ","JP ","JNP ","JL ","JGE ","JLE ","JG ", //conditional jumps
-n,n,invalid,n,
+
+["ADD ","OR ","ADC ","SBB ","AND ","SUB ","XOR ","CMP "], //op1=rm8 and op2=imm8
+["ADD ","OR ","ADC ","SBB ","AND ","SUB ","XOR ","CMP "], //op1=rm32/64 and op2=imm32
+
+invalid,
+
+["ADD ","OR ","ADC ","SBB ","AND ","SUB ","XOR ","CMP "], //op1=rm32,64 and op2=imm8
+
 "TEST ","TEST ",
 "XCHG ","XCHG ",
-"MOV ","MOV ","MOV ","MOV ","MOV ",
-"LEA",
-"MOV",
-"POP",
+"MOV ","MOV ","MOV ","MOV ",
+"MOV ",
+"LEA ",
+"MOV ",
+"POP ",
+
 "XCHG ","","","","","","","", //last 3 bits is register
+
 "C", //types=BW,WDE,DQE
 "C", //types=WD,DQ,QO
-invalid,"wait",
-"PUSH","POP", //pop,push flags types=Q
-"SHAF","LAHF", //store and load AH reg for flags
-"MOV ","MOV ","MOV ","MOV ",
+invalid,
+"wait",
+"PUSHFQ","POPFQ", //pop,push flags
+"SAHF","LAHF", //store and load AH reg for flags
+
+"MOV ","MOV ",
+"MOV ","MOV ",
+
 "MOVS ", //types=B
 "MOVS", //types=WDQ
 "CMPS", //types=B
@@ -58,23 +80,39 @@ invalid,"wait",
 "LODS", //types=WDQ
 "SCAS", //types=B
 "SCAS", //types=WDQ
+
 "MOV ","","","","","","","", //3 bit reg
 "MOV ","","","","","","","", //3 bit reg
-n,n, //shift operations
-"RETN ","RETN",invalid,invalid,
+
+["ROL ","ROR ","RCL ","RCR ","SAL ","SAR "], //op1=rm8 and op2=imm8
+["ROL ","ROR ","RCL ","RCR ","SAL ","SAR "], //op1=rm8,16,32,64 and op2=imm8
+
+"RET ","RET",
+invalid,invalid,
 "MOV ","MOV ",
 "ENTER","LEAVE",
 "RETF ","RETF",
 "INT 3","INT ","INTO",
 "IRET", //types=DQ
-n,n,n,n, //shift operations
+
+["ROL ","ROR ","RCL ","RCR ","SAL ","SAR "], //op1=rm8 and op2=1
+["ROL ","ROR ","RCL ","RCR ","SAL ","SAR "], //op1=rm8,16,32,64 and op2=1
+
+["ROL ","ROR ","RCL ","RCR ","SAL ","SAR "], //op1=rm8 and op2=CL
+["ROL ","ROR ","RCL ","RCR ","SAL ","SAR "], //op1=rm8,16,32,64 and op2=CL
+
 invalid,invalid,invalid,
+
 "XLAT", //types=B
-n,n,n,n,n,n,n,n, //float point unit
-"LOOPNE ","LOOPE ","LOOP ","JRCXZ ", //JRRCXZ? loop operations
+
+fpu,fpu,fpu,fpu,fpu,fpu,fpu,fpu, //float point unit
+
+"LOOPNE ","LOOPE ","LOOP ","JRCXZ ", //loops
 "IN ","IN ","OUT ","OUT ", //input output to hardware
 "CALL ","JMP ", //call function or jump processor to location
+
 invalid,
+
 "JMP ",
 "IN ","IN ","OUT ","OUT ", //input output to hardware
 "LOCK ",
@@ -83,83 +121,135 @@ invalid,
 
 "REPNE ","REP ",
 "HLT","CMC",
-n,n,
+
+["TEST ","TEST ","NOT ","NEG ","MUL ","IMUL ","DIV ","IDIV "], //mixed operand types
+["TEST ","TEST ","NOT ","NEG ","MUL ","IMUL ","DIV ","IDIV "], //mixed operand types
+
 "CLC","STC","CLI","CTI","CLD","STD", //turn switches off and on in cpu that are in flag register
-n,n, //Increment and Decrement
-n //INC,DEC,CALL,CALLF,JMP,JMPF,PUSH
+
+["INC ","DEC "], //op1=rm8
+
+["INC ","DEC ","CALL ","CALL ","JMP ","JMP ","PUSH ",invalid] //mixed operands
 ];
 
 //an array of numbers these numbers are used for what type of operands the operation code uses
-//0=no operands
-//1=ModR/M only 8 bit
-//2=ModR/M 8,16,32,64
-//3=ModR/M inputs reversed only 8 bit
-//4=ModR/M input reversed 8,16,32,64 bit
-//5=Accumulator imm8 input
-//6=Accumulator imm32 input
-//7=Register selection last 3 bits of op code
-//8=Rex Prefix opcode
-//9=no supported operand decode of operation yet
+//******************************************************************************************************************************
+//note1 the value of type in the OpcodeOperand array is an sectional value that defines what to use to decode the operation
+//"0,0,0,0,0"=operand types and decode op type,0000=rm,0000=reg,00=IMM,00=op1,00=op2,00=op3,00=op4
+//section bit position note
+//0=Bit22,0=Bit21,0=Bit20,0=Bit19,0=Bit18, 0000=Bit14,0000=Bit10,00=Bit8, 00=Bit6,00=Bit4,00=Bit2,00=Bit0
+//******************************************************************************************************************************
+//note2 the "0,0,0,0,0,0" specifiyes how to decode the operation
+//0=The Operation code Has an Register Selection Operand
+//0=does the last three bits of the opcode have an register selection
+//0=does the operation have an ModR/M byte
+//0=is the ModR/M Register an small opcode selection
+//0=are bytes read after the operation for stright input
+//******************************************************************************************************************************
+//note3 reg is in the format 0=64,0=32,0=16,0=8 the digits that are set one in value for reg is the allowed size for the register
+//the four bit reg value works the same as RM for decoding the Ram Address operand
+//the value of IMM goes as follows IMM8=00 then IMM16=01 then IMM32=10 then IMM64=11
+//******************************************************************************************************************************
+//note4 00=op1,00=op2,00=op3,00=op4 these four values define the order the operands go in for this operation
+//op1 is used for first operand input the value of this defines what part of the decode operands goes into input one
+//01=rm or 10=reg or 11=imm if 00 operand is not used
+//******************************************************************************************************************************
 
 var OpcodeOperandType=
 [
-1,2,3,4,5,6,0,0,
-1,2,3,4,5,6,0,0,
-1,2,3,4,5,6,0,0,
-1,2,3,4,5,6,0,0,
-1,2,3,4,5,6,0,0,
-1,2,3,4,5,6,0,0,
-1,2,3,4,5,6,0,0,
-1,2,3,4,5,6,0,0,
-8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,
-7,7,7,7,7,7,7,7,
-7,7,7,7,7,7,7,7,
+0x504460,0x53FC60,0x504490,0x53FC90,
+0,0, //static operands not support yet in new decode system
+0,0,
+0x504460,0x53FC60,0x504490,0x53FC90,
+0,0, //static operands not support yet in new decode system
+0,0,
+0x504460,0x53FC60,0x504490,0x53FC90,
+0,0, //static operands not support yet in new decode system
+0,0,
+0x504460,0x53FC60,0x504490,0x53FC90,
+0,0, //static operands not support yet in new decode system
+0,0,
+0x504460,0x53FC60,0x504490,0x53FC90,
+0,0, //static operands not support yet in new decode system
+0,0,
+0x504460,0x53FC60,0x504490,0x53FC90,
+0,0, //static operands not support yet in new decode system
+0,0,
+0x504460,0x53FC60,0x504490,0x53FC90,
+0,0, //static operands not support yet in new decode system
+0,0,
+0x504460,0x53FC60,0x504490,0x53FC90,
+0,0, //static operands not support yet in new decode system
+0,0,
+0xFFFFFF,0xFFFFFF,0xFFFFFF,0xFFFFFF,0xFFFFFF,0xFFFFFF,0xFFFFFF,0xFFFFFF, //Rex Prfix
+0xFFFFFF,0xFFFFFF,0xFFFFFF,0xFFFFFF,0xFFFFFF,0xFFFFFF,0xFFFFFF,0xFFFFFF, //Rex Prfix
+
+0x613C80,0x613C80,0x613C80,0x613C80,0x613C80,0x613C80,0x613C80,0x613C80,
+0x613C80,0x613C80,0x613C80,0x613C80,0x613C80,0x613C80,0x613C80,0x613C80,
 0,0,0,
-9,
+0x513090, // r32/64,rm/32
 0,0,0,0,
-9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,
-0,0,0,0,0,
-1,2,1,2,1,2,3,4,
-9,9,9,9,
-7,7,7,7,7,7,7,7,
-9,9,
-0,
-0,0,0,0,0,
-9,9,9,9,9,9,9,9,
-5,6,
-9,9,9,9,9,9,
+0x0402C0, //PUSH IMM32
+0x57329C, //3 input operand IMUL uses r32/64,rm32/64,IMM32
+0x0400C0, //PUSH IMM8
+0x57309C, //IMUL r32/64,rm32/64,IMM8
+0,0,0,0, //static operands not supported yet in new decode system
 
-9,9,9,9,9,9,9,9, //MOV R imm8
-9,9,9,9,9,9,9,9, //MOV R imm8
+//conditional jumps take RelativePosition+IMM8 but for now I will just use for IMM8
 
-9,9,
-9, //RETN imm16
-0, //RETN
+0x0400C0,0x0400C0,0x0400C0,0x0400C0,0x0400C0,0x0400C0,0x0400C0,0x0400C0,
+0x0400C0,0x0400C0,0x0400C0,0x0400C0,0x0400C0,0x0400C0,0x0400C0,0x0400C0,
+
+//end of conditional jumps
+
+0x1C4070,0x1F0270,0,0x1F0070,
+
+0x504460,0x53FC60,
+0x504490,0x53FC90,
+
+0x504460,0x53FC60,
+0x504490,0x53FC90,
+
+0, //mov segment not supported yet
+0x533090, //LEA should have no PTR for ram address ohh well at least it decodes correctly
+0, //segmented not fully supported yet
+0x120040, //POP only takes RM64
+0,0,0,0,0,0,0,0,  //static operands not supported yet in new decode system
+0,0, //convert size names not supported yet
+0,0,0,0,0,0,
+0,0,0,0, //0xA0 MOV 64 bit address only normally this is called moffs and the ptr size comes after moffs like this moffs8
+0,0, //0xA4 static double ram address
 0,0,
-9,9,
-9,//enter
-0,
-9,//retf imm16
-0,
-0,//int 3
-9, //int imm8
-0, //into
-0, //IRET
-0,0,0,0,0,0,0,
-9,9,9,9,9,9,9,9,9,
-9,9,9,9, //loops
-9,9,9,9, //input output
-9,9, //call jump
-0,
-9, //jmp
-9,9,9,9, //input output
-9, //lock
-0, //reserved
-9,9, //repeat
+0,0, //static operands not supported yet in new decode system
+0,0,0,0,0,0, //static operands not purported yet in new decode system
+0x6404B0,0x6404B0,0x6404B0,0x6404B0,0x6404B0,0x6404B0,0x6404B0,0x6404B0,
+0,0,0,0,0,0,0,0, //IMM32/64 not support
+0x1C4070,0x1F0070,
+0x0401C0,0,
 0,0,
-9,9,
-0,0,0,0,0,0, //flags
-9,9
+0,0,
+0, //enter op1=IMM16,op2=IMM8 no setting to read tow
+0,
+0x0401C0,0,
+0,0x0400C0,
+0,
+0, //IRET no support to D/32,Q/64
+0x180000,0x180000,0x180000,0x180000, //static operands not support yet in new decode system
+0,0,0,
+0, //static operands not support yet in new decode system
+0,0,0,0,0,0,0,0, //no float point unit
+0x0400C0,0x0400C0,0x0400C0,0x0400C0, //supposed to be relative position not MMI8
+0,0,0,0,  //static operands not support yet in new decode system
+0x0403C0,0x0403C0, //supposed to be relative position not MMI32
+0,
+0x0400C0, //supposed to be relative position not MMI8
+0,0,0,0, //static operands not support yet in new decode system
+0, //lock prefix not support
+0,0,
+0,0, //repeat operation
+0x180000,0x180000, //static operands not support yet in new decode system
+0,0,0,0,0,0,
+0x180000,0x180000 //static operands not support yet in new decode system
 ]
 
 //********************************registers and position in binary code********************************
@@ -207,14 +297,14 @@ var scale=["","*2","*4","*8"];
 
 //********************************Read an imm input********************************
 
-function ReadInput(n,p)
+function ReadInput(n)
 {
 //****************************************************************
 //n=0 returns nothing
 //n=1 returns a imm8
-//n=2 returns imm32 bit number
-//p=1 returned number starts with plus sing
-//p=0 returned number starts with no plus sing
+//n=2 returns imm16
+//n=3 returns a imm32
+//n=4 returns a imm64
 //****************************************************************
 
 var h="";t="";
@@ -227,23 +317,105 @@ if(n==0){return("");}
 
 if(n==1){h=Code[Pos].toString(16);if(h.length==1){h="0"+h;};Pos++;}
 
+//read 16 bit number
+
+if(n==2){Pos++;for(var i=0;i<2;i++,Pos--){h=Code[Pos].toString(16);
+if(h.length==1){t+="0"+h;}else{t+=h;}};h=t;Pos+=3;}
+
 //read 32 bit number
 
-if(n==2){Pos+=3;for(var i=0;i<4;i++,Pos--){h=Code[Pos].toString(16);
+if(n==3){Pos+=3;for(var i=0;i<4;i++,Pos--){h=Code[Pos].toString(16);
 if(h.length==1){t+="0"+h;}else{t+=h;}};h=t;Pos+=5;}
+
+//read 64 bit number
+
+if(n==4){Pos+=7;for(var i=0;i<8;i++,Pos--){h=Code[Pos].toString(16);
+if(h.length==1){t+="0"+h;}else{t+=h;}};h=t;Pos+=9;}
 
 //return the output
 
-if(p){return("+"+h.toUpperCase());}else{return(h.toUpperCase());}}
+return(h.toUpperCase());
+}
+
+//***********************************decode the Reg value**************************************
+
+//note type input meaning
+//type=0000 an 4 bit binary value of four yes or no's for 8,16,32,64
+//type=(0)=64,(0)=32,(0)=16,(0)=8
+//note1 64 bit cpu always defaults to 32
+//note 2
+//if r8,16,32,64 the cpu will default to 32 but
+//if r8,16,64 cpu will default to the next biggest size below 32 which is 16
+//if r64 then cpu has no choice but to go 64
+
+function DecodeRegValue(RValue,type)
+{
+
+//64 bit cpu defaults to 32 bit
+
+var RegGroup=2;
+
+//if rex extend register field
+
+var RExtend=0;
+
+//if rex access to new 8 bit registers
+
+var Reg8Group=0;
+
+//rex settings
+
+if(Rex[4]&Rex[2]){RExtend=8;}
+
+//check if only 64
+
+if(type==8){RegGroup=3;}
+
+//else default 32 or below
+
+//32
+
+else if(type>=4){RegGroup=2;}
+
+//16
+
+else if(type>=2){RegGroup=1;}
+
+//8
+
+else{RegGroup=0;}
+
+//set the new 8 bit reg access if REX prefix
+
+if(Rex[4]){Reg8Group=1;}
+
+//Check if 64 operand rex prefix and "if type can go 64"
+
+if(Rex[4]&Rex[3]&type>=8){RegGroup=3;}
+
+//decode Reg bit field check if Reg 8
+
+if(RegGroup==0){return(REG[RegGroup][Reg8Group][RValue+RExtend]);}
+
+//else normal reg group
+
+else{return(REG[RegGroup][RValue+RExtend]);}
+}
 
 //********************************decode the Operands for the ModRM and SIB********************************
 
 //note type input meaning
-//type=0 input is op1=r/m8,op2=r8
-//type=1 input is op1=r/m8/16/32/64,op2=r8/16/32/64
+//type=0000 an 4 bit binary value of four yes or no's for 8,16,32,64
+//type=(0)=64,(0)=32,(0)=16,(0)=8
+//note1 64 bit cpu always defaults to 32
+//note 2
+//if r/m8,16,32,64 the cpu will default to 32 but
+//if r/m8,16,64 cpu will default to the next biggest size below 32 which is 16
+//if r/m64 then cpu has no choice but to go 64
 
 function DecodeModRM(Data,type)
 {
+//WScript.echo("ModRM type="+type+"");
 
 //Rex values note
 //Rex[0]=B
@@ -252,23 +424,39 @@ function DecodeModRM(Data,type)
 //Rex[3]=W
 //Rex[4]=rex prefix is active
 
-var output1="",output2="",ModR_M=ModRM(Data[Pos]);
+var output="",ModR_M=ModRM(Data[Pos]);
 
-var IndexExtend=0,BaseExtend=0,RExtend=0;
+var IndexExtend=0,BaseExtend=0;
 
 //64 bit cpu defaults to 32 bit
 
 var RegGroup=2;
 
-//check if operation is r/m8,r8 only
+//check if 64 bit is the only size
 
-if(type==0){RegGroup=0;}
+if(type==8){RegGroup=3;}
+
+//default else 32 or below
+
+//32
+
+else if(type>=4){RegGroup=2;}
+
+//16
+
+else if(type>=2){RegGroup=1;}
+
+//8
+
+else{RegGroup=0;}
+
+//WScript.echo("RegGroupe="+RegGroup+"");
 
 //the selection between using the new 8 bit register access and high low
 
 var Reg8Group=0;
 
-//if Rex is active
+//set the new 8 bit reg access if REX prefix
 
 if(Rex[4]){Reg8Group=1;}
 
@@ -276,21 +464,12 @@ if(Rex[4]){Reg8Group=1;}
 
 if(Rex[4]&Rex[0]){BaseExtend=8;}
 if(Rex[4]&Rex[1]){IndexExtend=8;}
-if(Rex[4]&Rex[2]){RExtend=8;}
 
-//Check if 64 oprand prefix only if type ModRM type can go 64
+//Check if 64 operand prefix only if type ModR/M type can go 64
 
-if(Rex[4]&Rex[3]&type!=0){RegGroup=3;}
+if(Rex[4]&Rex[3]&type>=8){RegGroup=3;}
 
-//decode the ModRM and SIB
-
-//decode Reg bit field check if Reg 8
-
-if(RegGroup==0){output2=REG[RegGroup][Reg8Group][ModR_M[1]+RExtend];}
-
-//else normal reg group
-
-else{output2=REG[RegGroup][ModR_M[1]+RExtend];}
+//decode the ModR/M and SIB
 
 //decode the Mode and Memory displacements
 
@@ -299,11 +478,11 @@ if(ModR_M[0]==3)
 
 //check if Reg 8
 
-if(RegGroup==0){output1=REG[RegGroup][Reg8Group][ModR_M[1]+BaseExtend];}
+if(RegGroup==0){output=REG[RegGroup][Reg8Group][ModR_M[1]+BaseExtend];}
 
 //else normal reg group
 
-else{output1=REG[RegGroup][ModR_M[1]+BaseExtend];}
+else{output=REG[RegGroup][ModR_M[1]+BaseExtend];}
 
 }
 else
@@ -311,13 +490,13 @@ else
 
 if(ModR_M[0]==0&ModR_M[2]==5)
 {
-output1=PTRS[RegGroup]+ReadInput(2,0)+"]";
+output=PTRS[RegGroup]+ReadInput(3,0)+"]";
 }
 
 else
 {
 
-output1+=PTRS[RegGroup];
+output+=PTRS[RegGroup];
 
 if(ModR_M[2]==4)
 {
@@ -325,133 +504,174 @@ if(ModR_M[2]==4)
 
 SIB=ModRM(Data[Pos]);
 
-output1+=REG[3][SIB[2]+BaseExtend];
+output+=REG[3][SIB[2]+BaseExtend];
 
 if(SIB[1]!=4)
 {
-output1+="+"+REG[3][SIB[1]+IndexExtend]+scale[SIB[0]];
+output+="+"+REG[3][SIB[1]+IndexExtend]+scale[SIB[0]];
 }
 
 }
 else
 {
-output1+=REG[3][ModR_M[2]+BaseExtend];
+output+=REG[3][ModR_M[2]+BaseExtend];
 };
 
-output1+=ReadInput(ModR_M[0],1)+"]";
+if(ModR_M[0]==2){output+=ReadInput(3)+"]";}
+else{output+=ReadInput(ModR_M[0])+"]";}
 }
 
 }
 
-//deactivate Rex prefix
+//return operands decode output for the Ram Memory selection for RM operand type
 
-Rex[4]=0;
-
-//return oprands output
-
-return([output1,output2]);
+return([output,ModR_M[1]]);
 }
 
 //********************************decode the Mod_R_M byte and SIB********************************
 
-function ModRM(v){Mode=(v>>6)&0x3;R=(v>>3)&0x07;M=v&0x07;Pos+=1;return([Mode,R,M]);}
+function ModRM(v){Mode=(v>>6)&0x3;R=(v>>3)&0x07;M=v&0x07;Pos++;return([Mode,R,M]);}
 
 //********************************Decode an operation********************************
 
 function Decode(Data)
 {
+value=Data[Pos];Pos++;
 
-value=Data[Pos];
+//******************************************************************************************************************************
+//note1 the value of type in the OpcodeOperand array is an sectional value that defines what to use to decode the operation
+//"0,0,0,0,0"=operand types and decode op type,0000=reg,0000=rm,00=IMM,00=op1,00=op2,00=op3,00=op4
+//section bit position note
+//0=Bit22,0=Bit21,0=Bit20,0=Bit19,0=Bit18, 0000=Bit14,0000=Bit10,00=Bit8, 00=Bit6,00=Bit4,00=Bit2,00=Bit0
+//******************************************************************************************************************************
+//note2 the "0,0,0,0,0,0" specifies how to decode the operation
+//0=The Operation code Has an Register Selection Operand
+//0=does the last three bits of the opcode have an register selection
+//0=does the operation have an ModR/M byte
+//0=is the ModR/M Register an small opcode selection
+//0=are bytes read after the operation for straight input
+//******************************************************************************************************************************
+//note3 reg is in the format 0=64,0=32,0=16,0=8 the digits that are set one in value for reg is the allowed size for the register
+//the four bit reg value works the same as RM for decoding the Ram Address operand
+//the value of IMM goes as follows IMM8=00 then IMM16=01 then IMM32=10 then IMM64=11
+//******************************************************************************************************************************
+//note4 00=op1,00=op2,00=op3,00=op4 these four values define the order the operands go in for this operation
+//op1 is used for first operand input the value of this defines what part of the decoed operands goes into input one
+//01=rm or 10=reg or 11=imm if 00 operand is not used
+//******************************************************************************************************************************
 
 type=OpcodeOperandType[value];
-CodeName=opcodes[value];
 
-Pos++; //after the opcode byte is read move to the next byte code
+//check if Rex Prefix
 
-if(type==0)
+if(type==0xFFFFFF){value=(value&0x0F);
+Rex=[value&0x01,(value&0x02)>>1,(value&0x04)>>2,(value&0x08)>>3,1];
+return("");}
+
+//break apart the binary settings of type for how to decode the instructions operands
+
+var HasReg=(type>>22)&0x01; //binary bit for if operand has an Register Operand
+
+var HasOpReg=(type>>21)&0x01; //binary bit for if the opcodes last 3 bits is register selection
+
+var HasModRM=(type>>20)&0x01; //binary bit for if there is an ModRM operand
+
+var IsModRMOpCode=(type>>19)&0x01; //binary bit for if the Register selection is changed to an Opcode in ModR/M byte
+
+var HasIMM=(type>>18)&0x01; //binary bit for if the operation has an IMM input operand
+
+//get the size settings for ModRM and Reg and IMM
+
+var RMSize=(type>>14)&0x0F;
+var RegSize=(type>>10)&0x0F;
+var IMMSize=(type>>8)&0x03;
+
+//WScript.echo("RMSize="+RMSize.toString(2)+"\r\nRegSize="+RegSize.toString(2)+"\r\nIMMSize="+IMMSize+"");
+
+//check if OpReg else normal opcode
+
+var RegV=0;
+
+//operation code name
+
+var OpCodeName=opcodes[value];
+
+//the seprate operands
+
+var OperandReg="",OperandRM="",OperandIMM="";
+
+if(HasOpReg)
 {
-return(CodeName+"\r\n");
+RegV=value&0x07;
+OpCodeName=opcodes[value&0xF8];
 }
 
-else if(type==1)
+//check if ModR/M
+
+if(HasModRM)
 {
-var o=DecodeModRM(Data,0);
-return(CodeName+o[0]+","+o[1]+"\r\n");
+
+//decode the ModRM byte and sib
+
+var temp=DecodeModRM(Data,RMSize);
+
+OperandRM=temp[0];
+
+//check if Opcode select
+
+if(IsModRMOpCode)
+{
+OpCodeName=OpCodeName[temp[1]];
 }
 
-else if(type==2)
-{
-var o=DecodeModRM(Data,1);
-return(CodeName+o[0]+","+o[1]+"\r\n");
+//else Set Reg value
+
+else{RegV=temp[1];}
+
 }
 
-else if(type==3)
+//only decode Reg Value if opcode has an Reg Select operand
+
+if(HasReg)
 {
-var o=DecodeModRM(Data,0);
-return(CodeName+o[1]+","+o[0]+"\r\n");
+OperandReg=DecodeRegValue(RegV,RegSize);
 }
 
-else if(type==4)
+//Decode IMM input if there is an IMM input
+
+if(HasIMM)
 {
-var o=DecodeModRM(Data,1);
-return(CodeName+o[1]+","+o[0]+"\r\n");
+OperandIMM=ReadInput(IMMSize+1);
 }
 
-else if(type==5)
-{
-return(CodeName+REG[0][0]+","+ReadInput(1,0)+"\r\n");
-}
+//put operands into an numical selecton array
 
-else if(type==6)
-{
-return(CodeName+REG[2][0]+","+ReadInput(2,0)+"\r\n");
-}
+var Operands=[".",OperandRM,OperandReg,OperandIMM];
 
-//last 3 bit of opcode is register selection
+//let the opcode values select whichoprands to use in the decode output allows the order of oprands to be selected in an simple format
 
-else if(type==7)
-{
-//settings for if rex prefix is used
+op1=(type>>6)&0x03;
+op2=(type>>4)&0x03;
+op3=(type>>2)&0x03;
+op4=type&0x03;
 
-var Extend=0;
+//though the select operands together
 
-//check Rex Settings
+var output=OpCodeName+Operands[op1]+","+Operands[op2]+","+Operands[op3]+","+Operands[op4]+"";
 
-if(Rex[4]&Rex[0]){Extend=8;}
+//replace comma sepration of zeroed out operands
 
-//deactivate rex
+output=output.split(".,")[0];
+
+if(output.substring(output.length-1,output.length)==","){output=output.substring(0,output.length-1);}
+
+//deactivate Rex Preix if it was active after instruction decodes turn it off
 
 Rex[4]=0;
 
-return(opcodes[value&0xF8]+REG[3][(value&0x07)+Extend]+"\r\n");
-}
+//give back the decoded instruction
 
-//if rex prefix
-
-else if(type==8)
-{
-value=(value&0x0F);
-
-Rex=[value&0x01,(value&0x02)>>1,(value&0x04)>>2,(value&0x08)>>3];
-
-//Rex[0]=B
-//Rex[1]=X
-//Rex[2]=R
-//Rex[3]=W
-
-//set rex prfix active
-
-Rex[4]=1;
-
-return("");
-}
-
-//else does not know how to decode operand but knows the operation code
-
-else if(type==9)
-{
-return(opcodes[Data[Pos]]+"?\r\n");Pos++;
-}
+return(output+"\r\n");
 
 }
 
