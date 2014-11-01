@@ -1,9 +1,17 @@
 var binary="00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000";
 
+
+
 //convert binary to an byte number array called code
 
-var Code=new Array();
-var t=binary.split(",");for(var i=0;i<t.length;Code[i]=parseInt(t[i],2),i++);
+var 
+
+Code=new Array();
+
+
+var t=binary.split(",");
+
+for(var i=0;i<t.length;Code[i]=parseInt(t[i],2),i++);
 
 //internalize decode functions and arrays
 
@@ -22,11 +30,11 @@ var opcodes=
 "XOR ","XOR ","XOR ","XOR ","XOR ","XOR ",invalid,invalid,
 "CMP ","CMP ","CMP ","CMP ","CMP ","CMP ",invalid,invalid,
 
-    "",    "",    "",    "",    "",    "",   "",   "",
-    "",    "",    "",    "",    "",    "",   "",   "",
+"", "", "", "", "", "", "", "",
+"", "", "", "", "", "", "", "",
 
-"PUSH ",   "",    "",    "",    "",    "",   "",   "",
-"POP ",    "",    "",    "",    "",    "",   "",   "",
+"PUSH ", "", "", "", "", "", "", "",
+"POP ", "", "", "", "", "", "", "",
 
 invalid ,invalid,invalid,
 
@@ -242,10 +250,7 @@ var OpcodeOperandType=[
 
 0,0,
 0,0,
-
-0, //0xF4
-
-0,
+0,0,
 
 [0x10261,0,0x61,0x61,0xC2E1,0x61,0xC2E1,0x61],
 [0x10C6E,0,0x6E,0x6E,0xDCEE,0x6E,0xDCEE,0xDCEE],
@@ -256,7 +261,7 @@ var OpcodeOperandType=[
 
 [
 0x6E,0x6E,0x6A,
-0x6E,
+0x0, //normal=fword,16=dword,64=tbyte
 0x6A,
 0x6E,
 0x6A,
@@ -273,6 +278,7 @@ var Rex=[0,0,0,0,0]; //the rex prefix
 var Prefix="" //the prefix to add to instruction resets after next instruction
 var OvRam=0; //override for the Ram address register size
 var OvOperands=0; //override for the operands size
+var StaticReg=false //for register extend to not allow register extend with static registers that do not change in operation code
 
 //RAM ptr size
 
@@ -390,7 +396,7 @@ var Reg8Group=0;
 
 //rex settings
 
-if(Rex[4]&Rex[2]){RExtend=8;}
+if(Rex[4]&Rex[2]&!StaticReg){RExtend=8;}
 
 //check if only 64
 
@@ -484,8 +490,8 @@ if(Rex[4]){Reg8Group=1;}
 
 //check if rex is active and check Base and Index extend and register extend
 
-if(Rex[4]&Rex[0]){BaseExtend=8;}
-if(Rex[4]&Rex[1]){IndexExtend=8;}
+if(Rex[4]&Rex[0]&!StaticReg){BaseExtend=8;}
+if(Rex[4]&Rex[1]&!StaticReg){IndexExtend=8;}
 
 //Check if 64 operand prefix only if type ModR/M type can go 64
 
@@ -551,7 +557,7 @@ else
 output+=REG[RamReg][ModR_M[2]+BaseExtend];
 };
 
-if(ModR_M[0]==1){output+=ReadInput(1);}else if(ModR_M[0]==2){output+=ReadInput(4);}
+if(ModR_M[0]==1){output+="+"+ReadInput(1);}else if(ModR_M[0]==2){output+="+"+ReadInput(4);}
 
 output+="]";
 }
@@ -634,6 +640,8 @@ if((Name instanceof Array)&(type instanceof Array))
 HasModRMOp=true; //this makes an MReg Impossible because it is now an opcode selection
 
 ModRMByte=ModRM(Data[Pos]); //get the ModRM byte
+
+RValueM=ModRMByte[1];
 
 type=type[ModRMByte[1]]; //get the opcode operand types this type of operand must never have an MReg operand because glitch
 Name=Name[ModRMByte[1]]; //get the opcode name
@@ -733,6 +741,8 @@ if(Operands[5]==4){out[2]=ReadInput(Operands[4]);}
 
 //check which operands take an static input ram adddress SI (source index),DI (Destnation Index)
 
+StaticReg=true;
+
 if(Operands[1]==5|Operands[1]==6){out[0]=DecodeModRM([0,0,Operands[1]+1],Operands[0])[0];}
 if(Operands[3]==5|Operands[3]==6){out[1]=DecodeModRM([0,0,Operands[3]+1],Operands[2])[0];}
 if(Operands[5]==5|Operands[5]==6){out[2]=DecodeModRM([0,0,Operands[5]+1],Operands[4])[0];}
@@ -749,9 +759,40 @@ if(Operands[1]==11){out[0]="1";}
 if(Operands[3]==11){out[1]="1";}
 if(Operands[5]==11){out[2]="1";}
 
+StaticReg=false;
+
 //deactivate overides if any after instruction decodes
 
 Rex[4]=0;OvRam=0; OvOperands=0;Name=Prefix+Name;Prefix="";
+
+//************************************small XLAT fix**************************************
+
+if(value==0xD7)
+{
+return(Name+"BYTE PTR [RBX]");
+}
+
+//************************quick fix 32=fword,16=dword,64=tbyte****************************
+
+if((value==0xFF&(RValueM==3|RValueM==5)))
+{
+var rm=DecodeModRM(ModRMByte,0)[0];
+
+if(Rex[3]&Rex[4])
+{
+rm="TBYTE PTR "+rm;
+}
+else if(OvOperands)
+{
+rm="DWORD PTR "+rm;
+}
+else
+{
+rm="FWORD PTR "+rm;
+}
+
+out=rm;
+}
 
 //return the instruction
 
