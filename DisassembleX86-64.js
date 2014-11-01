@@ -1,14 +1,8 @@
 var binary="00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000";
 
-
-
 //convert binary to an byte number array called code
 
-var 
-
-Code=new Array();
-
-
+var Code=new Array();
 var t=binary.split(",");
 
 for(var i=0;i<t.length;Code[i]=parseInt(t[i],2),i++);
