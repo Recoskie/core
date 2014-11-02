@@ -140,7 +140,7 @@ invalid,
 ];
 
 //*****************************************************************************************************
-//operand types instruction decode settings
+//operand decode settings
 //*****************************************************************************************************
 
 var OpcodeOperandType=[
@@ -160,7 +160,7 @@ var OpcodeOperandType=[
 0,0,0,0,
 0x86,0x218DC4E,
 0x81,0x204DC4E,
-0x244C1,0x244CE,0x14322,0x15D22, //input output S
+0x244C1,0x244CE,0x14322,0x15D22,
 
 //relative position conditional jumps
 
@@ -182,10 +182,10 @@ var OpcodeOperandType=[
 [0x6A,0,0,0,0,0,0,0,0],
 
 0x5CEE,0x5CEE,0x5CEE,0x5CEE,0x5CEE,0x5CEE,0x5CEE,0x5CEE,
-0,0, //covert name types automatic
 0,0,
-0,0, //push and pop types automatic
-0,0, //load ah and save ah for flags
+0,0,
+0,0,
+0,0,
 
 0xE2E1,0xFCEE, //moffs format
 0x1C271,0x1DC7E, //moffs format
@@ -253,14 +253,7 @@ var OpcodeOperandType=[
 
 [0x61,0x61,0,0,0,0,0,0],
 
-[
-0x6E,0x6E,0x6A,
-0x0, //normal=fword,16=dword,64=tbyte
-0x6A,
-0x6E,
-0x6A,
-0
-]
+[0x6E,0x6E,0x6A,0,0x6A,0,0x6A,0]
 ];
 
 //********************************registers and position in binary code********************************
@@ -293,7 +286,7 @@ REG=[["ES","CS","SS","DS","FS","GS","st(-2)","st(-1)","ES","CS","SS","DS","FS","
 
 var scale=["","*2","*4","*8"];
 
-//*****************for opcode names that change name based on size*****************
+//****************for opcode names that change name based on size*****************
 
 function OpCodeNameSize()
 {
@@ -487,7 +480,7 @@ if(Rex[4]){Reg8Group=1;}
 if(Rex[4]&Rex[0]&!StaticReg){BaseExtend=8;}
 if(Rex[4]&Rex[1]&!StaticReg){IndexExtend=8;}
 
-//Check if 64 operand prefix only if type ModR/M type can go 64
+//Check if 64 operand prefix only if ModR/M type can go 64
 
 if(Rex[4]&Rex[3]&type>=8){RegGroup=4;}
 
@@ -563,7 +556,7 @@ output+="]";
 return([output,ModR_M[1]]);
 }
 
-//********************************decode the Mod_R_M byte and SIB********************************
+//**************************decode the Mod_R_M byte and SIB**************************
 
 function ModRM(v){Mode=(v>>6)&0x3;O=(v>>3)&0x07;RM=v&0x07;Pos++;return([Mode,O,RM]);}
 
@@ -578,9 +571,9 @@ value=Data[Pos];Pos++;
 if(value>=0x50&value<=0x60&!OvOperands){Rex=[0,0,0,1,1];}
 if(value==0x8F&!OvOperands){Rex=[0,0,0,1,1];}
 
-//************************************check override prefixes**************************************
+//******************************check override prefixes*******************************
 
-//check if override operand override prefix
+//check if override operand prefix
 
 if(value==0x66){OvOperands=true;return("");}
 
@@ -637,10 +630,10 @@ ModRMByte=ModRM(Data[Pos]); //get the ModRM byte
 
 RValueM=ModRMByte[1];
 
-type=type[ModRMByte[1]]; //get the opcode operand types this type of operand must never have an MReg operand because glitch
+type=type[ModRMByte[1]]; //get the opcode operand types this type of operand must never have an MReg operand because of an possible glitch
 Name=Name[ModRMByte[1]]; //get the opcode name
 
-//check if defaults to 64
+//check if it defaults to 64
 
 if((value==0xFF&ModRMByte[1]==2)&!OvOperands){Rex=[0,0,0,1,1];}
 if((value==0xFF&ModRMByte[1]==4)&!OvOperands){Rex=[0,0,0,1,1];}
@@ -766,7 +759,7 @@ if(value==0xD7)
 return(Name+"BYTE PTR [RBX]");
 }
 
-//************************quick fix 32=fword,16=dword,64=tbyte****************************
+//*******************************fix for fword,dword,tbyte********************************
 
 if((value==0xFF&(RValueM==3|RValueM==5)))
 {
@@ -801,7 +794,7 @@ Out="";
 
 //Disassemble binary code using an linear pass
 
-while(Pos<Code.length){Out+=Decode(Code);};
+while(Pos<Code.length){try{Out+=Decode(Code);}catch(e){Out+="???";}};
 
 //return the decoded binary code
 
