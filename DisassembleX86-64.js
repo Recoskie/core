@@ -334,30 +334,56 @@ if((type&0x0F)>=8&(Rex[4]&Rex[3])){n=4;}
 
 if(n==0){return("");}
 
-//read byte
+//return an byte
 
-if(n==1){h=Code[Pos].toString(16);if(h.length==1){h="0"+h;};Pos++;}
+else if(n==1){h=Code[Pos].toString(16);if(h.length==1){h="0"+h;};Pos++;}
 
-//read 16 bit number
+//read 16/32/64
 
-if(n==2){Pos++;for(var i=0;i<2;i++,Pos--){h=Code[Pos].toString(16);
-if(h.length==1){t+="0"+h;}else{t+=h;}};h=t;Pos+=3;}
+else
+{
+var End=Math.pow(2,n-1);
+Pos+=End-1;
 
-//read 32 bit number
+for(var i=0;i<End;i++,Pos--)
+{
+h=Code[Pos].toString(16);
 
-if(n==3){Pos+=3;for(var i=0;i<4;i++,Pos--){h=Code[Pos].toString(16);
-if(h.length==1){t+="0"+h;}else{t+=h;}};h=t;Pos+=5;}
+if(h.length==1){t+="0"+h;}
+else{t+=h;}
+}
 
-//read 64 bit number
-
-if(n==4){Pos+=7;for(var i=0;i<8;i++,Pos--){h=Code[Pos].toString(16);
-if(h.length==1){t+="0"+h;}else{t+=h;}};h=t;Pos+=9;}
+h=t;Pos+=End+1;
+}
 
 //before returning the number check if it is an relative position
 
-if((type&0x10)==16){var l=h.length;
-h=(parseInt(h)+Pos).toString(16);
-while(h.length<l){h="0"+h;}}
+if((type&0x10)==16)
+{
+h=parseInt(h,16);
+
+//relative position size only effect the bits of the relative address size and not the bits higher up
+
+var BitSize=Math.pow(2,n-1)*8;
+var MaxValue=Math.pow(2,BitSize)-1;
+
+//calculate the relative position
+
+h=(Pos-(Pos&MaxValue))+((h+Pos)&MaxValue); //Xor did not work as expected in JS so I subtracted instead
+
+//if OvOperands is active and rex 64 is not then only the first 16 bit's are used out of the hole address
+
+if(OvOperands&!(Rex[4]&Rex[3]))
+{
+h=h&0xFFFF;
+}
+
+h=h.toString(16);
+
+//relative jumps and calls should always show the hole 64 bit address
+
+while(h.length<16){h="0"+h;}
+}
 
 //return the output
 
