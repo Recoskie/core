@@ -75,7 +75,7 @@ invalid,
 "MOVS ","MOVS ",
 "CMPS ","CMPS ",
 "TEST ","TEST ",
-"STO ","STO ",
+"STOS ","STOS ",
 "LODS ","LODS ",
 "SCAS ","SCAS ",
 
@@ -355,7 +355,7 @@ if((type&0x10)==16)
 {
 h=parseInt(h,16);
 
-//relative position size only effect the bits of the relative address size and not the bits higher up
+//relative position size only effects the bits of the relative address size and not the bits higher up
 
 var BitSize=Math.pow(2,n-1)*8;
 var MaxValue=Math.pow(2,BitSize)-1;
@@ -472,7 +472,7 @@ if(ModR_M[0]==3)
 
 //check if Reg 8
 
-if(RegGroup==0){output=REG[RegGroup][Reg8Group][ModR_M[2]+BaseExtend];}
+if(RegGroup==1){output=REG[RegGroup][Reg8Group][ModR_M[2]+BaseExtend];}
 
 //else normal reg group
 
@@ -607,8 +607,6 @@ return(Name[GetOperandSize(0x0F)]+"\r\n");
 
 Operands=[type&0x1F,(type>>5)&0x0F,(type>>9)&0x1F,(type>>14)&0x0F,(type>>18)&0x1F,(type>>23)&0x0F];
 
-//WScript.echo(Operands+"");
-
 //check if an operand has an OpCode+reg and record which operand it is
 
 if(Operands[1]==1){ORegEl=0;HasORegValue=true;}
@@ -671,7 +669,7 @@ out[((MRegEl+2)/2)-1]=DecodeRegValue(RValueM,Operands[MRegEl]);
 
 if(HasORegValue)
 {
-//fix the register exstend for O Reg exstend
+//switch the register extend for O Reg extend
 
 var t=Rex[2];
 Rex[2]=Rex[0];
