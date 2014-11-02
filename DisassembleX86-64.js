@@ -3,8 +3,8 @@ var binary="00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000
 //convert binary to an byte number array called code
 
 var Code=new Array();
-var t=binary.split(",");
 
+var t=binary.split(",");
 for(var i=0;i<t.length;Code[i]=parseInt(t[i],2),i++);
 
 //internalize decode functions and arrays
@@ -13,9 +13,7 @@ var invalid="Op-code is not an valid 64 bit instruction!";
 var tb="Tow Byte Instructions not Supported yet!"
 var fpu="Float Point unit Not Supported yet!";
 
-var opcodes=
-[
-"ADD ","ADD ","ADD ","ADD ","ADD ","ADD ",invalid,invalid,
+var opcodes=["ADD ","ADD ","ADD ","ADD ","ADD ","ADD ",invalid,invalid,
 "OR ","OR ","OR ","OR ","OR ","OR ",invalid,tb,
 "ADC ","ADC ","ADC ","ADC ","ADC ","ADC ",invalid,invalid,
 "SBB ","SBB ","SBB ","SBB ","SBB ","SBB ",invalid,invalid,
@@ -286,23 +284,33 @@ REG=[["ES","CS","SS","DS","FS","GS","st(-2)","st(-1)","ES","CS","SS","DS","FS","
 
 var scale=["","*2","*4","*8"];
 
-//****************for opcode names that change name based on size*****************
+//*********get what the operand size should be based on its size setting,Rex 64,and OvOperands*********
 
-function OpCodeNameSize()
+function GetOperandSize(type)
 {
+var n=-1;
 
-//if rex 64
+//if 64 and not 32
 
-if(Rex[4]&Rex[3]){return(3);}
+if((type&8)>=8&!((type&4)==4)){n=3;}
 
-//operand overide to 16 bit
+//else 32 and bellow
 
-else if(OvOperands){return(1);}
+else if((type&0x04)==4){n=2;}
+else if((type&0x02)==2){n=1;}
+else if((type&0x01)==1){n=0;}
 
-//else default 32
+//if Rex 64 and can go 64
 
-else{return(2);}
+if((type&0x0F)>=8&(Rex[4]&Rex[3])){n=3;}
 
+//operand override if operation can go 16 bit else Rex 64 is not active
+
+else if((type&0x02)==2&OvOperands){n=1;}
+
+//return the operand size
+
+return(n);
 }
 
 //********************************Read an IMM input********************************
@@ -313,24 +321,9 @@ var h="";t="",n=3;
 
 //detrimen the size
 
-//auto 32 and bellow
+n=GetOperandSize(type)+1;
 
-if((type&0x0F)==8){n=4;} //if only 64
-
-else if((type&0x04)==4){n=3;}
-else if((type&0x02)==2){n=2;}
-else if((type&0x01)==1){n=1;}
-else{n=0;}
-
-//operand override if operation can go 16 bit and if Rex 64 is not active
-
-if((type&0x02)==2&OvOperands&!(Rex[4]&Rex[3])){n=2;}
-
-//if Rex 64 and imm can go 64
-
-if((type&0x0F)>=8&(Rex[4]&Rex[3])){n=4;}
-
-//return nothing
+//return nuthing
 
 if(n==0){return("");}
 
@@ -369,7 +362,7 @@ var MaxValue=Math.pow(2,BitSize)-1;
 
 //calculate the relative position
 
-h=(Pos-(Pos&MaxValue))+((h+Pos)&MaxValue); //Xor did not work as expected in JS so I subtracted instead
+h=(Pos-(Pos&MaxValue))+((h+Pos)&MaxValue); //Xor did not work as expected so I subtracted instead
 
 //if OvOperands is active and rex 64 is not then only the first 16 bit's are used out of the hole address
 
@@ -407,43 +400,17 @@ var RExtend=0;
 
 var Reg8Group=0;
 
+//detrimen the size
+
+RegGroup=GetOperandSize(type)+1;
+
 //rex settings
 
-if(Rex[4]&Rex[2]&!StaticReg){RExtend=8;}
-
-//check if only 64
-
-if(type==8){RegGroup=4;}
-
-//else default 32 or below
-
-//32
-
-else if((type&0x04)==4){RegGroup=3;}
-
-//16
-
-else if((type&0x02)==2){RegGroup=2;}
-
-//8
-
-else if((type&0x01)==1){RegGroup=1;}
-
-//else segments
-
-else{RegGroup=0;}
-
-//operand override if operation can go 16 bit and if Rex 64 is not active
-
-if((type&0x02)==2&OvOperands&!(Rex[4]&Rex[3])){RegGroup=2;}
+if((Rex[4]&Rex[2])&(!StaticReg)){RExtend=8;}
 
 //set the new 8 bit reg access if REX prefix
 
 if(Rex[4]){Reg8Group=1;}
-
-//Check if 64 operand rex prefix and "if type can go 64"
-
-if(Rex[4]&Rex[3]&(type&0x08)==8){RegGroup=4;}
 
 //decode Reg bit field check if Reg 8
 
@@ -467,60 +434,34 @@ var IndexExtend=0,BaseExtend=0;
 
 var RegGroup=3;
 
-var RamReg=4; //set 3 if Overide
-
-if(OvRam){RamReg=3;}
-
-//check if 64 bit is the only size
-
-if((type&0x0F)==8){RegGroup=4;}
-
-//default else 32 or below
-
-//32
-
-else if((type&0x04)==4){RegGroup=3;}
-
-//16
-
-else if((type&0x02)>=2){RegGroup=2;}
-
-//8
-
-else if((type&0x01)==1){RegGroup=1;}
-
-//no ptr
-
-else{RegGroup=0;}
-
 //the selection between using the new 8 bit register access and high low
 
 var Reg8Group=0;
 
+var RamReg=4; //set 3 if Ram Address Overide
+
+//detrimen the size
+
+RegGroup=GetOperandSize(type)+1;
+
 //set the new 8 bit reg access if REX prefix
 
 if(Rex[4]){Reg8Group=1;}
+
+//ram address overide
+
+if(OvRam){RamReg=3;}
 
 //check if rex is active and check Base and Index extend and register extend
 
 if(Rex[4]&Rex[0]&!StaticReg){BaseExtend=8;}
 if(Rex[4]&Rex[1]&!StaticReg){IndexExtend=8;}
 
-//Check if 64 operand prefix only if ModR/M type can go 64
-
-if(Rex[4]&Rex[3]&type>=8){RegGroup=4;}
-
-//operand override if operation can go 16 bit and if Rex 64 is not active
-
-if((type&0x02)==2&OvOperands&!(Rex[4]&Rex[3])){RegGroup=2;}
-
 //Check if moffs type ram address
 
 if((type&0x10)==16)
 {
-
 if(OvRam){return([PTRS[RegGroup]+ReadInput(4)+"]",0]);}
-
 return([PTRS[RegGroup]+ReadInput(8)+"]",0]);
 }
 
@@ -592,11 +533,6 @@ function Decode(Data)
 {
 value=Data[Pos];Pos++;
 
-//for operations that default to 64 but can go 16 bit
-
-if(value>=0x50&value<=0x60&!OvOperands){Rex=[0,0,0,1,1];}
-if(value==0x8F&!OvOperands){Rex=[0,0,0,1,1];}
-
 //******************************check override prefixes*******************************
 
 //check if override operand prefix
@@ -656,27 +592,22 @@ ModRMByte=ModRM(Data[Pos]); //get the ModRM byte
 
 RValueM=ModRMByte[1];
 
-type=type[ModRMByte[1]]; //get the opcode operand types this type of operand must never have an MReg operand because of an possible glitch
+type=type[ModRMByte[1]]; //get the opcode operand types this type of operand must never have an MReg operand because of an posible glitch
 Name=Name[ModRMByte[1]]; //get the opcode name
-
-//check if it defaults to 64
-
-if((value==0xFF&ModRMByte[1]==2)&!OvOperands){Rex=[0,0,0,1,1];}
-if((value==0xFF&ModRMByte[1]==4)&!OvOperands){Rex=[0,0,0,1,1];}
-if((value==0xFF&ModRMByte[1]==6)&!OvOperands){Rex=[0,0,0,1,1];}
-
 }
 
 //if opcode name is an array and has no operands
 
 if(Name instanceof Array&type==0)
 {
-return(Name[OpCodeNameSize()]+"\r\n");
+return(Name[GetOperandSize(0x0F)]+"\r\n");
 }
 
 //decode the operand types for the operation code
 
 Operands=[type&0x1F,(type>>5)&0x0F,(type>>9)&0x1F,(type>>14)&0x0F,(type>>18)&0x1F,(type>>23)&0x0F];
+
+//WScript.echo(Operands+"");
 
 //check if an operand has an OpCode+reg and record which operand it is
 
@@ -740,6 +671,12 @@ out[((MRegEl+2)/2)-1]=DecodeRegValue(RValueM,Operands[MRegEl]);
 
 if(HasORegValue)
 {
+//fix the register exstend for O Reg exstend
+
+var t=Rex[2];
+Rex[2]=Rex[0];
+Rex[0]=t;
+
 out[((ORegEl+2)/2)-1]=DecodeRegValue(RValueO,Operands[ORegEl]);
 }
 
@@ -820,7 +757,7 @@ Out="";
 
 //Disassemble binary code using an linear pass
 
-while(Pos<Code.length){try{Out+=Decode(Code);}catch(e){Out+="???";}};
+while(Pos<Code.length){try{Out+=Decode(Code);}catch(e){Out+="???";}}
 
 //return the decoded binary code
 
