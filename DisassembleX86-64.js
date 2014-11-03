@@ -270,7 +270,7 @@ var StaticReg=false //for register extend to not allow register extend with stat
 
 var HexCode="" //the hex code of the decoded instruction
 
-var InstructionPos=""; //used to show the 64 bit address that the instruction is in the array
+var InstructionPos=-1; //used to show the 64 bit address that the instruction is in the array
 
 //RAM ptr size
 
@@ -554,10 +554,10 @@ return([Mode,O,RM]);}
 
 function Decode(Data)
 {
-//if no recorded hex for the decoded instruction then record the start position of the instruction
+//check if InstructionPos is reset then set it for current instruction
 //only if ShowInstructionPos decoding is active
 
-if(HexCode==""&ShowInstructionPos){InstructionPos=Pos;}
+if(InstructionPos==-1&ShowInstructionPos){InstructionPos=Pos;}
 
 value=Data[Pos];
 
@@ -619,9 +619,9 @@ if(((type>>5)&0x0F)==2|((type>>14)&0x0F)==2|((type>>23)&0x0F)==2)
 //reset
 
 Rex[4]=[0,0,0,0,0];OvRam=0;OvOperands=0;Name=Prefix+Name;Prefix="";
-InstructionPos=0;HexCode="";
+InstructionPos=-1;HexCode="";
 
-//return unkowen
+//return unknown
 
 return("???\r\n");
 }
@@ -740,7 +740,7 @@ Name=HexCode.toUpperCase()+" "+Name;HexCode="";}
 
 if(ShowInstructionPos){InstructionPos=InstructionPos.toString(16);
 for(;InstructionPos.length<16;InstructionPos="0"+InstructionPos);
-Name=InstructionPos.toUpperCase()+" "+Name;InstructionPos=0;}
+Name=InstructionPos.toUpperCase()+" "+Name;InstructionPos=-1;}
 
 //return the instruction
 
@@ -764,4 +764,4 @@ return(Out);
 
 //********************************call the disassemble function to disassemble the binary instructions and display the output********************************
 
-alert(Disassemble(Code))
+alert(Disassemble(Code));
