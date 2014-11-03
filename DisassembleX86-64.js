@@ -1,6 +1,6 @@
 var binary="00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000";
 
-var ShowInstructionHex=true; //setting to show the the code of the instruction beside the decoded instruction output
+var ShowInstructionHex=true; //setting to show the hex code of the instruction beside the decoded instruction output
 var ShowInstructionPos=true; //setting to show the instruction address position
 
 //convert binary to an byte number array called code
@@ -8,7 +8,7 @@ var ShowInstructionPos=true; //setting to show the instruction address position
 var Code=new Array();
 
 var t=binary.split(",");
-for(var i=0;i<t.length;Code[i]=parseInt(t[i],2),i++);
+for(var i=0;i<t.length;Code[i]=parseInt(t[i],2)&0xFF,i++);
 
 //internalize decode functions and arrays
 
@@ -423,9 +423,9 @@ if(RegGroup==1){return(REG[RegGroup][Reg8Group][RValue+RExtend]);}
 else{return(REG[RegGroup][RValue+RExtend]);}
 }
 
-//********************************decode the Operands for the ModRM and SIB********************************
+//********************************decode the Address for ModRM Byte and SIB********************************
 
-function DecodeModRM(ModR_M,type)
+function DecodeModRMAddress(ModR_MByte,type)
 {
 
 var output="";
@@ -463,28 +463,28 @@ if(Rex[4]&Rex[1]&!StaticReg){IndexExtend=8;}
 
 if((type&0x10)==16)
 {
-if(OvRam){return([PTRS[RegGroup]+ReadInput(4)+"]",0]);}
-return([PTRS[RegGroup]+ReadInput(8)+"]",0]);
+if(OvRam){return(PTRS[RegGroup]+ReadInput(4)+"]");}
+return(PTRS[RegGroup]+ReadInput(8)+"]");
 }
 
 //decode the ModR/M and SIB
 
-if(ModR_M[0]==3)
+if(ModR_MByte[0]==3)
 {
 
 //check if Reg 8
 
-if(RegGroup==1){output=REG[RegGroup][Reg8Group][ModR_M[2]+BaseExtend];}
+if(RegGroup==1){output=REG[RegGroup][Reg8Group][ModR_MByte[2]+BaseExtend];}
 
 //else normal reg group
 
-else{output=REG[RegGroup][ModR_M[2]+BaseExtend];}
+else{output=REG[RegGroup][ModR_MByte[2]+BaseExtend];}
 
 }
 else
 {
 
-if(ModR_M[0]==0&ModR_M[2]==5)
+if(ModR_MByte[0]==0&ModR_MByte[2]==5)
 {
 output=PTRS[RegGroup]+ReadInput(4,0)+"]";
 }
@@ -494,11 +494,11 @@ else
 
 output+=PTRS[RegGroup];
 
-if(ModR_M[2]==4)
+if(ModR_MByte[2]==4)
 {
 //decode the SIB byte
 
-SIB=ModRM(Data[Pos]);
+SIB=DecodeModRMByte(Data[Pos]);
 
 output+=REG[RamReg][SIB[2]+BaseExtend];
 
@@ -510,24 +510,24 @@ output+="+"+REG[RamReg][SIB[1]+IndexExtend]+scale[SIB[0]];
 }
 else
 {
-output+=REG[RamReg][ModR_M[2]+BaseExtend];
+output+=REG[RamReg][ModR_MByte[2]+BaseExtend];
 };
 
-if(ModR_M[0]==1){output+="+"+ReadInput(1);}else if(ModR_M[0]==2){output+="+"+ReadInput(4);}
+if(ModR_MByte[0]==1){output+="+"+ReadInput(1);}else if(ModR_MByte[0]==2){output+="+"+ReadInput(4);}
 
 output+="]";
 }
 
 }
 
-//return operands decode output for the Ram Memory selection for RM operand type
+//return the Address
 
-return([output,ModR_M[1]]);
+return(output);
 }
 
 //**************************decode the Mod_R_M byte and SIB**************************
 
-function ModRM(v)
+function DecodeModRMByte(v)
 {
 //add this to the hex code of the operation if ShowInstructionHex decoding is active
 
@@ -574,26 +574,12 @@ HexCode+=h;
 
 Pos++;
 
-//******************************check override prefixes*******************************
-
-//check if override operand prefix
+//******************************check overrides and prefixes*******************************
 
 if(value==0x66){OvOperands=true;return("");}
-
-//check if Ram Address override Prefix
-
 if(value==0x67){OvRam=true;return("");}
-
-//check if Rex Prefix
-
 if(value>=0x40&value<=0x4F){Rex=[value&0x01,(value&0x02)>>1,(value&0x04)>>2,(value&0x08)>>3,1];return("");}
-
-//check if prefix with operation code
-
-if(value==0xF0|value==0xF2|value==0xF3)
-{
-Prefix=opcodes[value];return("");
-}
+if(value==0xF0|value==0xF2|value==0xF3){Prefix=opcodes[value];return("");}
 
 //get the opcode
 
@@ -605,43 +591,56 @@ type=OpcodeOperandType[value];
 
 //decode setting values
 
-var HasModRM=false;
-var HasMRegValue=false;
-var HasModRMOp=false;
-var HasORegValue=false;
+var HasModRM=false,HasMRegValue=false,HasORegValue=false;
 
-var RValueO=0;
-var RValueM=0;
+var ORegEl=0,MRegEl=0,ModRMEl=0;
 
-var ORegEl=0;
-var MRegEl=0;
-var ModRMEl=0;
+var ModRMByte=new Array(); //the decoded ModRM byte
 
-var ModRMByte=new Array();
+var out=new Array(); //the output array
 
-//the output array
+//opcode name varies on size overrides
 
-var out=new Array();
+if(Name instanceof Array&type==0){Name=Name[GetOperandSize(0x0F)];}
 
-//if both are array then the next byte is an ModRM and Reg is Opcode
+//ModRM opcode group
 
 if((Name instanceof Array)&(type instanceof Array))
 {
-HasModRMOp=true; //this makes an MReg Impossible because it is now an opcode selection
+//get the operand type
 
-ModRMByte=ModRM(Data[Pos]); //get the ModRM byte
+ModRMByte=DecodeModRMByte(Data[Pos]);
+type=type[ModRMByte[1]];
 
-RValueM=ModRMByte[1];
+//check operands MReg and MReg=Opcode can not be active at the same time
 
-type=type[ModRMByte[1]]; //get the opcode operand types this type of operand must never have an MReg operand because of an possible glitch
-Name=Name[ModRMByte[1]]; //get the opcode name
+if(((type>>5)&0x0F)==2|((type>>14)&0x0F)==2|((type>>23)&0x0F)==2)
+{
+//reset
+
+Rex[4]=[0,0,0,0,0];OvRam=0;OvOperands=0;Name=Prefix+Name;Prefix="";
+InstructionPos=0;HexCode="";
+
+//return unkowen
+
+return("???\r\n");
 }
 
-//if opcode name is an array and has no operands
+//get opcode
 
-if(Name instanceof Array&type==0)
+Name=Name[ModRMByte[1]];
+
+//set ModRM byte true
+
+HasModRM=true;
+
+}
+
+//else check if normal ModRM byte
+
+else if(((type>>5)&0x0F)==3|((type>>14)&0x0F)==3|((type>>23)&0x0F)==3)
 {
-Name=Name[GetOperandSize(0x0F)];
+ModRMByte=DecodeModRMByte(Data[Pos]);HasModRM=true;
 }
 
 //decode the operand types for the operation code
@@ -650,79 +649,34 @@ Operands=[type&0x1F,(type>>5)&0x0F,(type>>9)&0x1F,(type>>14)&0x0F,(type>>18)&0x1
 
 //check if an operand has an OpCode+reg and record which operand it is
 
-if(Operands[1]==1){ORegEl=0;HasORegValue=true;}
-if(Operands[3]==1){ORegEl=2;HasORegValue=true;}
-if(Operands[5]==1){ORegEl=4;HasORegValue=true;}
+ORegEl=((Operands[3]==1)<<1)|((Operands[5]==1)<<2);HasORegValue=Operands[1]==1|Operands[3]==1|Operands[5]==1;
 
-//check if an operand has an MReg and record which operand it is as long as HasModRMOp is not active
+//check if an operand has an MReg and record which operand it is
 
-if(Operands[1]==2){MRegEl=0;HasMRegValue=true;}
-if(Operands[3]==2){MRegEl=2;HasMRegValue=true;}
-if(Operands[5]==2){MRegEl=4;HasMRegValue=true;}
+MRegEl=((Operands[3]==2)<<1)|((Operands[5]==2)<<2);HasMRegValue=Operands[1]==2|Operands[3]==2|Operands[5]==2;
 
-//check if an operand has an ModRM decode and record which operand it is
+//record which operand has the ModRM Address
 
-if(Operands[1]==3){ModRMEl=0;HasModRM=true;}
-if(Operands[3]==3){ModRMEl=2;HasModRM=true;}
-if(Operands[5]==3){ModRMEl=4;HasModRM=true;}
+ModRMEl=((Operands[3]==3)<<1)|((Operands[5]==3)<<2);
 
-//get the reg value if OpCode+Reg
+//stops the Reg error for moffs Ram Address type
 
-if(HasORegValue){RValueO=(value&0x07);Name=opcodes[(value&0xF8)];}
-
-//decode the ModRM byte if not ModRM+Opcode and HasModRM operand
-
-if(HasModRMOp&HasMRegValue)
-{
-//return unkowen operand as it is imposible to have both
-
-Rex[4]=0;OvRam=0; OvOperands=0;Name=Prefix+Name;Prefix="";
-return(Name+"???\r\n");
-}
-
-//else if it Has ModRM+reg byte with no Opcode reg type selection
-
-else if(!HasModRMOp&HasModRM)
-{
-ModRMByte=ModRM(Data[Pos]);
-RValueM=ModRMByte[1];
-HasMRegValue=true;
-}
-
-//decode the ModRM Operands and put it in element Operands order in output array
-
-if(HasModRM)
-{
-//check if moffs to stop MReg ERROR
 if((Operands[ModRMEl]&0x10)==16){HasMRegValue=false;}
 
-out[((ModRMEl+2)/2)-1]=DecodeModRM(ModRMByte,Operands[ModRMEl])[0];
-}
+//Decode an opcode which has the last three bits as an register selection
 
-//if operand has an RegM value Decode the RegM Value and put it into the output array
+if(HasORegValue){var t=Rex[2];Rex[2]=Rex[0];Rex[0]=t;
+out[((ORegEl+2)/2)-1]=DecodeRegValue(value&0x07,Operands[ORegEl]);Name=opcodes[(value&0xF8)];}
 
-if(HasMRegValue)
-{
-out[((MRegEl+2)/2)-1]=DecodeRegValue(RValueM,Operands[MRegEl]);
-}
+//decode the ModRM Ram Address
 
-//if operand has an RegO value Decode the RegO value and put it in it's operand element
+if(HasModRM){out[((ModRMEl+2)/2)-1]=DecodeModRMAddress(ModRMByte,Operands[ModRMEl]);}
 
-if(HasORegValue)
-{
-//fix the register extend for O Reg extend
+//decode the ModRM Register Select
 
-var t=Rex[2];
-Rex[2]=Rex[0];
-Rex[0]=t;
+if(HasMRegValue){out[((MRegEl+2)/2)-1]=DecodeRegValue(ModRMByte[1],Operands[MRegEl]);}
 
-out[((ORegEl+2)/2)-1]=DecodeRegValue(RValueO,Operands[ORegEl]);
-}
-
-//the Mod RM and reg values had to be decoded in an cirtaint order
-//the next operands do not need to be decoded in an binay bit placment order
-
-//check for IMM inputs
+//IMM inputs
 
 if(Operands[1]==4){out[0]=ReadInput(Operands[0]);}
 if(Operands[3]==4){out[1]=ReadInput(Operands[2]);}
@@ -732,9 +686,9 @@ if(Operands[5]==4){out[2]=ReadInput(Operands[4]);}
 
 StaticReg=true;
 
-if(Operands[1]==5|Operands[1]==6){out[0]=DecodeModRM([0,0,Operands[1]+1],Operands[0])[0];}
-if(Operands[3]==5|Operands[3]==6){out[1]=DecodeModRM([0,0,Operands[3]+1],Operands[2])[0];}
-if(Operands[5]==5|Operands[5]==6){out[2]=DecodeModRM([0,0,Operands[5]+1],Operands[4])[0];}
+if(Operands[1]==5|Operands[1]==6){out[0]=DecodeModRMAddress([0,0,Operands[1]+1],Operands[0]);}
+if(Operands[3]==5|Operands[3]==6){out[1]=DecodeModRMAddress([0,0,Operands[3]+1],Operands[2]);}
+if(Operands[5]==5|Operands[5]==6){out[2]=DecodeModRMAddress([0,0,Operands[5]+1],Operands[4]);}
 
 //static general use registeres AX,CX,DX,BX
 
@@ -750,10 +704,7 @@ if(Operands[5]==11){out[2]="1";}
 
 //************************************small XLAT fix**************************************
 
-if(value==0xD7)
-{
-out=DecodeModRM([00,000,3],1)[0];
-}
+if(value==0xD7){out=DecodeModRMAddress([00,000,3],1);}
 
 //deactivate static registeres
 
@@ -761,22 +712,13 @@ StaticReg=false;
 
 //*******************************fix for fword,dword,tbyte********************************
 
-if((value==0xFF&(RValueM==3|RValueM==5)))
+if((value==0xFF&(ModRMByte[1]==3|ModRMByte[1]==5)))
 {
-var rm=DecodeModRM(ModRMByte,0)[0];
+var rm=DecodeModRMAddress(ModRMByte,0);
 
-if(Rex[3]&Rex[4])
-{
-rm="TBYTE PTR "+rm;
-}
-else if(OvOperands)
-{
-rm="DWORD PTR "+rm;
-}
-else
-{
-rm="FWORD PTR "+rm;
-}
+if(Rex[3]&Rex[4]){rm="TBYTE PTR "+rm;}
+else if(OvOperands){rm="DWORD PTR "+rm;}
+else{rm="FWORD PTR "+rm;}
 
 out=rm;
 }
@@ -791,27 +733,14 @@ Rex[4]=0;OvRam=0; OvOperands=0;Name=Prefix+Name;Prefix="";
 
 //add hex code and the reset hex code if ShowInstructionHex decoding is active
 
-if(ShowInstructionHex)
-{
-for(;HexCode.length<15;HexCode=HexCode+" "); //pad hex code to 15 in length
-
-Name=HexCode.toUpperCase()+" "+Name; //add in the 16 space it is rare for codes to exceed 16 for example an moffs address type will exceed 16
-
-HexCode="";
-}
+if(ShowInstructionHex){for(;HexCode.length<15;HexCode=HexCode+" ");
+Name=HexCode.toUpperCase()+" "+Name;HexCode="";}
 
 //show the 64 bit instruction address if ShowInstructionPos is active
 
-if(ShowInstructionPos)
-{
-InstructionPos=InstructionPos.toString(16);
-
+if(ShowInstructionPos){InstructionPos=InstructionPos.toString(16);
 for(;InstructionPos.length<16;InstructionPos="0"+InstructionPos);
-
-Name=InstructionPos.toUpperCase()+" "+Name; //add it to the instruction then reset InstructionPos
-
-InstructionPos=0;
-}
+Name=InstructionPos.toUpperCase()+" "+Name;InstructionPos=0;}
 
 //return the instruction
 
@@ -835,4 +764,4 @@ return(Out);
 
 //********************************call the disassemble function to disassemble the binary instructions and display the output********************************
 
-alert(Disassemble(Code));
+alert(Disassemble(Code))
