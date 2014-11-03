@@ -1,5 +1,8 @@
 var binary="00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000";
 
+var ShowInstructionHex=true; //setting to show the he code of the instruction beside the decoded instruction output
+var ShowInstructionPos=true; //setting to show the instruction address position
+
 //convert binary to an byte number array called code
 
 var Code=new Array();
@@ -104,7 +107,7 @@ invalid,invalid,
 
 invalid,invalid,invalid,
 
-"XLAT",
+"XLAT ",
 
 fpu,fpu,fpu,fpu,fpu,fpu,fpu,fpu, //float point unit
 
@@ -265,6 +268,10 @@ var OvRam=0; //override for the Ram address register size
 var OvOperands=0; //override for the operands size
 var StaticReg=false //for register extend to not allow register extend with static registers that do not change in operation code
 
+var HexCode="" //the hex code of the decoded instruction
+
+var InstructionPos=""; //used to show the 64 bit address that the instruction is in the array
+
 //RAM ptr size
 
 PTRS=["[","BYTE PTR [","WORD PTR [","DWORD PTR [","QWORD PTR ["];
@@ -317,37 +324,35 @@ return(n);
 
 function ReadInput(type)
 {
-var h="";t="",n=3;
+var h="",n=3;
 
 //detrimen the size
 
 n=GetOperandSize(type)+1;
 
-//return nuthing
+//return nothing
 
 if(n==0){return("");}
 
-//return an byte
+//read 8/16/32/64
 
-else if(n==1){h=Code[Pos].toString(16);if(h.length==1){h="0"+h;};Pos++;}
-
-//read 16/32/64
-
-else
-{
+var Data=new Array();
 var End=Math.pow(2,n-1);
-Pos+=End-1;
 
-for(var i=0;i<End;i++,Pos--)
+for(var i=0;i<End;i++,Pos++)
 {
 h=Code[Pos].toString(16);
 
-if(h.length==1){t+="0"+h;}
-else{t+=h;}
+if(h.length==1){Data[i]="0"+h;}else{Data[i]=h;}
 }
 
-h=t;Pos+=End+1;
-}
+//add this to the hex code of the operation if Show Hex Code Decoding is active
+
+if(ShowInstructionHex){HexCode+=(Data+"").replace(/,/g,"");}
+
+//put Data into reverse order
+
+h=(Data.reverse()+"").replace(/,/g,"");
 
 //before returning the number check if it is an relative position
 
@@ -355,21 +360,18 @@ if((type&0x10)==16)
 {
 h=parseInt(h,16);
 
-//relative position size only effects the bits of the relative address size and not the bits higher up
+//relative position size only effect the bits of the relative address size and not the bits higher up
 
 var BitSize=Math.pow(2,n-1)*8;
 var MaxValue=Math.pow(2,BitSize)-1;
 
 //calculate the relative position
 
-h=(Pos-(Pos&MaxValue))+((h+Pos)&MaxValue); //Xor did not work as expected so I subtracted instead
+h=(Pos-(Pos&MaxValue))+((h+Pos)&MaxValue);
 
 //if OvOperands is active and rex 64 is not then only the first 16 bit's are used out of the hole address
 
-if(OvOperands&!(Rex[4]&Rex[3]))
-{
-h=h&0xFFFF;
-}
+if(OvOperands&!(Rex[4]&Rex[3])){h=h&0xFFFF;}
 
 h=h.toString(16);
 
@@ -438,7 +440,7 @@ var RegGroup=3;
 
 var Reg8Group=0;
 
-var RamReg=4; //set 3 if Ram Address Overide
+var RamReg=4; //set 3 if Ram Address Override
 
 //detrimen the size
 
@@ -448,7 +450,7 @@ RegGroup=GetOperandSize(type)+1;
 
 if(Rex[4]){Reg8Group=1;}
 
-//ram address overide
+//ram address override
 
 if(OvRam){RamReg=3;}
 
@@ -525,13 +527,52 @@ return([output,ModR_M[1]]);
 
 //**************************decode the Mod_R_M byte and SIB**************************
 
-function ModRM(v){Mode=(v>>6)&0x3;O=(v>>3)&0x07;RM=v&0x07;Pos++;return([Mode,O,RM]);}
+function ModRM(v)
+{
+//add this to the hex code of the operation if ShowInstructionHex decoding is active
+
+if(ShowInstructionHex)
+{
+h=v.toString(16);
+if(h.length<=1){h="0"+h;}
+HexCode+=h;
+}
+
+//decode the byte value
+
+Mode=(v>>6)&0x3;
+
+O=(v>>3)&0x07;
+
+RM=v&0x07;
+
+Pos++;
+
+return([Mode,O,RM]);}
 
 //********************************Decode an operation********************************
 
 function Decode(Data)
 {
-value=Data[Pos];Pos++;
+//if no recorded hex for the decoded instruction then record the start position of the instruction
+//only if ShowInstructionPos decoding is active
+
+if(HexCode==""&ShowInstructionPos){InstructionPos=Pos;}
+
+value=Data[Pos];
+
+//add this to the hex code of the operation if hex cod decoding is active
+
+if(ShowInstructionHex)
+{
+h=value.toString(16);
+if(h.length<=1){h="0"+h;}
+HexCode+=h;
+}
+
+//move position continue decoding
+
+Pos++;
 
 //******************************check override prefixes*******************************
 
@@ -545,7 +586,7 @@ if(value==0x67){OvRam=true;return("");}
 
 //check if Rex Prefix
 
-if(value>=0x40&value<0x50){Rex=[value&0x01,(value&0x02)>>1,(value&0x04)>>2,(value&0x08)>>3,1];return("");}
+if(value>=0x40&value<=0x4F){Rex=[value&0x01,(value&0x02)>>1,(value&0x04)>>2,(value&0x08)>>3,1];return("");}
 
 //check if prefix with operation code
 
@@ -592,7 +633,7 @@ ModRMByte=ModRM(Data[Pos]); //get the ModRM byte
 
 RValueM=ModRMByte[1];
 
-type=type[ModRMByte[1]]; //get the opcode operand types this type of operand must never have an MReg operand because of an posible glitch
+type=type[ModRMByte[1]]; //get the opcode operand types this type of operand must never have an MReg operand because of an possible glitch
 Name=Name[ModRMByte[1]]; //get the opcode name
 }
 
@@ -600,7 +641,7 @@ Name=Name[ModRMByte[1]]; //get the opcode name
 
 if(Name instanceof Array&type==0)
 {
-return(Name[GetOperandSize(0x0F)]+"\r\n");
+Name=Name[GetOperandSize(0x0F)];
 }
 
 //decode the operand types for the operation code
@@ -669,7 +710,7 @@ out[((MRegEl+2)/2)-1]=DecodeRegValue(RValueM,Operands[MRegEl]);
 
 if(HasORegValue)
 {
-//switch the register extend for O Reg extend
+//fix the register extend for O Reg extend
 
 var t=Rex[2];
 Rex[2]=Rex[0];
@@ -707,18 +748,16 @@ if(Operands[1]==11){out[0]="1";}
 if(Operands[3]==11){out[1]="1";}
 if(Operands[5]==11){out[2]="1";}
 
-StaticReg=false;
-
-//deactivate overides if any after instruction decodes
-
-Rex[4]=0;OvRam=0; OvOperands=0;Name=Prefix+Name;Prefix="";
-
 //************************************small XLAT fix**************************************
 
 if(value==0xD7)
 {
-return(Name+"BYTE PTR [RBX]");
+out=DecodeModRM([00,000,3],1)[0];
 }
+
+//deactivate static registeres
+
+StaticReg=false;
 
 //*******************************fix for fword,dword,tbyte********************************
 
@@ -740,6 +779,38 @@ rm="FWORD PTR "+rm;
 }
 
 out=rm;
+}
+
+//XCHG EAX,EAX should be NOP as it does no operation because XCHG EAX,EAX does not change the value of the acumulator
+
+if(value==0x90){Name="NOP";out="";}
+
+//deactivate instruction overides if any after the instruction decodes
+
+Rex[4]=0;OvRam=0; OvOperands=0;Name=Prefix+Name;Prefix="";
+
+//add hex code and the reset hex code if ShowInstructionHex decoding is active
+
+if(ShowInstructionHex)
+{
+for(;HexCode.length<15;HexCode=HexCode+" "); //pad hex code to 15 in length
+
+Name=HexCode.toUpperCase()+" "+Name; //add in the 16 space it is rare for codes to exceed 16 for example an moffs address type will exceed 16
+
+HexCode="";
+}
+
+//show the 64 bit instruction address if ShowInstructionPos is active
+
+if(ShowInstructionPos)
+{
+InstructionPos=InstructionPos.toString(16);
+
+for(;InstructionPos.length<16;InstructionPos="0"+InstructionPos);
+
+Name=InstructionPos.toUpperCase()+" "+Name; //add it to the instruction then reset InstructionPos
+
+InstructionPos=0;
 }
 
 //return the instruction
