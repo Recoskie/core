@@ -1,6 +1,6 @@
 var binary="00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000";
 
-var ShowInstructionHex=true; //setting to show the he code of the instruction beside the decoded instruction output
+var ShowInstructionHex=true; //setting to show the the code of the instruction beside the decoded instruction output
 var ShowInstructionPos=true; //setting to show the instruction address position
 
 //convert binary to an byte number array called code
