@@ -42,3 +42,4 @@ if you want to know how to decode the setup headers of an Microsoft exe see an e
 
 https://github.com/Recoskie/Java-Exe-and-Dll-decoder
 https://github.com/Recoskie/Java-Exe-and-Dll-decoder/tree/master/EXEDecode
+ 
