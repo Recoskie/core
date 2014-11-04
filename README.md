@@ -1,7 +1,7 @@
 X86-64-bit-JS-Disassembler
 ==========================
 
-supports all first byte operations except Float Point Unit And Two Byte Instructions.
+*supports all first byte operations except Float Point Unit And Two Byte Instructions.
 
 Note Microsoft binaries have Setup Headers an MZ header then an PE header which defines the following values
 
