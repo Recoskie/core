@@ -57,7 +57,7 @@ Loader Flags
 
 Number of Directories
 
-If you decode the headers for an exe virtual ram addresses then to find the binary instructions of the exe you do.
+If you decode the headers for an exe and it's virtual ram addresses then to find the binary instructions of the exe you do.
 
 (Image-Base)+(Base-of-Code)=X86-64-binary-code
 
