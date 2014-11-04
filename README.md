@@ -66,5 +66,5 @@ This is only if the Microsoft binary is an 64 bit exe.
 if you want to know how to decode the setup headers of an Microsoft exe see an earlier project I did.
 
 https://github.com/Recoskie/Java-Exe-and-Dll-decoder
+
 https://github.com/Recoskie/Java-Exe-and-Dll-decoder/tree/master/EXEDecode
- 
