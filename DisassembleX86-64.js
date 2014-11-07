@@ -194,49 +194,49 @@ var OpcodeOperandType=[
 //float point unit
 //*****************************************************************************************************
 [
-//M-REAL
+//M
 4,4,4,4,4,4,4,4,
 //ST
 0,0,1,1,0,0,0,0
 ],
 [
-//M-REAL
+//M
 4,,4,4,0,2,0,2,
 //ST
 1,1,,1,,,,
 ],
 [
-//M-REAL
+//M
 4,4,4,4,4,4,4,4,
 //ST
 0,0,0,0,,,,
 ],
 [
-//M-REAL
+//M
 4,4,4,4,,16,,16,
 //ST
 0,0,0,0,,0,0,
 ],
 [
-//M-REAL
+//M
 8,8,8,8,8,8,8,8,
 //ST
 2,2,1,1,2,2,2,2
 ],
 [
-//M-REAL
+//M
 8,8,8,8,0,,0,2,
 //ST
 1,1,1,1,1,1,,
 ],
 [
-//M-REAL
+//M
 2,2,2,2,2,2,2,2,
 //ST
 2,2,1,,2,2,2,2
 ],
 [
-//M-REAL
+//M
 2,2,2,2,16,8,16,8,
 //ST
 1,1,1,1,,0,0,
@@ -584,7 +584,7 @@ if(value==0xF0|value==0xF2|value==0xF3){Prefix=opcodes[value];return("");}
 
 //*******************************Normal instruction Decode if it is not an FPU instruction*****************************
 
-if(!(value>=0xD8&value<=0xDF))
+if(!(value>=0xD8&value<=0xDF)) //this does not need to happen fixing this
 {
 
 //get the opcode
