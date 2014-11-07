@@ -424,7 +424,7 @@ else{return(REG[RegGroup][RValue+RExtend]);}
 
 //********************************decode the Address for ModRM Byte and SIB********************************
 
-function DecodeModRMAddress(ModR_MByte,type)
+function DecodeModRMAddress(ModR_MByte,Data,type)
 {
 
 var output="";
@@ -676,7 +676,7 @@ out[((ORegEl+2)/2)-1]=DecodeRegValue(value&0x07,Operands[ORegEl]);Name=opcodes[(
 
 //decode the ModRM Ram Address
 
-if(HasModRM){out[((ModRMEl+2)/2)-1]=DecodeModRMAddress(ModRMByte,Operands[ModRMEl]);}
+if(HasModRM){out[((ModRMEl+2)/2)-1]=DecodeModRMAddress(ModRMByte,Data,Operands[ModRMEl]);}
 
 //decode the ModRM Register Select
 
@@ -692,9 +692,9 @@ if(Operands[5]==4){out[2]=ReadInput(Operands[4]);}
 
 StaticReg=true;
 
-if(Operands[1]==5|Operands[1]==6){out[0]=DecodeModRMAddress([0,0,Operands[1]+1],Operands[0]);}
-if(Operands[3]==5|Operands[3]==6){out[1]=DecodeModRMAddress([0,0,Operands[3]+1],Operands[2]);}
-if(Operands[5]==5|Operands[5]==6){out[2]=DecodeModRMAddress([0,0,Operands[5]+1],Operands[4]);}
+if(Operands[1]==5|Operands[1]==6){out[0]=DecodeModRMAddress([0,0,Operands[1]+1],Data,Operands[0]);}
+if(Operands[3]==5|Operands[3]==6){out[1]=DecodeModRMAddress([0,0,Operands[3]+1],Data,Operands[2]);}
+if(Operands[5]==5|Operands[5]==6){out[2]=DecodeModRMAddress([0,0,Operands[5]+1],Data,Operands[4]);}
 
 //static general use registeres AX,CX,DX,BX
 
@@ -710,7 +710,7 @@ if(Operands[5]==11){out[2]="1";}
 
 //************************************small XLAT fix**************************************
 
-if(value==0xD7){out=DecodeModRMAddress([00,000,3],1);}
+if(value==0xD7){out=DecodeModRMAddress([00,000,3],Data,1);}
 
 //deactivate static registeres
 
@@ -720,7 +720,7 @@ StaticReg=false;
 
 if((value==0xFF&(ModRMByte[1]==3|ModRMByte[1]==5)))
 {
-var rm=DecodeModRMAddress(ModRMByte,0);
+var rm=DecodeModRMAddress(ModRMByte,Data,0);
 
 if(Rex[3]&Rex[4]){rm="TBYTE PTR "+rm;}
 else if(OvOperands){rm="DWORD PTR "+rm;}
@@ -761,11 +761,11 @@ if(typeof(type)!="undefined")
 {
 if(type<=15)
 {
-out=DecodeModRMAddress(ModRMByte,type);
+out=DecodeModRMAddress(ModRMByte,Data,type);
 }
 else
 {
-out="TBYTE PTR "+DecodeModRMAddress(ModRMByte,0);
+out="TBYTE PTR "+DecodeModRMAddress(ModRMByte,Data,0);
 }
 }
 
