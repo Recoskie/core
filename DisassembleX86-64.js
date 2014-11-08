@@ -12,22 +12,20 @@ for(var i=0;i<t.length;Code[i]=parseInt(t[i],2)&0xFF,i++);
 
 //internalize decode functions and arrays
 
-var invalid="Op-code is not an valid 64 bit instruction!";
+var invalid="Invalid Instruction!";
 var tb="Tow Byte Instructions not Supported yet!"
-var InvalidFPU="Invalid FPU Operation!";
 
-var opcodes=["ADD ","ADD ","ADD ","ADD ","ADD ","ADD ",invalid,invalid,
-"OR ","OR ","OR ","OR ","OR ","OR ",invalid,tb,
-"ADC ","ADC ","ADC ","ADC ","ADC ","ADC ",invalid,invalid,
-"SBB ","SBB ","SBB ","SBB ","SBB ","SBB ",invalid,invalid,
-"AND ","AND ","AND ","AND ","AND ","AND ",invalid,invalid,
-"SUB ","SUB ","SUB ","SUB ","SUB ","SUB ",invalid,invalid,
-"XOR ","XOR ","XOR ","XOR ","XOR ","XOR ",invalid,invalid,
-"CMP ","CMP ","CMP ","CMP ","CMP ","CMP ",invalid,invalid,
+var opcodes=["ADD ","ADD ","ADD ","ADD ","ADD ","ADD ",,,
+"OR ","OR ","OR ","OR ","OR ","OR ",,tb,
+"ADC ","ADC ","ADC ","ADC ","ADC ","ADC ",,,
+"SBB ","SBB ","SBB ","SBB ","SBB ","SBB ",,,
+"AND ","AND ","AND ","AND ","AND ","AND ",,,
+"SUB ","SUB ","SUB ","SUB ","SUB ","SUB ",,,
+"XOR ","XOR ","XOR ","XOR ","XOR ","XOR ",,,
+"CMP ","CMP ","CMP ","CMP ","CMP ","CMP ",,,
 ,,,,,,,,,,,,,,,,
 "PUSH ",,,,,,,,
-"POP ",,,,,,,,
-invalid ,invalid,invalid,
+"POP ",,,,,,,,,,,
 "MOVSXD ",
 "FS:","GS:",,,
 "PUSH ","IMUL ","PUSH ","IMUL ",
@@ -35,19 +33,17 @@ invalid ,invalid,invalid,
 "JO ","JNO ","JB ","JAE ","JE ","JNE ","JBE ","JA ",
 "JS ","JNS ","JP ","JNP ","JL ","JGE ","JLE ","JG ",
 ["ADD ","OR ","ADC ","SBB ","AND ","SUB ","XOR ","CMP "],
-["ADD ","OR ","ADC ","SBB ","AND ","SUB ","XOR ","CMP "],
-invalid,
+["ADD ","OR ","ADC ","SBB ","AND ","SUB ","XOR ","CMP "],,
 ["ADD ","OR ","ADC ","SBB ","AND ","SUB ","XOR ","CMP "],
 "TEST ","TEST ","XCHG ","XCHG ",
-"MOV ","MOV ","MOV ","MOV ","MOV ",
-"LEA ","MOV ",
-["POP ",invalid,invalid,invalid,invalid,invalid,invalid,invalid],
+"MOV ","MOV ","MOV ","MOV ","MOV ","LEA ","MOV ",
+["POP "],
 "XCHG ",,,,,,,,
-[invalid,"CBW","CWDE","CQE"],
-[invalid,"CWD","CDQ","CQO"],
-invalid,"wait",
-[invalid,"PUSHF","PUSHFQ","PUSHFQ"],
-[invalid,"POPF","POPFQ","POPFQ"],
+[,"CBW","CWDE","CQE"],
+[,"CWD","CDQ","CQO"],,
+"wait",
+[,"PUSHF","PUSHFQ","PUSHFQ"],
+[,"POPF","POPFQ","POPFQ"],
 "SAHF","LAHF",
 "MOV ","MOV ","MOV ","MOV ",
 "MOVS ","MOVS ",
@@ -59,26 +55,25 @@ invalid,"wait",
 "MOV ",,,,,,,,"MOV ",,,,,,,,
 ["ROL ","ROR ","RCL ","RCR ","SHL ","SHR ","SAL ","SAR "],
 ["ROL ","ROR ","RCL ","RCR ","SHL ","SHR ","SAL ","SAR "],
-"RET ","RET",
-invalid,invalid,
-["MOV ",invalid,invalid,invalid,invalid,invalid,invalid,invalid],
-["MOV ",invalid,invalid,invalid,invalid,invalid,invalid,invalid],
+"RET ","RET",,,
+["MOV "],
+["MOV "],
 "ENTER ","LEAVE","RETF ","RETF","INT 3","INT ","INTO",
-[invalid,"IRET","IRETD","IRETQ"],
+[,"IRET","IRETD","IRETQ"],
 ["ROL ","ROR ","RCL ","RCR ","SHL ","SHR ","SAL ","SAR "],
 ["ROL ","ROR ","RCL ","RCR ","SHL ","SHR ","SAL ","SAR "],
 ["ROL ","ROR ","RCL ","RCR ","SHL ","SHR ","SAL ","SAR "],
-["ROL ","ROR ","RCL ","RCR ","SHL ","SHR ","SAL ","SAR "],
-invalid,invalid,invalid,"XLAT ",
+["ROL ","ROR ","RCL ","RCR ","SHL ","SHR ","SAL ","SAR "],,,,
+"XLAT ",
 //*****************************************************************************************************
 //float point unit
 //*****************************************************************************************************
 ["FADD ","FMUL ","FCOM ","FCOMP ","FSUB ","FSUBR ","FDIV ","FDIVR ",[]],
-["FLD ",InvalidFPU,"FST ","FSTP ","FLDENV ","FLDCW ","FNSTENV ","FNSTCW ",[]],
+["FLD ",,"FST ","FSTP ","FLDENV ","FLDCW ","FNSTENV ","FNSTCW ",[]],
 ["FIADD ","FIMUL ","FICOM ","FICOMP ","FISUB ","FISUBR ","FIDIV ","FIDIVR ",[]],
-["FILD ","FISTTP ","FIST ","FISTP ",InvalidFPU,"FLD ",InvalidFPU,"FSTP ",[]],
+["FILD ","FISTTP ","FIST ","FISTP ",,"FLD ",,"FSTP ",[]],
 ["FADD ","FMUL ","FCOM ","DCOMP ","FSUB ","FSUBR ","FDIV ","FDIVR ",[]],
-["FLD ","FISTTP ","FST ","FSTP ","FRSTOR ",InvalidFPU,"FNSAVE ","FNSTSW ",[]],
+["FLD ","FISTTP ","FST ","FSTP ","FRSTOR ",,"FNSAVE ","FNSTSW ",[]],
 ["FIADD ","FIMUL ","FICOM ","FICOMP ","FISUB ","FISUBR ","FIDIV ","FIDIVR ",[]],
 ["FILD ","FISTTP ","FIST ","FISTP ","FBLD ","FILD ","FBSTP ","FISTP ",[]],
 //*****************************************************************************************************
@@ -87,17 +82,16 @@ invalid,invalid,invalid,"XLAT ",
 "LOOPNE ","LOOPE ","LOOP ","JRCXZ ",
 "IN ","IN ","OUT ","OUT ",
 "CALL ","JMP ",
-invalid,"JMP ",
+,"JMP ",
 "IN ","IN ","OUT ","OUT ",
 "LOCK ",
-"THIS IS AN UNUSED OP-CODE IT DOES NOTHING IT MIGHT DO SOMETHING IN NEW PROCESSORS TO COME",
+"Reserved Op-Code!",
 "REPNE ","REP ","HLT","CMC",
-["TEST ",invalid,"NOT ","NEG ","MUL ","IMUL ","DIV ","IDIV "],
-["TEST ",invalid,"NOT ","NEG ","MUL ","IMUL ","DIV ","IDIV "],
+["TEST ",,"NOT ","NEG ","MUL ","IMUL ","DIV ","IDIV "],
+["TEST ",,"NOT ","NEG ","MUL ","IMUL ","DIV ","IDIV "],
 "CLC","STC","CLI","CTI","CLD","STD",
-["INC ","DEC ",invalid,invalid,invalid,invalid,invalid,invalid],
-["INC ","DEC ","CALL ","CALL ","JMP ","JMP ","PUSH ",invalid]
-];
+["INC ","DEC "],
+["INC ","DEC ","CALL ","CALL ","JMP ","JMP ","PUSH "]];
 
 //*****************************************************************************************************
 //The other FPU operations for C0 and up
@@ -138,38 +132,36 @@ opcodes[0xDF][8][0x30]="FCOMIP ";
 //operand decode settings
 //*****************************************************************************************************
 
-var OpcodeOperandType=[
-0x8261,0x9E6F,0xC241,0xDE4F,0x102E1,0x10CEE,0,0,
-0x8261,0x9E6F,0xC241,0xDE4F,0x102E1,0x10CEE,0,0,
-0x8261,0x9E6F,0xC241,0xDE4F,0x102E1,0x10CEE,0,0,
-0x8261,0x9E6F,0xC241,0xDE4F,0x102E1,0x10CEE,0,0,
-0x8261,0x9E6F,0xC241,0xDE4F,0x102E1,0x10CEE,0,0,
-0x8261,0x9E6F,0xC241,0xDE4F,0x102E1,0x10CEE,0,0,
-0x8261,0x9E6F,0xC241,0xDE4F,0x102E1,0x10CEE,0,0,
-0x8261,0x9E6F,0xC241,0xDE4F,0x102E1,0x10CEE,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+var OpcodeOperandType=[0x8261,0x9E6F,0xC241,0xDE4F,0x102E1,0x10CEE,,,
+0x8261,0x9E6F,0xC241,0xDE4F,0x102E1,0x10CEE,,,
+0x8261,0x9E6F,0xC241,0xDE4F,0x102E1,0x10CEE,,,
+0x8261,0x9E6F,0xC241,0xDE4F,0x102E1,0x10CEE,,,
+0x8261,0x9E6F,0xC241,0xDE4F,0x102E1,0x10CEE,,,
+0x8261,0x9E6F,0xC241,0xDE4F,0x102E1,0x10CEE,,,
+0x8261,0x9E6F,0xC241,0xDE4F,0x102E1,0x10CEE,,,
+0x8261,0x9E6F,0xC241,0xDE4F,0x102E1,0x10CEE,,,
+,,,,,,,,,,,,,,,,
 0x2A,0x2A,0x2A,0x2A,0x2A,0x2A,0x2A,0x2A,
 0x2A,0x2A,0x2A,0x2A,0x2A,0x2A,0x2A,0x2A,
-0,0,0,
+,,,
 0xC84E,
-0,0,0,0,
+0,0,,,
 0x86,0x218DC4E,
 0x81,0x204DC4E,
 0x244C1,0x244CE,0x14322,0x15D22,
 0x91,0x91,0x91,0x91,0x91,0x91,0x91,0x91,
 0x91,0x91,0x91,0x91,0x91,0x91,0x91,0x91,
 [0x10261,0x10261,0x10261,0x10261,0x10261,0x10261,0x10261,0x10261],
-[0x10C6E,0x10C6E,0x10C6E,0x10C6E,0x10C6E,0x10C6E,0x10C6E,0x10C6E],
-0x00,
+[0x10C6E,0x10C6E,0x10C6E,0x10C6E,0x10C6E,0x10C6E,0x10C6E,0x10C6E],,
 [0x1026E,0x1026E,0x1026E,0x1026E,0x1026E,0x1026E,0x1026E,0x1026E],
 0x8261,0x9C6E,
 0xC241,0xDC4E,
 0x8261,0x9C6E,
 0xC241,0xDC4E,
 0x8062,0xC04E,0xC440,
-[0x6A,0,0,0,0,0,0,0,0],
+[0x6A],
 0x5CEE,0x5CEE,0x5CEE,0x5CEE,0x5CEE,0x5CEE,0x5CEE,0x5CEE,
-0,0,0,0,0,0,0,0,
+0,0,,0,0,0,0,0,
 0xE2E1,0xFCEE, //moffs format
 0x1C271,0x1DC7E, //moffs format
 0x142C1,0x15CCE,
@@ -180,66 +172,66 @@ var OpcodeOperandType=[
 0x11C2E,0x11C2E,0x11C2E,0x11C2E,0x11C2E,0x11C2E,0x11C2E,0x11C2E,
 [0x10261,0x10261,0x10261,0x10261,0x10261,0x10261,0x10261,0x10261],
 [0x1026E,0x1026E,0x1026E,0x1026E,0x1026E,0x1026E,0x1026E,0x1026E],
-0x82,0,0,0,
-[0x10261,0,0,0,0,0,0,0],
-[0x10C6E,0,0,0,0,0,0,0],
+0x82,0,,,
+[0x10261],
+[0x10C6E],
 0x10481,0,0x82,0,
 0,0x81,0,0,
 [0x2C061,0x2C061,0x2C061,0x2C061,0x2C061,0x2C061,0x2C061,0x2C061],
 [0x2C06E,0x2C06E,0x2C06E,0x2C06E,0x2C06E,0x2C06E,0x2C06E,0x2C06E],
 [0x20261,0x20261,0x20261,0x20261,0x20261,0x20261,0x20261,0x20261],
-[0x2026E,0x2026E,0x2026E,0x2026E,0x2026E,0x2026E,0x2026E,0x2026E],
-0,0,0,0,
+[0x2026E,0x2026E,0x2026E,0x2026E,0x2026E,0x2026E,0x2026E,0x2026E],,,,
+0,
 //*****************************************************************************************************
 //float point unit
 //*****************************************************************************************************
-[
+[//note the commas with no elements that are undefined this means the codes within that part of the code have no encoding type
 //M
-4,4,4,4,4,4,4,4,
+0x64,0x64,0x64,0x64,0x64,0x64,0x64,0x64,
 //ST
-0,0,1,1,0,0,0,0
+0x34180,0x34180,0x1A0,0x1A0,0x34180,0x34180,0x34180,0x34180
 ],
 [
 //M
-4,,4,4,0,2,0,2,
+0x64,,0x64,0x64,0x60,0x62,0x60,0x62,
 //ST
-1,1,,1,,,,
+0x1A0,0x1A0,,0x1A0
 ],
 [
 //M
-4,4,4,4,4,4,4,4,
+0x64,0x64,0x64,0x64,0x64,0x64,0x64,0x64,
 //ST
-0,0,0,0,,,,
+0x34180,0x34180,0x34180,0x34180
 ],
 [
 //M
-4,4,4,4,,16,,16,
+0x64,0x64,0x64,0x64,,0x70,,0x70,
 //ST
-0,0,0,0,,0,0,
+0x34180,0x34180,0x34180,0x34180,,0x34180,0x34180
 ],
 [
 //M
-8,8,8,8,8,8,8,8,
+0x68,0x68,0x68,0x68,0x68,0x68,0x68,0x68,
 //ST
-2,2,1,1,2,2,2,2
+0x301A0,0x301A0,0x1A0,0x1A0,0x301A0,0x301A0,0x301A0,0x301A0
 ],
 [
 //M
-8,8,8,8,0,,0,2,
+0x68,0x68,0x68,0x68,0x60,,0x60,0x62,
 //ST
-1,1,1,1,1,1,,
+0x1A0,0x1A0,0x1A0,0x1A0,0x1A0,0x1A0
 ],
 [
 //M
-2,2,2,2,2,2,2,2,
+0x62,0x62,0x62,0x62,0x62,0x62,0x62,0x62,
 //ST
-2,2,1,,2,2,2,2
+0x301A0,0x301A0,0x1A0,,0x301A0,0x301A0,0x301A0,0x301A0
 ],
 [
 //M
-2,2,2,2,16,8,16,8,
+0x62,0x62,0x62,0x62,0x70,0x68,0x70,0x68,
 //ST
-1,1,1,1,,0,0,
+0x1A0,0x1A0,0x1A0,0x1A0,,0x34180,0x34180
 ],
 //*****************************************************************************************************
 //end of float point unit instructions
@@ -254,8 +246,8 @@ var OpcodeOperandType=[
 [0x10261,0,0x61,0x61,0xC2E1,0x61,0xC2E1,0x61],
 [0x10C6E,0,0x6E,0x6E,0xDCEE,0x6E,0xDCEE,0xDCEE],
 0,0,0,0,0,0,
-[0x61,0x61,0,0,0,0,0,0],
-[0x6E,0x6E,0x6A,0,0x6A,0,0x6A,0]];
+[0x61,0x61],
+[0x6E,0x6E,0x6A,0,0x6A,0,0x6A]];
 
 //********************************registers and position in binary code********************************
 
@@ -553,9 +545,9 @@ return([Mode,O,RM]);}
 
 function Decode(Data)
 {
-var Name="",type=0,out=[];
+var Name="",value=0,RValue=0,type=0,out=[];
 
-//check if InstructionPos is rest then set it for curnt instruction
+//check if InstructionPos is rest then set it for current instruction
 //only if ShowInstructionPos decoding is active
 
 if(InstructionPos==-1&ShowInstructionPos){InstructionPos=Pos;}
@@ -582,10 +574,7 @@ if(value==0x67){OvRam=true;return("");}
 if(value>=0x40&value<=0x4F){Rex=[value&0x01,(value&0x02)>>1,(value&0x04)>>2,(value&0x08)>>3,1];return("");}
 if(value==0xF0|value==0xF2|value==0xF3){Prefix=opcodes[value];return("");}
 
-//*******************************Normal instruction Decode if it is not an FPU instruction*****************************
-
-if(!(value>=0xD8&value<=0xDF)) //this does not need to happen fixing this
-{
+//*******************************instruction Decode*****************************
 
 //get the opcode
 
@@ -615,26 +604,42 @@ if((Name instanceof Array)&(type instanceof Array))
 {
 //get the operand type
 
-ModRMByte=DecodeModRMByte(Data[Pos]);
-type=type[ModRMByte[1]];
+RValue=Data[Pos];
 
-//check operands MReg and MReg=Opcode can not be active at the same time
+ModRMByte=DecodeModRMByte(RValue);
 
-if(((type>>5)&0x0F)==2|((type>>14)&0x0F)==2|((type>>23)&0x0F)==2)
+//note if opcode name has one element grater than then it has opcode selections and format changes at Mode 11
+
+if(ModRMByte[0]==3&Name.length>8)
 {
-//reset
 
-Rex[4]=[0,0,0,0,0];OvRam=0;OvOperands=0;Name=Prefix+Name;Prefix="";
-InstructionPos=-1;HexCode="";
+type=type[ModRMByte[1]+8];
 
-//return unkowen
+//if no encoding type use single opcode mnemonic without encoding
 
-return("???\r\n");
+if(typeof(type)=="undefined")
+{
+//invalid opcode is checked at the end of decode by if there was an menomic or not
+
+Name=Name[8][RValue&0x3F];
 }
 
-//get opcode
+//else encoded operands type
 
+else
+{
+Name=Name[8][RValue&0x38];
+}
+
+}
+
+//else the decode type has no fancy format change for when mode is 11
+
+else
+{
+type=type[ModRMByte[1]];
 Name=Name[ModRMByte[1]];
+}
 
 //set ModRM byte true
 
@@ -648,6 +653,10 @@ else if(((type>>5)&0x0F)==3|((type>>14)&0x0F)==3|((type>>23)&0x0F)==3)
 {
 ModRMByte=DecodeModRMByte(Data[Pos]);HasModRM=true;
 }
+
+//if invalid opcode do not decode ModRM operands
+
+if(typeof(Name)=="undefined"){HasModRM=false;}
 
 //decode the operand types for the operation code
 
@@ -676,7 +685,19 @@ out[((ORegEl+2)/2)-1]=DecodeRegValue(value&0x07,Operands[ORegEl]);Name=opcodes[(
 
 //decode the ModRM Ram Address
 
-if(HasModRM){out[((ModRMEl+2)/2)-1]=DecodeModRMAddress(ModRMByte,Data,Operands[ModRMEl]);}
+if(HasModRM)
+{
+//small TByte fix for TByte RM operands
+
+if((value==0xDB)&((RValue&0x38)==0x28)){out[((ModRMEl+2)/2)-1]="TBYTE PTR "+DecodeModRMAddress(ModRMByte,Data,0);}
+else if((value==0xDB)&((RValue&0x38)==0x38)){out[((ModRMEl+2)/2)-1]="TBYTE PTR "+DecodeModRMAddress(ModRMByte,Data,0);}
+else if((value==0xDF)&((RValue&0x38)==0x20)){out[((ModRMEl+2)/2)-1]="TBYTE PTR "+DecodeModRMAddress(ModRMByte,Data,0);}
+else if((value==0xDF)&((RValue&0x38)==0x30)){out[((ModRMEl+2)/2)-1]="TBYTE PTR "+DecodeModRMAddress(ModRMByte,Data,0);}
+
+//else normal setting size
+
+else{out[((ModRMEl+2)/2)-1]=DecodeModRMAddress(ModRMByte,Data,Operands[ModRMEl]);}
+}
 
 //decode the ModRM Register Select
 
@@ -688,7 +709,7 @@ if(Operands[1]==4){out[0]=ReadInput(Operands[0]);}
 if(Operands[3]==4){out[1]=ReadInput(Operands[2]);}
 if(Operands[5]==4){out[2]=ReadInput(Operands[4]);}
 
-//check which operands take an static input ram adddress SI (source index),DI (Destnation Index)
+//check which operands take an static input ram address SI (source index),DI (Destination Index)
 
 StaticReg=true;
 
@@ -696,7 +717,7 @@ if(Operands[1]==5|Operands[1]==6){out[0]=DecodeModRMAddress([0,0,Operands[1]+1],
 if(Operands[3]==5|Operands[3]==6){out[1]=DecodeModRMAddress([0,0,Operands[3]+1],Data,Operands[2]);}
 if(Operands[5]==5|Operands[5]==6){out[2]=DecodeModRMAddress([0,0,Operands[5]+1],Data,Operands[4]);}
 
-//static general use registeres AX,CX,DX,BX
+//static general use registers AX,CX,DX,BX
 
 if(Operands[1]>=7&Operands[1]<=10){out[0]=DecodeRegValue(Operands[1]-7,Operands[0]);}
 if(Operands[3]>=7&Operands[3]<=10){out[1]=DecodeRegValue(Operands[3]-7,Operands[2]);}
@@ -708,11 +729,23 @@ if(Operands[1]==11){out[0]="1";}
 if(Operands[3]==11){out[1]="1";}
 if(Operands[5]==11){out[2]="1";}
 
+//Stack ST operand
+
+if(Operands[1]==12){out[0]=REG[5][0];}
+if(Operands[3]==12){out[1]=REG[5][0];}
+if(Operands[5]==12){out[2]=REG[5][0];}
+
+//Stack STi operand
+
+if(Operands[1]==13){out[0]=REG[5][ModRMByte[2]+1];}
+if(Operands[3]==13){out[1]=REG[5][ModRMByte[2]+1];}
+if(Operands[5]==13){out[2]=REG[5][ModRMByte[2]+1];}
+
 //************************************small XLAT fix**************************************
 
 if(value==0xD7){out=DecodeModRMAddress([00,000,3],Data,1);}
 
-//deactivate static registeres
+//deactivate static registers
 
 StaticReg=false;
 
@@ -729,92 +762,25 @@ else{rm="FWORD PTR "+rm;}
 out=rm;
 }
 
-//XCHG EAX,EAX should be NOP as it does no operation because XCHG EAX,EAX does not change the value of the acumulator
+//XCHG EAX,EAX should be NOP as it does no operation because XCHG EAX,EAX does not change the value of the accumulator
 
 if(value==0x90){Name="NOP";out="";}
 
-}
+//in case of ModR/M address decode with no operand type
 
-//**************************else it is an float point unit instruction**************************
-
-else
+if(typeof(type)=="undefined")
 {
-//record which float point opcode group
+out="";
+}
 
-var FPUGroup=value;
+//if no opcode name then invalid operation
 
-value=Data[Pos];
-
-//read the ModRM byte for MReal address format
-
-var ModRMByte=DecodeModRMByte(value);
-
-//get FPU operand type if not Mode 11
-
-if(ModRMByte[0]!=3)
+if(typeof(Name)=="undefined")
 {
-type=OpcodeOperandType[FPUGroup][ModRMByte[1]];
-
-Name=opcodes[FPUGroup][ModRMByte[1]];
-
-if(typeof(type)!="undefined")
-{
-if(type<=15)
-{
-out=DecodeModRMAddress(ModRMByte,Data,type);
-}
-else
-{
-out="TBYTE PTR "+DecodeModRMAddress(ModRMByte,Data,0);
-}
+Name=invalid;out="";
 }
 
-}
-
-//else codes C0 and up
-
-else
-{
-
-type=OpcodeOperandType[FPUGroup][ModRMByte[1]+8];
-
-Name=opcodes[FPUGroup][8][(value&0x3F)];
-
-if(typeof(type)!="undefined")
-{
-
-Name=opcodes[FPUGroup][8][(value&0x38)];
-
-//ST,STi
-
-if(type==0)
-{
-out=REG[5][0]+","+REG[5][ModRMByte[2]+1];
-}
-
-//STi
-
-if(type==1)
-{
-out=REG[5][ModRMByte[2]+1];
-}
-
-//STi,ST
-
-if(type==2)
-{
-out=REG[5][ModRMByte[2]+1]+","+REG[5][0];
-}
-
-}
-
-}
-
-if(typeof(Name)=="undefined"){Name=InvalidFPU;}
-
-}
-
-//deactivate instruction overides if any after the instruction decodes
+//deactivate instruction overrides if any after the instruction decodes
 
 Rex[4]=0;OvRam=0; OvOperands=0;Name=Prefix+Name;Prefix="";
 
