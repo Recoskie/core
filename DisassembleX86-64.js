@@ -68,14 +68,17 @@ var opcodes=["ADD ","ADD ","ADD ","ADD ","ADD ","ADD ",,,
 //*****************************************************************************************************
 //float point unit
 //*****************************************************************************************************
-["FADD ","FMUL ","FCOM ","FCOMP ","FSUB ","FSUBR ","FDIV ","FDIVR ",[]],
-["FLD ",,"FST ","FSTP ","FLDENV ","FLDCW ","FNSTENV ","FNSTCW ",[]],
-["FIADD ","FIMUL ","FICOM ","FICOMP ","FISUB ","FISUBR ","FIDIV ","FIDIVR ",[]],
-["FILD ","FISTTP ","FIST ","FISTP ",,"FLD ",,"FSTP ",[]],
-["FADD ","FMUL ","FCOM ","DCOMP ","FSUB ","FSUBR ","FDIV ","FDIVR ",[]],
-["FLD ","FISTTP ","FST ","FSTP ","FRSTOR ",,"FNSAVE ","FNSTSW ",[]],
-["FIADD ","FIMUL ","FICOM ","FICOMP ","FISUB ","FISUBR ","FIDIV ","FIDIVR ",[]],
-["FILD ","FISTTP ","FIST ","FISTP ","FBLD ","FILD ","FBSTP ","FISTP ",[]],
+["FADD ","FMUL ","FCOM ","FCOMP ","FSUB ","FSUBR ","FDIV ","FDIVR ",
+["FADD ",,,,,,,,"FMUL ",,,,,,,,"FCOM ",,,,,,,,"FCOMP ",,,,,,,,"FSUB ",,,,,,,,"FSUBR ",,,,,,,,"FDIV ",,,,,,,,"FDIVR "]],
+["FLD ",,"FST ","FSTP ","FLDENV ","FLDCW ","FNSTENV ","FNSTCW ",
+["FLD ",,,,,,,,"FXCH ",,,,,,,,"FNOP ",,,,,,,,"FSTP1 ",,,,,,,,"FCHS","FABS",,,"FTST","FXAM",,,"FLD1","FLDL2T","FLDL2E","FLDPI",
+"FLDLG2","FLDLN2","FLDZ",,"F2XM1","FYL2X","FPTAN","FPATAN","FXTRACT","FPREM1","FDECSTP","FINCSTP","FPREM","FYL2XP1","FSQRT","FSINCOS","FRNDINT","FSCALE","FSIN","FCOS"]],
+["FIADD ","FIMUL ","FICOM ","FICOMP ","FISUB ","FISUBR ","FIDIV ","FIDIVR ",["FCMOVB ",,,,,,,,"FCMOVE ",,,,,,,,"FCMOVBE ",,,,,,,,"FCMOVU ",,,,,,,,,,,,,,,,,"FUCOMPP"]],
+["FILD ","FISTTP ","FIST ","FISTP ",,"FLD ",,"FSTP ",["CMOVNB ",,,,,,,,"FCMOVNE ",,,,,,,,"FCMOVNBE ",,,,,,,,"FCMOVNU ",,,,,,,,"FENI","FDISI","FNCLEX","FNINIT","FSETPM",,,,"FUCOMI ",,,,,,,,"FCOMI "]],
+["FADD ","FMUL ","FCOM ","DCOMP ","FSUB ","FSUBR ","FDIV ","FDIVR ",["FADD ",,,,,,,,"FMUL ",,,,,,,,"FCOM2 ",,,,,,,,"FCOMP3 ",,,,,,,,"FSUBR ",,,,,,,,"FSUB ",,,,,,,,"FDIVR ",,,,,,,,"FDIV "]],
+["FLD ","FISTTP ","FST ","FSTP ","FRSTOR ",,"FNSAVE ","FNSTSW ",["FFREE ",,,,,,,,"FXCH4 ",,,,,,,,"FST ",,,,,,,,"FSTP ",,,,,,,,"FUCOM ",,,,,,,,"FUCOMP "]],
+["FIADD ","FIMUL ","FICOM ","FICOMP ","FISUB ","FISUBR ","FIDIV ","FIDIVR ",["FADDP ",,,,,,,,"FMULP ",,,,,,,,"FCOMP5 ",,,,,,,,,"FCOMPP",,,,,,,"FSUBRP ",,,,,,,,"FSUBP "]],
+["FILD ","FISTTP ","FIST ","FISTP ","FBLD ","FILD ","FBSTP ","FISTP ",["FFREEP ",,,,,,,,"FXCH7 ",,,,,,,,"FSTP8 ",,,,,,,,"FSTP9 ",,,,,,,,"FNSTSW AX",,,,,,,,"FUCOMIP ",,,,,,,,"FCOMIP "]],
 //*****************************************************************************************************
 //end of float point unit instructions
 //*****************************************************************************************************
@@ -92,41 +95,6 @@ var opcodes=["ADD ","ADD ","ADD ","ADD ","ADD ","ADD ",,,
 "CLC","STC","CLI","CTI","CLD","STD",
 ["INC ","DEC "],
 ["INC ","DEC ","CALL ","CALL ","JMP ","JMP ","PUSH "]];
-
-//*****************************************************************************************************
-//The other FPU operations for C0 and up
-//*****************************************************************************************************
-
-opcodes[0xD8][8][00]="FADD ";opcodes[0xD8][8][08]="FMUL ";opcodes[0xD8][8][0x10]="FCOM ";
-opcodes[0xD8][8][0x18]="FCOMP ";opcodes[0xD8][8][0x20]="FSUB ";opcodes[0xD8][8][0x28]="FSUBR ";
-opcodes[0xD8][8][0x30]="FDIV ";opcodes[0xD8][8][0x38]="FDIVR ";
-opcodes[0xD9][8][00]="FLD ";opcodes[0xD9][8][08]="FXCH ";opcodes[0xD9][8][0x10]="FNOP ";
-opcodes[0xD9][8][0x18]="FSTP1 ";opcodes[0xD9][8][0x20]="FCHS";opcodes[0xD9][8][0x21]="FABS";
-opcodes[0xD9][8][0x24]="FTST";opcodes[0xD9][8][0x25]="FXAM";opcodes[0xD9][8][0x28]="FLD1";
-opcodes[0xD9][8][0x29]="FLDL2T";opcodes[0xD9][8][0x2A]="FLDL2E";opcodes[0xD9][8][0x2B]="FLDPI";
-opcodes[0xD9][8][0x2C]="FLDLG2";opcodes[0xD9][8][0x2D]="FLDLN2";opcodes[0xD9][8][0x2E]="FLDZ";
-opcodes[0xD9][8][0x30]="F2XM1";opcodes[0xD9][8][0x31]="FYL2X";opcodes[0xD9][8][0x32]="FPTAN";
-opcodes[0xD9][8][0x33]="FPATAN";opcodes[0xD9][8][0x34]="FXTRACT";opcodes[0xD9][8][0x35]="FPREM1";
-opcodes[0xD9][8][0x36]="FDECSTP";opcodes[0xD9][8][0x37]="FINCSTP";opcodes[0xD9][8][0x38]="FPREM";
-opcodes[0xD9][8][0x39]="FYL2XP1";opcodes[0xD9][8][0x3A]="FSQRT";opcodes[0xD9][8][0x3B]="FSINCOS";
-opcodes[0xD9][8][0x3C]="FRNDINT";opcodes[0xD9][8][0x3D]="FSCALE";opcodes[0xD9][8][0x3E]="FSIN";
-opcodes[0xD9][8][0x3F]="FCOS";
-opcodes[0xDA][8][00]="FCMOVB ";opcodes[0xDA][8][08]="FCMOVE ";opcodes[0xDA][8][0x10]="FCMOVBE ";
-opcodes[0xDA][8][0x18]="FCMOVU ";opcodes[0xDA][8][0x29]="FUCOMPP";
-opcodes[0xDB][8][00]="FCMOVNB ";opcodes[0xDB][8][08]="FCMOVNE ";opcodes[0xDB][8][0x10]="FCMOVNBE ";
-opcodes[0xDB][8][0x18]="FCMOVNU ";opcodes[0xDB][8][0x20]="FENI";opcodes[0xDB][8][0x21]="FDISI";
-opcodes[0xDB][8][0x22]="FNCLEX";opcodes[0xDB][8][0x23]="FNINIT";opcodes[0xDB][8][0x24]="FSETPM";
-opcodes[0xDB][8][0x28]="FUCOMI ";opcodes[0xDB][8][0x30]="FCOMI ";
-opcodes[0xDC][8][00]="FADD ";opcodes[0xDC][8][08]="FMUL ";opcodes[0xDC][8][0x10]="FCOM2 ";
-opcodes[0xDC][8][0x18]="FCOMP3 ";opcodes[0xDC][8][0x20]="FSUBR ";opcodes[0xDC][8][0x28]="FSUB ";
-opcodes[0xDC][8][0x30]="FDIVR ";opcodes[0xDC][8][0x38]="FDIV ";
-opcodes[0xDD][8][00]="FFREE ";opcodes[0xDD][8][08]="FXCH4 ";opcodes[0xDD][8][0x10]="FST ";
-opcodes[0xDD][8][0x18]="FSTP ";opcodes[0xDD][8][0x20]="FUCOM ";opcodes[0xDD][8][0x28]="FUCOMP ";
-opcodes[0xDE][8][00]="FADDP ";opcodes[0xDE][8][08]="FMULP ";opcodes[0xDE][8][0x10]="FCOMP5 ";
-opcodes[0xDE][8][0x19]="FCOMPP";opcodes[0xDE][8][0x20]="FSUBRP ";opcodes[0xDE][8][0x28]="FSUBP ";
-opcodes[0xDF][8][00]="FFREEP ";opcodes[0xDF][8][08]="FXCH7 ";opcodes[0xDF][8][0x10]="FSTP8 ";
-opcodes[0xDF][8][0x18]="FSTP9 ";opcodes[0xDF][8][0x20]="FNSTSW AX";opcodes[0xDF][8][0x28]="FUCOMIP ";
-opcodes[0xDF][8][0x30]="FCOMIP ";
 
 //*****************************************************************************************************
 //operand decode settings
@@ -172,7 +140,7 @@ var OpcodeOperandType=[0x80981,0x87997,0xC0901,0xCB90F,0x100C01,0x10340E,,,
 0x10708E,0x10708E,0x10708E,0x10708E,0x10708E,0x10708E,0x10708E,0x10708E,
 [0x100981,0x100981,0x100981,0x100981,0x100981,0x100981,0x100981,0x100981],
 [0x100996,0x100996,0x100996,0x100996,0x100996,0x100996,0x100996,0x100996],
-0x202,0x0,,,
+0x202,0,,,
 [0x100981],
 [0x103196],
 0x101201,0,0x202,0,
@@ -181,39 +149,25 @@ var OpcodeOperandType=[0x80981,0x87997,0xC0901,0xCB90F,0x100C01,0x10340E,,,
 [0x300196,0x300196,0x300196,0x300196,0x300196,0x300196,0x300196,0x300196],
 [0x240981,0x240981,0x240981,0x240981,0x240981,0x240981,0x240981,0x240981],
 [0x240996,0x240996,0x240996,0x240996,0x240996,0x240996,0x240996,0x240996],,,,
-
-0x381, //XLAT now has an operand type and no longer needs the fix
-
+0x381,
 //*****************************************************************************************************
 //float point unit
 //*****************************************************************************************************
 [0x184,0x184,0x184,0x184,0x184,0x184,0x184,0x184,0x380680,0x380680,0x700,0x700,0x380680,0x380680,0x380680,0x380680],
 [0x184,,0x184,0x184,0x180,0x182,0x180,0x182,0x700,0x700,,0x700],
 [0x184,0x184,0x184,0x184,0x184,0x184,0x184,0x184,0x380680,0x380680,0x380680,0x380680],
-[0x184,0x184,0x184,0x184,,
-
-0x1A0, //TBYTE operand
-,
-0x1A0, //TBYTE operand
-
-0x380680,0x380680,0x380680,0x380680,,0x380680,0x380680],
+[0x184,0x184,0x184,0x184,,0x1A0,,0x1A0,0x380680,0x380680,0x380680,0x380680,,0x380680,0x380680],
 [0x190,0x190,0x190,0x190,0x190,0x190,0x190,0x190,0x340700,0x340700,0x700,0x700,0x340700,0x340700,0x340700,0x340700],
 [0x190,0x190,0x190,0x190,0x180,,0x180,0x182,0x700,0x700,0x700,0x700,0x700,0x700],
 [0x182,0x182,0x182,0x182,0x182,0x182,0x182,0x182,0x340700,0x340700,0x700,,0x340700,0x340700,0x340700,0x340700],
-[0x182,0x182,0x182,0x182,
-
-0x1A0, //TBYTE operand
-0x190,
-0x1A0, //TBYTE operand
-
-0x190,0x700,0x700,0x700,0x700,,0x380680,0x380680],
+[0x182,0x182,0x182,0x182,0x1A0,0x190,0x1A0,0x190,0x700,0x700,0x700,0x700,,0x380680,0x380680],
 //*****************************************************************************************************
 //end of float point unit instructions
 //*****************************************************************************************************
 0x241,0x241,0x241,0x241,
 0x100C01,0x100C0E,
 0x200A01,0x207201,
-0x244,0x244,0x0,0x241,
+0x244,0x244,0,0x241,
 0x281401,0x28140E,
 0x200D02,0x207502,
 0,0,0,0,0,0,
@@ -221,13 +175,7 @@ var OpcodeOperandType=[0x80981,0x87997,0xC0901,0xCB90F,0x100C01,0x10340E,,,
 [0x103196,,0x196,0x196,0xCB40E,0x196,0xCB40E,0xCB40E],
 0,0,0,0,0,0,
 [0x181,0x181],
-[0x196,0x196,0x192,
-
-0x1AC, //DWORD,FWORD,TBYTE operand
-0x192,
-0x1AC, //DWORD,FWORD,TBYTE operand
-
-0x192]];
+[0x196,0x196,0x192,0x1AC,0x192,0x1AC,0x192]];
 
 //********************************registers and position in binary code********************************
 
@@ -565,11 +513,11 @@ HexCode+=h;
 
 //decode the byte value
 
-Mode=(v>>6)&0x3;
+Mode=(v>>6)&0x03;
 
-O=(v>>3)&07;
+O=(v>>3)&0x07;
 
-RM=v&07;
+RM=v&0x07;
 
 Pos++;
 
@@ -605,7 +553,7 @@ Pos++;
 
 if(value==0x66){OvOperands=true;return("");}
 if(value==0x67){OvRam=true;return("");}
-if(value>=0x40&value<=0x4F){Rex=[value&01,(value&02)>>1,(value&04)>>2,(value&08)>>3,1];return("");}
+if(value>=0x40&value<=0x4F){Rex=[value&0x01,(value&0x02)>>1,(value&0x04)>>2,(value&0x08)>>3,1];return("");}
 if(value==0xF0|value==0xF2|value==0xF3){Prefix=opcodes[value];return("");}
 
 //*******************************instruction Decode*****************************
@@ -694,7 +642,7 @@ if(typeof(Name)=="undefined"){HasModRM=false;}
 
 //decode the operand types for the operation code
 
-Operands=[type&0x7F,(type>>7)&0x0F,(type>>11)&0x7F,(type>>18)&0x0F,(type>>22)&0x7F,(type>>29)&0x0F];
+Operands=[type&0x7F,(type>>7)&0x0F,(type>>11)&0x7F,(type>>18)&0x0F,(type>>22)&0x7F,(Math.abs(type>>29))&0x0F];
 
 //check if an operand has an OpCode+reg and record which operand it is
 
