@@ -2037,7 +2037,7 @@ function Disassemble(Code)
 //Sample code
 //------------------------------------------------------------------------------------------------------------------------
 
-SetBasePosition("00007ffa417b5930"); //set the 64 bit address
+SetBasePosition("00007FFA417B5930"); //set the 64 bit address
 
 //Create a simple hex code
 
