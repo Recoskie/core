@@ -675,9 +675,9 @@ function GetOperandSize(SizeSetting)
   //when the result of "n" is 2 from this function means the operand size is 16 BIT which is used by General use Registers 16 in size, or "WORD PTR" pointer address 16 in size, or Immediate input 16 in size
   //when the result of "n" is 3 from this function means the operand size is 32 BIT which is used by General use Registers 32 in size, or "DWORD PTR" pointer address 32 in size, or Immediate input 32 in size
   //when the result of "n" is 4 from this function means the operand size is 48 BIT which is only used by "FWORD PTR" pointer address 48 in size, or Immediate input 48 in size
-  //when the result of "n" is 5 from this function means the operand size is 64 BIT which is used by General use Registers 64 in size, or "QWORD PTR" pointer address 64 in size, or Immediate input 64 in size
+  //when the result of "n" is 5 from this function means the operand size is 64 BIT which is used by General use Registers 64 in size, also "QWORD PTR", or "MMWORD PTR" pointer address 64 in size, or Immediate input 64 in size
   //when the result of "n" is 6 from this function means the operand size is 80 BIT which is only used by "TBYTE PTR" pointer address 80 in size
-  //when the result of "n" is 7 from this function means the operand size is 128 BIT which is only used by "XMMWORD PTR" pointer address 128 in size
+  //when the result of "n" is 7 from this function means the operand size is 128 BIT which is used by "OWORD PTR", or "XMMWORD PTR" pointer address 128 in size.
   
   var n=0;
 
