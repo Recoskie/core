@@ -154,8 +154,7 @@ Mnemonics = [
   ];
 
 //------------------------------------------------------------------------------------------------------------------------
-//The Operand type array each operation code can use different operands that must be decoded in the X86-64 instruction format order,
-//But can be used in any order by the Arithmetic operation See the included file to under the Operand type strings
+//The Operand type array each operation code can use different operands that must be decoded in the X86-64 instruction format order.
 //------------------------------------------------------------------------------------------------------------------------
  
 Operands = [
