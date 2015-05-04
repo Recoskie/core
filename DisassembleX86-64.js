@@ -32,13 +32,13 @@ Mnemonics = [
   "INS ","INS ","OUTS ","OUTS ",
   "JO ","JNO ","JB ","JAE ","JE ","JNE ","JBE ","JA ",
   "JS ","JNS ","JP ","JNP ","JL ","JGE ","JLE ","JG ",
-  ["ADD ","OR ","ADC ","SBB ","AND ","SUB ","XOR ","CMP "], //*ModR/M byte is used as a secondary opcode selection by reg/Opcode value of the ModR/M byte
-  ["ADD ","OR ","ADC ","SBB ","AND ","SUB ","XOR ","CMP "], //*ModR/M byte is used as a secondary opcode selection by reg/Opcode value of the ModR/M byte
+  ["ADD ","OR ","ADC ","SBB ","AND ","SUB ","XOR ","CMP "], //*ModR/M byte is used as a secondary opcode seletion by reg/Opcode value of the ModR/M byte
+  ["ADD ","OR ","ADC ","SBB ","AND ","SUB ","XOR ","CMP "], //*ModR/M byte is used as a secondary opcode seletion by reg/Opcode value of the ModR/M byte
   "???",
   ["ADD ","OR ","ADC ","SBB ","AND ","SUB ","XOR ","CMP "], //*ModR/M byte is used as a secondary opcode seletion by reg/Opcode value of the ModR/M byte
   "TEST ","TEST ","XCHG ","XCHG ",
   "MOV ","MOV ","MOV ","MOV ","MOV ","LEA ","MOV ",
-  ["POP ","???","???","???","???","???","???","???"], //*ModR/M byte is used as a secondary opcode selection by reg/Opcode value of the ModR/M byte
+  ["POP ","???","???","???","???","???","???","???"], //*ModR/M byte is used as a secondary opcode seletion by reg/Opcode value of the ModR/M byte
   "XCHG ","XCHG ","XCHG ","XCHG ","XCHG ","XCHG ","XCHG ","XCHG ",
   ["*","CBW","CWDE","CDQE"], //*Operation code goes by size
   ["*","CWD","CDQ","CQO"],  //*Operation code goes by size
@@ -56,34 +56,34 @@ Mnemonics = [
   "SCAS ","SCAS ",
   "MOV ","MOV ","MOV ","MOV ","MOV ","MOV ","MOV ","MOV ",
   "MOV ","MOV ","MOV ","MOV ","MOV ","MOV ","MOV ","MOV ",
-  ["ROL ","ROR ","RCL ","RCR ","SHL ","SHR ","SAL ","SAR "], //*ModR/M byte is used as a secondary opcode selection by reg/Opcode value of the ModR/M byte
-  ["ROL ","ROR ","RCL ","RCR ","SHL ","SHR ","SAL ","SAR "], //*ModR/M byte is used as a secondary opcode selection by reg/Opcode value of the ModR/M byte
+  ["ROL ","ROR ","RCL ","RCR ","SHL ","SHR ","SAL ","SAR "], //*ModR/M byte is used as a secondary opcode seletion by reg/Opcode value of the ModR/M byte
+  ["ROL ","ROR ","RCL ","RCR ","SHL ","SHR ","SAL ","SAR "], //*ModR/M byte is used as a secondary opcode seletion by reg/Opcode value of the ModR/M byte
   "RET ","RET",
   "???","???",
-  ["MOV ","???","???","???","???","???","???","???"], //*ModR/M byte is used as a secondary opcode selection by reg/Opcode value of the ModR/M byte
-  ["MOV ","???","???","???","???","???","???","???"], //*ModR/M byte is used as a secondary opcode selection by reg/Opcode value of the ModR/M byte
+  ["MOV ","???","???","???","???","???","???","???"], //*ModR/M byte is used as a secondary opcode seletion by reg/Opcode value of the ModR/M byte
+  ["MOV ","???","???","???","???","???","???","???"], //*ModR/M byte is used as a secondary opcode seletion by reg/Opcode value of the ModR/M byte
   "ENTER ","LEAVE","RETF ","RETF","INT 3","INT ","INTO",
   ["*","IRET","IRETD","IRETQ"],
-  ["ROL ","ROR ","RCL ","RCR ","SHL ","SHR ","SAL ","SAR "], //*ModR/M byte is used as a secondary opcode selection by reg/Opcode value of the ModR/M byte
   ["ROL ","ROR ","RCL ","RCR ","SHL ","SHR ","SAL ","SAR "], //*ModR/M byte is used as a secondary opcode seletion by reg/Opcode value of the ModR/M byte
   ["ROL ","ROR ","RCL ","RCR ","SHL ","SHR ","SAL ","SAR "], //*ModR/M byte is used as a secondary opcode seletion by reg/Opcode value of the ModR/M byte
-  ["ROL ","ROR ","RCL ","RCR ","SHL ","SHR ","SAL ","SAR "], //*ModR/M byte is used as a secondary opcode selection by reg/Opcode value of the ModR/M byte
+  ["ROL ","ROR ","RCL ","RCR ","SHL ","SHR ","SAL ","SAR "], //*ModR/M byte is used as a secondary opcode seletion by reg/Opcode value of the ModR/M byte
+  ["ROL ","ROR ","RCL ","RCR ","SHL ","SHR ","SAL ","SAR "], //*ModR/M byte is used as a secondary opcode seletion by reg/Opcode value of the ModR/M byte
   "???","???","???",
   "XLAT ",
   //------------------------------------------------------------------------------------------------------------------------
   //X87 FPU
   //------------------------------------------------------------------------------------------------------------------------
   [
-    ["FADD ","FMUL ","FCOM ","FCOMP ","FSUB ","FSUBR ","FDIV ","FDIVR "], //*ModR/M byte is used as a secondary opcode in a separated Memory Address operand types
-    ["FADD ","FMUL ","FCOM ","FCOMP ","FSUB ","FSUBR ","FDIV ","FDIVR "]  //*ModR/M byte is used as a secondary opcode selection by register value under Register mode operand type changes
+    ["FADD ","FMUL ","FCOM ","FCOMP ","FSUB ","FSUBR ","FDIV ","FDIVR "], //*ModR/M byte is used as a secondary opcode in a seprated Memory Address operand types
+    ["FADD ","FMUL ","FCOM ","FCOMP ","FSUB ","FSUBR ","FDIV ","FDIVR "]  //*ModR/M byte is used as a secondary opcode seletion by register value under Register mode operand type changes
   ],
   [
-    ["FLD ","???","FST ","FSTP ","FLDENV ","FLDCW ","FNSTENV ","FNSTCW "], //*ModR/M byte is used as a secondary opcode selection by register value Memory Address mode ModR/M
+    ["FLD ","???","FST ","FSTP ","FLDENV ","FLDCW ","FNSTENV ","FNSTCW "], //*ModR/M byte is used as a secondary opcode seletion by register value Memory Address mode ModR/M
     [
       "FLD ", //The Secondary Operation reg/Opcode if 000 in value uses this operation with the Register value of R/M bits
       "FXCH ", //The Secondary Operation reg/Opcode if 001 in value uses this operation with the Register value of R/M bits
-      ["FNOP","???","???","???","???","???","???","???"], //If the Reg/Opcode bits are 010 uses the Register value of the R/M bits to select a static operation code rather than a register
-      "FSTP1 ", //FSTP1 uses Register Mode Thus register value of R/M bits only if the ModR/M Reg/Opcode bits is operation value 011 bin
+      ["FNOP","???","???","???","???","???","???","???"], //If the Reg/Opcode bits are 010 uses the Register value of the R/M bits to selecet a static operation code rather than a register
+      "FSTP1 ", //FSTP1 uses Reigister Mode Thus register value of R/M bits only if the ModR/M Reg/Opcode bits is operation value 011 bin
       ["FCHS","FABS","???","???","FTST","FXAM","???","???"], //Static Opcode selection under digit operation code 100 bin
       ["FLD1","FLDL2T","FLDL2E","FLDPI","FLDLG2","FLDLN2","FLDZ","???"], //Static Opcode selection under Reg/Opcode operation code 101
       ["F2XM1","FYL2X","FPTAN","FPATAN","FXTRACT","FPREM1","FDECSTP","FINCSTP"], //Static Opcode selection under Reg/Opcode 110 bin
@@ -97,7 +97,7 @@ Mnemonics = [
       "FCMOVE ", //Reg/Opcode 001
       "FCMOVBE ", //Reg/Opcode 010
       "FCMOVU ", //Reg/Opcode 011
-      "???", //Reg/Opcode 100 invalid operation code
+      "???", //Reg/Opcode 100 invaild operation code
       [
         "???", //Reg/Opcode 101 R/M bit 000 = static operation code hex is 11 (Register Mode), 101 (Reg/Opcode), 000 (R/M) is E8 hex
         "FUCOMPP", //Reg/Opcode 101 R/M bit 001 = static operation code hex is 11 (Register Mode), 101 (Reg/Opcode), 001 (R/M) is E9 hex is static FPU operation FUCOMPP
@@ -217,7 +217,11 @@ Mnemonics = [
   ["**", //SSE
   "MOVUPS ","MOVSS ", //SSE1 Single Precision goes Packed, or Scalar
   "MOVUPD ","MOVSD " //SSE2 Double Precision goes Packed, or Scalar
-  ]
+  ],
+  ["**", //SSE
+  "MOVLPS ","MOVSLDUP ", //SSE1 Single Precision goes Packed, or Scalar
+  "MOVSLDUP  ","MOVDDUP " //SSE2 Double Precision goes Packed, or Scalar
+  ],
 ];
 
 //------------------------------------------------------------------------------------------------------------------------
@@ -228,73 +232,73 @@ Operands = [
   //------------------------------------------------------------------------------------------------------------------------
   //First Byte operations
   //------------------------------------------------------------------------------------------------------------------------
-  "02010701","02160716","07010201","07160216","0B010801","0B160906","","",
-  "02010701","02160716","07010201","07160216","0B010801","0B160906","","",
-  "02010701","02160716","07010201","07160216","0B010801","0B160906","","",
-  "02010701","02160716","07010201","07160216","0B010801","0B160906","","",
-  "02010701","02160716","07010201","07160216","0B010801","0B160906","","",
-  "02010701","02160716","07010201","07160216","0B010801","0B160906","","",
-  "02010701","02160716","07010201","07160216","0B010801","0B160906","","",
-  "02010701","02160716","07010201","07160216","0B010801","0B160906","","",
+  "02010901","02160916","09010201","09160216","0D010A01","0D160B06","","",
+  "02010901","02160916","09010201","09160216","0D010A01","0D160B06","","",
+  "02010901","02160916","09010201","09160216","0D010A01","0D160B06","","",
+  "02010901","02160916","09010201","09160216","0D010A01","0D160B06","","",
+  "02010901","02160916","09010201","09160216","0D010A01","0D160B06","","",
+  "02010901","02160916","09010201","09160216","0D010A01","0D160B06","","",
+  "02010901","02160916","09010201","09160216","0D010A01","0D160B06","","",
+  "02010901","02160916","09010201","09160216","0D010A01","0D160B06","","",
   "","","","","","","","","","","","","","","","",
   "0112","0112","0112","0112","0112","0112","0112","0112",
   "0112","0112","0112","0112","0112","0112","0112","0112",
   "","","",
-  "07160204",
+  "09160204",
   "","","","",
-  "0906","071602160906",
-  "0901","071602160901",
-  "10010D02","10160D02","0D020F01","0D020F16",
-  "0A01","0A01","0A01","0A01","0A01","0A01","0A01","0A01",
-  "0A01","0A01","0A01","0A01","0A01","0A01","0A01","0A01",
-  ["02010801","02010801","02010801","02010801","02010801","02010801","02010801","02010801"],
-  ["02160806","02160806","02160806","02160806","02160806","02160806","02160806","02160806"],
+  "0B06","091602160B06",
+  "0B01","091602160B01",
+  "12010F02","12160F02","0F021101","0F021116",
+  "0C01","0C01","0C01","0C01","0C01","0C01","0C01","0C01",
+  "0C01","0C01","0C01","0C01","0C01","0C01","0C01","0C01",
+  ["02010A01","02010A01","02010A01","02010A01","02010A01","02010A01","02010A01","02010A01"],
+  ["02160A06","02160A06","02160A06","02160A06","02160A06","02160A06","02160A06","02160A06"],
   "",
-  ["02160801","02160801","02160801","02160801","02160801","02160801","02160801","02160801"],
-  "02010701","02160716",
-  "07010201","07160216",
-  "02010701","02160716",
-  "07010201","07160216",
-  "02020700","07160200",
-  "07000202",
+  ["02160A01","02160A01","02160A01","02160A01","02160A01","02160A01","02160A01","02160A01"],
+  "02010901","02160916",
+  "09010201","09160216",
+  "02010901","02160916",
+  "09010201","09160216",
+  "02020900","09160200",
+  "09000202",
   ["0212","","","","","","",""],
-  "0B160116","0B160116","0B160116","0B160116","0B160116","0B160116","0B160116","0B160116",
-  ["","",""], //goes by size the Middle is when no size is set first element is Operand override last is Rex.W
+  "0D160116","0D160116","0D160116","0D160116","0D160116","0D160116","0D160116","0D160116",
+  ["","",""], //goes by size the midel is when no size is set first element is Operand overide last is Rex.W
   ["","",""],
   "","",
   ["","",""],
   ["","",""],
   "","",
-  "0B010601","0B160616",
-  "06010B01","06160B16",
-  "10010F01","10160F16",
-  "0F011001","0F161016",
-  "0B010801","0B160906",
-  "1001","1016","0F01","0F16","1001","1016",
-  "01010801","01010801","01010801","01010801","01010801","01010801","01010801","01010801",
-  "01160906","01160906","01160906","01160906","01160906","01160906","01160906","01160906",
-  ["02010801","02010801","02010801","02010801","02010801","02010801","02010801","02010801"],
-  ["02160801","02160801","02160801","02160801","02160801","02160801","02160801","02160801"],
-  "0802","",
+  "0D010801","0D160816",
+  "08010D01","08160D16",
+  "12011101","12161116",
+  "11011201","11161216",
+  "0D010A01","0D160B06",
+  "1201","1216","1101","1116","1201","1216",
+  "01010A01","01010A01","01010A01","01010A01","01010A01","01010A01","01010A01","01010A01",
+  "01160B06","01160B06","01160B06","01160B06","01160B06","01160B06","01160B06","01160B06",
+  ["02010A01","02010A01","02010A01","02010A01","02010A01","02010A01","02010A01","02010A01"],
+  ["02160A01","02160A01","02160A01","02160A01","02160A01","02160A01","02160A01","02160A01"],
+  "0A02","",
   "","",
-  ["02010801","","","","","","",""],
-  ["02160906","","","","","","",""],
-  "08020801","",
-  "0802","","",
-  "0801","",
+  ["02010A01","","","","","","",""],
+  ["02160B06","","","","","","",""],
+  "0A020A01","",
+  "0A02","","",
+  "0A01","",
   ["","",""],
-  ["02011300","02011300","02011300","02011300","02011300","02011300","02011300","02011300"],
-  ["02161300","02161300","02161300","02161300","02161300","02161300","02161300","02161300"],
-  ["02010C01","02010C01","02010C01","02010C01","02010C01","02010C01","02010C01","02010C01"],
-  ["02160C01","02160C01","02160C01","02160C01","02160C01","02160C01","02160C01","02160C01"],
+  ["02011500","02011500","02011500","02011500","02011500","02011500","02011500","02011500"],
+  ["02161500","02161500","02161500","02161500","02161500","02161500","02161500","02161500"],
+  ["02010E01","02010E01","02010E01","02010E01","02010E01","02010E01","02010E01","02010E01"],
+  ["02160E01","02160E01","02160E01","02160E01","02160E01","02160E01","02160E01","02160E01"],
   "","","",
-  "1101",
+  "1301",
   //------------------------------------------------------------------------------------------------------------------------
   //X87 FPU
   //------------------------------------------------------------------------------------------------------------------------
   [
     ["0304","0304","0304","0304","0304","0304","0304","0304"],
-    ["12000304","12000304","0304","0304","12000304","12000304","12000304","12000304"]
+    ["14000304","14000304","0304","0304","14000304","14000304","14000304","14000304"]
   ],
   [
     ["0304","","0304","0304","0300","0302","0300","0302"],
@@ -311,21 +315,21 @@ Operands = [
   [
     ["0304","0304","0304","0304","0304","0304","0304","0304"],
     [
-      "12000304","12000304","12000304","12000304","",
+      "14000304","14000304","14000304","14000304","",
       ["","","","","","","",""],"",""
     ]
   ],
   [
     ["0304","0304","0304","0304","","0320","","0320",""],
     [
-      "12000304","12000304","12000304","12000304",
+      "14000304","14000304","14000304","14000304",
       ["","","","","","","",""],
-      "12000304","12000304",""
+      "14000304","14000304",""
     ]
   ],
   [
     ["0310","0310","0310","0310","0310","0310","0310","0310"],
-    ["03101200","03101200","0310","0310","03101200","03101200","03101200","03101200"]
+    ["03101400","03101400","0310","0310","03101400","03101400","03101400","03101400"]
   ],
   [
     ["0310","0310","0310","0310","0310","","0300","0302"],
@@ -334,9 +338,9 @@ Operands = [
   [
     ["0302","0302","0302","0302","0302","0302","0302","0302"],
     [
-      "03021200","03021200","0302",
+      "03021400","03021400","0302",
       ["","","","","","","",""],
-      "03021200","03021200",
+      "03021400","03021400",
       "","","",""
     ]
   ],
@@ -344,25 +348,25 @@ Operands = [
     ["0302","0302","0302","0302","0320","0310","0320","0310"],
     [
       "0302","0302","0302","0302",
-      ["0B02","","","","","","",""],
-      "12000302","12000302",
+      ["0D02","","","","","","",""],
+      "14000302","14000302",
       "","","","",""
     ]
   ],
   //------------------------------------------------------------------------------------------------------------------------
   //End of X87 FPU
   //------------------------------------------------------------------------------------------------------------------------
-  "0A01","0A01","0A01","0A01",
-  "0B010801","0B160801",
-  "08010B01","08010B16",
-  "0A04","0A04",
+  "0C01","0C01","0C01","0C01",
+  "0D010A01","0D160A01",
+  "0A010D01","0A010D16",
+  "0C04","0C04",
   "",
-  "0A01",
-  "0B010D02","0B160D02",
-  "0D020B01","0D020B16",
+  "0C01",
+  "0D010F02","0D160F02",
+  "0F020D01","0F020D16",
   "","","","","","",
-  ["02010801","","0201","0201","0B010201","0201","0B010201","0201"],
-  ["02160906","","0216","0216","0B160216","0216","0B160216","0B160216"],
+  ["02010A01","","0201","0201","0D010201","0201","0D010201","0201"],
+  ["02160B06","","0216","0216","0D160216","0216","0D160216","0D160216"],
   "","","","","","",
   ["0201","0201","","","","","",""],
   [
@@ -377,18 +381,18 @@ Operands = [
     ["0216","0216","0216","0216","0216","0216","0216"]
   ],
   [
-    ["0208","0208","0208","0208","0202",,"0202","0200"],
+    ["0208","0208","0208","0208","0202","","0202","0200"],
     [
       ["","","","","","","",""],
-      ["0B100C100D10","0B100C10"],
+      ["0D100E100F10","0D100E10","","","","","",""],
       ["","","","","","","",""],
-      ["0B10","","0B10","0B10","","","0B04","0B100C04"],
+      ["0D10","","0D10","0D10","","","0D04","0D100E04"],
       "0216","",
       "0202",
       ["","","","","","","",""],""
     ]
   ],
-  "07160216","07160216","",
+  "09160216","09160216","",
   "","","","",
   "","","","",
   [
@@ -396,8 +400,9 @@ Operands = [
     ["","","","","","","",""]
   ],
   "","",
-  ["07820540","07820504","07820540","07820510"], //SSE Instructions have four Prefix modes
-  ["05400782","05040782","05400782","05100782"], //SSE Instructions have four Prefix modes
+  ["09820540","09820504","09820540","09820510"], //SSE Instructions have four Prefix modes
+  ["05400982","05040982","05400982","05100982"], //SSE Instructions have four Prefix modes
+  ["09820610","09820540","09820610","09820510"] //SSE Instructions have four Prefix modes
 ];
 
 //-------------------------------------------------------------------------------------------------------------------------
@@ -1329,6 +1334,8 @@ function DecodeImmediate(SizeSetting, type)
 //when RegMode is 1 the Registers are the ST registers note
 //when RegMode is 2 the registers are the MM registers
 //when RegMode is 3 the registers are the XMM registers
+//when RegMode is 4 the registers are not used normal memory pointers are used
+//when RegMode is 5 the registers are not used normal XMM memory pointers are used
 //--------------------------------------------------------------------------------------------------
 //SizeSetting is a 7 bit value used by the GetOperandSize function for the correct pointer size or
 //used for General use register selection under Register mode 0
@@ -1378,7 +1385,7 @@ function Decode_ModRM_SIB_Address(ModRMArray, RegMode, SizeSetting)
     {
       //if RegMode is Multimedia use the Multimedia pointers under 64 and 128
 
-      if(RegMode > 1)
+      if(RegMode > 1 & RegMode < 4 | RegMode == 5)
       {
         out = PTRS[s][1];
       }
@@ -1612,7 +1619,7 @@ function FormatOperands(Operands)
 
     //The ModR/M address, Moffs comes next 
 
-    else if( Operands[i] > 1 & Operands[i] < 7 )
+    else if( Operands[i] > 1 & Operands[i] < 9 )
     {
       //This operand can only be used once in the X86-64 format only set if element 1 has not been defined once already
 
@@ -1627,7 +1634,7 @@ function FormatOperands(Operands)
 
     //The ModR/M Reg bit's
 
-    else if( Operands[i] == 7 )
+    else if( Operands[i] == 9 )
     {
       //This operand can only be used once in the X86-64 format only set if element 2 has not been defined once already
 
@@ -1642,7 +1649,7 @@ function FormatOperands(Operands)
 
     //The Immediate inputs come last there can only be a max of two
 
-    else if(Operands[i] > 7 & Operands[i] < 11)
+    else if(Operands[i] > 9 & Operands[i] < 13)
     {
       if(IMM <= 4) //note elements 3 and 4 is where the Immediate input Operands are stored
       {
@@ -1655,7 +1662,7 @@ function FormatOperands(Operands)
       }
     }
 
-    else if(Operands[i] > 10)
+    else if(Operands[i] > 12)
     {
       out[Explicit] = new FOperands(Operands[i], //Type
       Operands[i + 1], //Size
@@ -1961,7 +1968,7 @@ function DecodeInstruction()
   {
     //check if type is the Moffs Address
     
-    if( X86Format[1].Type == 6 )
+    if( X86Format[1].Type == 8 )
     {
       var s = GetOperandSize( X86Format[1].Size );
  
@@ -2008,14 +2015,14 @@ function DecodeInstruction()
  
   if(typeof X86Format[3] != "undefined")
   {
-    out[ X86Format[3].OperandNum ] = DecodeImmediate(X86Format[3].Size, X86Format[3].Type - 8);
+    out[ X86Format[3].OperandNum ] = DecodeImmediate(X86Format[3].Size, X86Format[3].Type - 10);
   }
  
   //element 4 which is the second possible Immediate input Note rarely used
  
   if(typeof X86Format[4] != "undefined")
   {
-    out[ X86Format[4].OperandNum ] = DecodeImmediate(X86Format[4].Size, X86Format[4].Type - 8);
+    out[ X86Format[4].OperandNum ] = DecodeImmediate(X86Format[4].Size, X86Format[4].Type - 10);
   }
  
   //Decode the Possible Explicit Operands only if they exist in in array length if so iterate them till length end
@@ -2024,35 +2031,35 @@ function DecodeInstruction()
   {
     //General use registers value 0 though 4 there size can change by size setting but can not be extended or changed
  
-    if(X86Format[i].Type >= 11 & X86Format[i].Type <= 14)
+    if(X86Format[i].Type >= 13 & X86Format[i].Type <= 16)
     {
-      out[ X86Format[i].OperandNum ] = DecodeRegValue(X86Format[i].Type - 11, X86Format[i].Size, false); //No Boolean logic extend condition this time just false
+      out[ X86Format[i].OperandNum ] = DecodeRegValue(X86Format[i].Type - 13, X86Format[i].Size, false); //No Boolean logic extend condition this time just false
     }
     
     //source and destination address Explicit Operands prefixes can extend the registers and change pointer size uses RegMode 0
     
-    else if(X86Format[i].Type == 15 | X86Format[i].Type == 16)
+    else if(X86Format[i].Type == 17 | X86Format[i].Type == 18)
     {
-      out[ X86Format[i].OperandNum ] = Decode_ModRM_SIB_Address([0,0,X86Format[i].Type - 9], 0, X86Format[i].Size);
+      out[ X86Format[i].OperandNum ] = Decode_ModRM_SIB_Address([0,0,X86Format[i].Type - 11], 0, X86Format[i].Size);
     }
  
     //RBX address Explicit Operands prefixes can extend the registers and change pointer size RegMode 0
     
-    else if(X86Format[i].Type == 17)
+    else if(X86Format[i].Type == 19)
     {
       out[ X86Format[i].OperandNum ] = Decode_ModRM_SIB_Address([0,0,3], 0, X86Format[i].Size);
     }
  
     //The ST only Operand
     
-    else if(X86Format[i].Type == 18)
+    else if(X86Format[i].Type == 20)
     {
       out[ X86Format[i].OperandNum ] = "ST";
     }
  
     //The Explicit Operand is always a forward input of 1
     
-    else if(X86Format[i].Type == 19)
+    else if(X86Format[i].Type == 21)
     {
       out[ X86Format[i].OperandNum ] = "1";
     }
@@ -2064,7 +2071,18 @@ function DecodeInstruction()
   if(Opcode == 0x90)
   {
     Name = "NOP";
-    out="";
+    out = [""];
+  }
+
+  //if ModR/M address gave back is invaild
+ 
+  if(typeof X86Format[1] != "undefined")
+  {
+    if(out[ X86Format[1].OperandNum ] == "")
+    {
+      Name = "???";
+      out = [""];
+    }
   }
 
   //add the Prefix string before the operation code
@@ -2101,6 +2119,37 @@ function DecodeInstruction()
  
   return(Name+out+"\r\n");
  
+}
+
+//********************************do an linear disassemble********************************
+
+function Disassemble(Code)
+{
+  Out=""; //The Disassemble output
+
+  BinCode = Code; //set the Publicaly avaible binary code array that will be used by all functions
+
+  //Disassemble binary code using an linear pass
+
+  while(CodePos32<BinCode.length)
+  {
+    try
+      {
+        Out += DecodeInstruction(); //Decode One Instruction at a time
+      }
+    catch(e) //Binary code Array index out of bounds
+    {
+      Out +=  InstructionPos+" "+InstructionHex+" "+"???\r\n";
+      InstructionPos = "";
+      InstructionHex = "";
+    }
+  }
+
+  CodePos32 = 0; //reset the Code position
+
+   //return the decoded binary code
+
+  return(Out);
 }
 
 //********************************do an linear disassemble********************************
