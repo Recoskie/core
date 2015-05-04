@@ -223,11 +223,7 @@ Mnemonics = [
   ["**", //SSE
   "MOVUPS ","MOVSS ", //SSE1 Single Precision goes Packed, or Scalar
   "MOVUPD ","MOVSD " //SSE2 Double Precision goes Packed, or Scalar
-  ],
-  ["**", //SSE
-  "MOVLPS ","MOVSLDUP ", //SSE1 Single Precision goes Packed, or Scalar
-  "MOVSLDUP  ","MOVDDUP " //SSE2 Double Precision goes Packed, or Scalar
-  ],
+  ]
 ];
 
 //------------------------------------------------------------------------------------------------------------------------
@@ -1936,20 +1932,6 @@ function DecodeInstruction()
       Type = Type[0];
     }
 
-  }
- 
-  //if the operation code has no mnemonic set it to three question marks
- 
-  if(Name == undefined)
-  {
-    Name = "???";
-  }
-  
-  //if there is no Operand set it to a empty string to stop undefined string errors for the Decode operand function
-  
-  if(Type == undefined)
-  {
-      Type = "";
   }
  
   //decode the operand string and sort it for the X86-64 instruction format decode order
