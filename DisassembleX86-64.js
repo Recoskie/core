@@ -195,7 +195,7 @@ Mnemonics = [
   ],
   "FEMMS",,
   ["**", //SSE
-  "MOVUPS ","MOVSS ", //SSE1 Signle Precision goes Packed, or Scalar
+  "MOVUPS ","MOVSS ", //SSE1 Single Precision goes Packed, or Scalar
   "MOVUPD ","MOVSD " //SSE2 Double Precision goes Packed, or Scalar
   ]
 ];
