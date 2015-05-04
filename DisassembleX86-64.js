@@ -1695,7 +1695,7 @@ function DecodeInstruction()
   }
 
  
-  //*******************************instruction Decode logic*****************************
+  //*******************************instruction Decode*****************************
   //The output array will hold the operand decoded strings under the elements the operands go under
  
   var out=new Array();
@@ -1761,7 +1761,7 @@ function DecodeInstruction()
           Type = Type[1];
         }
       
-        //else There are three Memory modes 00, 01, 10 Mode
+        //else There are three Memory mode
  
         else
         {
