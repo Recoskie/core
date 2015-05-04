@@ -18,40 +18,39 @@ Mnemonics = [
   //------------------------------------------------------------------------------------------------------------------------
   //First Byte operations
   //------------------------------------------------------------------------------------------------------------------------
-  "ADD ","ADD ","ADD ","ADD ","ADD ","ADD ","???","???",
-  "OR ","OR ","OR ","OR ","OR ","OR ","???",
-  "", //*Two byte instructions prefix
-  "ADC ","ADC ","ADC ","ADC ","ADC ","ADC ","???","???",
-  "SBB ","SBB ","SBB ","SBB ","SBB ","SBB ","???","???",
-  "AND ","AND ","AND ","AND ","AND ","AND ","???","???",
-  "SUB ","SUB ","SUB ","SUB ","SUB ","SUB ","???","???",
-  "XOR ","XOR ","XOR ","XOR ","XOR ","XOR ","???","???",
-  "CMP ","CMP ","CMP ","CMP ","CMP ","CMP ","???","???",
-  "","","","","","","","","","","","","","","","", //*The Rex Prefix
+  "ADD ","ADD ","ADD ","ADD ","ADD ","ADD ",,,
+  "OR ","OR ","OR ","OR ","OR ","OR ",,,
+  "ADC ","ADC ","ADC ","ADC ","ADC ","ADC ",,,
+  "SBB ","SBB ","SBB ","SBB ","SBB ","SBB ",,,
+  "AND ","AND ","AND ","AND ","AND ","AND ",,,
+  "SUB ","SUB ","SUB ","SUB ","SUB ","SUB ",,,
+  "XOR ","XOR ","XOR ","XOR ","XOR ","XOR ",,,
+  "CMP ","CMP ","CMP ","CMP ","CMP ","CMP ",,,
+  ,,,,,,,,,,,,,,,,
   "PUSH ","PUSH ","PUSH ","PUSH ","PUSH ","PUSH ","PUSH ","PUSH ",
   "POP ","POP ","POP ","POP ","POP ","POP ","POP ","POP ",
-  "???","???","???",
+  ,,,
   "MOVSXD ",
   "FS:","GS:",
-  "???","???",
+  ,,
   "PUSH ","IMUL ","PUSH ","IMUL ",
   "INS ","INS ","OUTS ","OUTS ",
   "JO ","JNO ","JB ","JAE ","JE ","JNE ","JBE ","JA ",
   "JS ","JNS ","JP ","JNP ","JL ","JGE ","JLE ","JG ",
-  ["ADD ","OR ","ADC ","SBB ","AND ","SUB ","XOR ","CMP "], //*ModR/M byte is used as a secondary opcode selection by reg/Opcode value of the ModR/M byte
-  ["ADD ","OR ","ADC ","SBB ","AND ","SUB ","XOR ","CMP "], //*ModR/M byte is used as a secondary opcode selection by reg/Opcode value of the ModR/M byte
-  "???",
-  ["ADD ","OR ","ADC ","SBB ","AND ","SUB ","XOR ","CMP "], //*ModR/M byte is used as a secondary opcode seletion by reg/Opcode value of the ModR/M byte
+  ["ADD ","OR ","ADC ","SBB ","AND ","SUB ","XOR ","CMP "],
+  ["ADD ","OR ","ADC ","SBB ","AND ","SUB ","XOR ","CMP "],
+  ,
+  ["ADD ","OR ","ADC ","SBB ","AND ","SUB ","XOR ","CMP "],
   "TEST ","TEST ","XCHG ","XCHG ",
   "MOV ","MOV ","MOV ","MOV ","MOV ","LEA ","MOV ",
-  ["POP ","???","???","???","???","???","???","???"], //*ModR/M byte is used as a secondary opcode seletion by reg/Opcode value of the ModR/M byte
+  ["POP "],
   "XCHG ","XCHG ","XCHG ","XCHG ","XCHG ","XCHG ","XCHG ","XCHG ",
-  ["*","CBW","CWDE","CDQE"], //*Operation code goes by size
-  ["*","CWD","CDQ","CQO"],  //*Operation code goes by size
-  "???",
+  ["*","CBW","CWDE","CDQE"],
+  ["*","CWD","CDQ","CQO"],
+  ,
   "WAIT",
-  ["*","PUSHF","PUSHFQ","PUSHFQ"], //*Operation code goes by size
-  ["*","POPF","POPFQ","POPFQ"], //*Operation code goes by size
+  ["*","PUSHF","PUSHFQ","PUSHFQ"],
+  ["*","POPF","POPFQ","POPFQ"],
   "SAHF","LAHF",
   "MOV ","MOV ","MOV ","MOV ",
   "MOVS ","MOVS ",
@@ -62,60 +61,43 @@ Mnemonics = [
   "SCAS ","SCAS ",
   "MOV ","MOV ","MOV ","MOV ","MOV ","MOV ","MOV ","MOV ",
   "MOV ","MOV ","MOV ","MOV ","MOV ","MOV ","MOV ","MOV ",
-  ["ROL ","ROR ","RCL ","RCR ","SHL ","SHR ","SAL ","SAR "], //*ModR/M byte is used as a secondary opcode selection by reg/Opcode value of the ModR/M byte
-  ["ROL ","ROR ","RCL ","RCR ","SHL ","SHR ","SAL ","SAR "], //*ModR/M byte is used as a secondary opcode selection by reg/Opcode value of the ModR/M byte
-  "RET ","RET",
-  "???","???",
-  ["MOV ","???","???","???","???","???","???","???"], //*ModR/M byte is used as a secondary opcode selection by reg/Opcode value of the ModR/M byte
-  ["MOV ","???","???","???","???","???","???","???"], //*ModR/M byte is used as a secondary opcode selection by reg/Opcode value of the ModR/M byte
+  ["ROL ","ROR ","RCL ","RCR ","SHL ","SHR ","SAL ","SAR "],
+  ["ROL ","ROR ","RCL ","RCR ","SHL ","SHR ","SAL ","SAR "],
+  "RET ","RET",,,
+  ["MOV "],
+  ["MOV "],
   "ENTER ","LEAVE","RETF ","RETF","INT 3","INT ","INTO",
   ["*","IRET","IRETD","IRETQ"],
-  ["ROL ","ROR ","RCL ","RCR ","SHL ","SHR ","SAL ","SAR "], //*ModR/M byte is used as a secondary opcode selection by reg/Opcode value of the ModR/M byte
-  ["ROL ","ROR ","RCL ","RCR ","SHL ","SHR ","SAL ","SAR "], //*ModR/M byte is used as a secondary opcode selection by reg/Opcode value of the ModR/M byte
-  ["ROL ","ROR ","RCL ","RCR ","SHL ","SHR ","SAL ","SAR "], //*ModR/M byte is used as a secondary opcode selection by reg/Opcode value of the ModR/M byte
-  ["ROL ","ROR ","RCL ","RCR ","SHL ","SHR ","SAL ","SAR "], //*ModR/M byte is used as a secondary opcode selection by reg/Opcode value of the ModR/M byte
-  "???","???","???",
+  ["ROL ","ROR ","RCL ","RCR ","SHL ","SHR ","SAL ","SAR "],
+  ["ROL ","ROR ","RCL ","RCR ","SHL ","SHR ","SAL ","SAR "],
+  ["ROL ","ROR ","RCL ","RCR ","SHL ","SHR ","SAL ","SAR "],
+  ["ROL ","ROR ","RCL ","RCR ","SHL ","SHR ","SAL ","SAR "],
+  ,,,
   "XLAT ",
   //------------------------------------------------------------------------------------------------------------------------
   //X87 FPU
   //------------------------------------------------------------------------------------------------------------------------
   [
-    ["FADD ","FMUL ","FCOM ","FCOMP ","FSUB ","FSUBR ","FDIV ","FDIVR "], //*ModR/M byte is used as a secondary opcode in a seprated Memory Address operand types
-    ["FADD ","FMUL ","FCOM ","FCOMP ","FSUB ","FSUBR ","FDIV ","FDIVR "]  //*ModR/M byte is used as a secondary opcode seletion by register value under Register mode operand type changes
+    ["FADD ","FMUL ","FCOM ","FCOMP ","FSUB ","FSUBR ","FDIV ","FDIVR "],
+    ["FADD ","FMUL ","FCOM ","FCOMP ","FSUB ","FSUBR ","FDIV ","FDIVR "]
   ],
   [
-    ["FLD ","???","FST ","FSTP ","FLDENV ","FLDCW ","FNSTENV ","FNSTCW "], //*ModR/M byte is used as a secondary opcode selection by register value Memory Address mode ModR/M
+    ["FLD ",,"FST ","FSTP ","FLDENV ","FLDCW ","FNSTENV ","FNSTCW "],
     [
-      "FLD ", //The Secondary Operation reg/Opcode if 000 in value uses this operation with the Register value of R/M bits
-      "FXCH ", //The Secondary Operation reg/Opcode if 001 in value uses this operation with the Register value of R/M bits
-      ["FNOP","???","???","???","???","???","???","???"], //If the Reg/Opcode bits are 010 uses the Register value of the R/M bits to select a static operation code rather than a register
-      "FSTP1 ", //FSTP1 uses Register Mode Thus register value of R/M bits only if the ModR/M Reg/Opcode bits is operation value 011 bin
-      ["FCHS","FABS","???","???","FTST","FXAM","???","???"], //Static Opcode selection under digit operation code 100 bin
-      ["FLD1","FLDL2T","FLDL2E","FLDPI","FLDLG2","FLDLN2","FLDZ","???"], //Static Opcode selection under Reg/Opcode operation code 101
-      ["F2XM1","FYL2X","FPTAN","FPATAN","FXTRACT","FPREM1","FDECSTP","FINCSTP"], //Static Opcode selection under Reg/Opcode 110 bin
-      ["FPREM","FYL2XP1","FSQRT","FSINCOS","FRNDINT","FSCALE","FSIN","???"] //Static Opcode selection under Reg/Opcode 111 bin
+      "FLD ","FXCH ",
+      ["FNOP"],
+      "FSTP1 ",
+      ["FCHS","FABS",,,"FTST","FXAM"],
+      ["FLD1","FLDL2T","FLDL2E","FLDPI","FLDLG2","FLDLN2","FLDZ"],
+      ["F2XM1","FYL2X","FPTAN","FPATAN","FXTRACT","FPREM1","FDECSTP","FINCSTP"],
+      ["FPREM","FYL2XP1","FSQRT","FSINCOS","FRNDINT","FSCALE","FSIN"]
     ]
   ],
   [
     ["FIADD ","FIMUL ","FICOM ","FICOMP ","FISUB ","FISUBR ","FIDIV ","FIDIVR "],
     [
-      "FCMOVB ", //Reg/Opcode 000
-      "FCMOVE ", //Reg/Opcode 001
-      "FCMOVBE ", //Reg/Opcode 010
-      "FCMOVU ", //Reg/Opcode 011
-      "???", //Reg/Opcode 100 invalid operation code
-      [
-        "???", //Reg/Opcode 101 R/M bit 000 = static operation code hex is 11 (Register Mode), 101 (Reg/Opcode), 000 (R/M) is E8 hex
-        "FUCOMPP", //Reg/Opcode 101 R/M bit 001 = static operation code hex is 11 (Register Mode), 101 (Reg/Opcode), 001 (R/M) is E9 hex is static FPU operation FUCOMPP
-        "???", //Reg/Opcode 101 R/M bit 000 = static operation code hex is 11 (Register Mode), 101 (Reg/Opcode), 010 (R/M) is EA hex
-        "???", //Reg/Opcode 101 R/M bit 000 = static operation code hex is 11 (Register Mode), 101 (Reg/Opcode), 011 (R/M) is EB hex
-        "???", //Reg/Opcode 101 R/M bit 000 = static operation code hex is 11 (Register Mode), 101 (Reg/Opcode), 100 (R/M) is EC hex
-        "???", //Reg/Opcode 101 R/M bit 000 = static operation code hex is 11 (Register Mode), 101 (Reg/Opcode), 101 (R/M) is ED hex
-        "???", //Reg/Opcode 101 R/M bit 000 = static operation code hex is 11 (Register Mode), 101 (Reg/Opcode), 110 (R/M) is EE hex
-        "???"  //Reg/Opcode 101 R/M bit 000 = static operation code hex is 11 (Register Mode), 101 (Reg/Opcode), 111 (R/M) is EF hex
-      ],
-      "???", //Reg/Opcode 110 R/M bit 000 = static operation code hex is 11 (Register Mode), 110 (Reg/Opcode), 000 (R/M) is F0 hex the R/M bits is register value, But is a Invaild operation code
-      "???" //Reg/Opcode 111 R/M bit 000 = static operation code hex is 11 (Register Mode), 111 (Reg/Opcode), 000 (R/M) is F8 hex the R/M bits is register value, But is a Invalid operation code
+      "FCMOVB ","FCMOVE ","FCMOVBE ","FCMOVU ",,
+      [,"FUCOMPP"]
     ]
   ],
   [
@@ -123,11 +105,11 @@ Mnemonics = [
     
     "FISTTP ",  //Intel SSE3 Instruction
     
-    "FIST ","FISTP ","???","FLD ","???","FSTP "],
+    "FIST ","FISTP ",,"FLD ",,"FSTP "],
     [
       "CMOVNB ","FCMOVNE ","FCMOVNBE ","FCMOVNU ",
       ["FENI ","FDISI ","FNCLEX ","FNINIT ","FSETPM "],
-      "FUCOMI ","FCOMI ","???"
+      "FUCOMI ","FCOMI "
     ]
   ],
   [
@@ -139,16 +121,16 @@ Mnemonics = [
     
     "FISTTP ", //Intel SSE3 Instruction
     
-    "FST ","FSTP ","FRSTOR ","???","FNSAVE ","FNSTSW "],
-    ["FFREE ","FXCH4 ","FST ","FSTP ","FUCOM ","FUCOMP ","???","???"]
+    "FST ","FSTP ","FRSTOR ",,"FNSAVE ","FNSTSW "],
+    ["FFREE ","FXCH4 ","FST ","FSTP ","FUCOM ","FUCOMP "]
   ],
 
   [
     ["FIADD ","FIMUL ","FICOM ","FICOMP ","FISUB ","FISUBR ","FIDIV ","FIDIVR "],
     [
       "FADDP ","FMULP ","FCOMP5 ",
-      ["???","FCOMPP ","???","???","???","???","???","???"],
-      "FSUBRP ","FSUBP ","???","???"
+      [,"FCOMPP "],
+      "FSUBRP ","FSUBP "
     ]
   ],
   [
@@ -159,8 +141,8 @@ Mnemonics = [
     "FIST ","FISTP ","FBLD ","FILD ","FBSTP ","FISTP "],
     [
       "FFREEP ","FXCH7 ","FSTP8 ","FSTP9 ",
-      ["FNSTSW ","???","???","???","???","???","???","???"],
-      "FUCOMIP ","FCOMIP ","???"
+      ["FNSTSW "],
+      "FUCOMIP ","FCOMIP "
     ]
   ],
   //------------------------------------------------------------------------------------------------------------------------
@@ -169,57 +151,49 @@ Mnemonics = [
   "LOOPNE ","LOOPE ","LOOP ","JRCXZ ",
   "IN ","IN ","OUT ","OUT ",
   "CALL ","JMP ",
-  "???",
+  ,
   "JMP ",
   "IN ","IN ","OUT ","OUT ",
   "LOCK ",
   "Reserved Op-Code!",
   "REPNE ","REP ",
   "HLT","CMC",
-  ["TEST ","???","NOT ","NEG ","MUL ","IMUL ","DIV ","IDIV "],
-  ["TEST ","???","NOT ","NEG ","MUL ","IMUL ","DIV ","IDIV "],
+  ["TEST ",,"NOT ","NEG ","MUL ","IMUL ","DIV ","IDIV "],
+  ["TEST ",,"NOT ","NEG ","MUL ","IMUL ","DIV ","IDIV "],
   "CLC","STC","CLI","CTI","CLD","STD",
-  ["INC ","DEC ","???","???","???","???","???","???"],
+  ["INC ","DEC "],
   [
-    ["INC ","DEC ","CALL ","CALL ","JMP ","JMP ","PUSH ","???"], //*invaild instructions very betwean Memory Mode, and Register Mode of the ModR/M
-    ["INC ","DEC ","CALL ","???","JMP ","???","PUSH ","???"] //*invaild instructions very betwean Memory Mode, and Register Mode of the ModR/M
+    ["INC ","DEC ","CALL ","CALL ","JMP ","JMP ","PUSH "],
+    ["INC ","DEC ","CALL ",,"JMP ",,"PUSH "]
   ],
   //------------------------------------------------------------------------------------------------------------------------
   //Two Byte operations
   //------------------------------------------------------------------------------------------------------------------------
   [
-    ["SLDT ","STR ","LLDT ","LTR ","VERR ","VERW ","JMPE "], //*The operand input type verys betwean Memory Mode, and Register Mode of the ModR/M
-    ["SLDT ","STR ","LLDT ","LTR ","VERR ","VERW ","JMPE "] //*The operand input type verys betwean Memory Mode, and Register Mode of the ModR/M
+    ["SLDT ","STR ","LLDT ","LTR ","VERR ","VERW ","JMPE "],
+    ["SLDT ","STR ","LLDT ","LTR ","VERR ","VERW ","JMPE "]
   ],
   [
-    ["SGDT ","SIDT ","LGDT ","LIDT ","SMSW ","???","LMSW ","INVLPG "],
+    ["SGDT ","SIDT ","LGDT ","LIDT ","SMSW ",,"LMSW ","INVLPG "],
     [
-      ["???","VMCALL","VMLAUNCH","VMRESUME","VMXOFF","???","???","???"], //Intel VMX Instrictions
-      ["MONITOR ","MWAIT ","???","???","???","???","???","???"], //Intel SSE3 Instructions
-      ["XGETBV","XSETBV","???","???","???","???","???","???"],
+      [,"VMCALL","VMLAUNCH","VMRESUME","VMXOFF"], //Intel VMX Instrictions
+      ["MONITOR ","MWAIT "], //Intel SSE3 Instructions
+      ["XGETBV","XSETBV"],
       ["VMRUN ","VMMCALL","VMLOAD ","VMSAVE ", //Intel VMX Instrictions
       "STGI","CLGI","SKINIT ","INVLPGA "],
-      "SMSW ",
-      "???",
+      "SMSW ",,
       "LMSW ",
-      ["SWAPGS","RDTSCP","???","???","???","???","???","???"]
+      ["SWAPGS","RDTSCP"]
     ]
   ],
-  "LAR ","LSL ",
-  "???",
+  "LAR ","LSL ",,
   "SYSCALL","CLTS","SYSRET","INVD",
-  "WBINVD","???",
-  "UD2","???",
+  "WBINVD",,"UD2",,
   [
-    ["PREFETCH ","PREFETCHW ","???","???","???","???","???","???"], //*used under Memory address mode only for the ModR/M
-    ["???","???","???","???","???","???","???","???"]  //*Not used under Register mode for the ModR/M
+    ["PREFETCH ","PREFETCHW "],
+    []
   ],
-  "FEMMS",
-  "???",
-  ["**", //SSE
-  "MOVUPS ","MOVSS ", //SSE1 Single Precision goes Packed, or Scalar
-  "MOVUPD ","MOVSD " //SSE2 Double Precision goes Packed, or Scalar
-  ],
+  "FEMMS",,
   ["**", //SSE
   "MOVUPS ","MOVSS ", //SSE1 Single Precision goes Packed, or Scalar
   "MOVUPD ","MOVSD " //SSE2 Double Precision goes Packed, or Scalar
@@ -230,28 +204,25 @@ Mnemonics = [
 //The Operand type array each operation code can use different operands that must be decoded in the X86-64 instruction format order.
 //------------------------------------------------------------------------------------------------------------------------
  
-//------------------------------------------------------------------------------------------------------------------------
-//The Operand type array each operation code can use different operands that must be decoded in the X86-64 instruction format order.
-//------------------------------------------------------------------------------------------------------------------------
- 
 Operands = [
   //------------------------------------------------------------------------------------------------------------------------
   //First Byte operations
   //------------------------------------------------------------------------------------------------------------------------
-  "02010701","02160716","07010201","07160216","0B010801","0B160906","","",
-  "02010701","02160716","07010201","07160216","0B010801","0B160906","","",
-  "02010701","02160716","07010201","07160216","0B010801","0B160906","","",
-  "02010701","02160716","07010201","07160216","0B010801","0B160906","","",
-  "02010701","02160716","07010201","07160216","0B010801","0B160906","","",
-  "02010701","02160716","07010201","07160216","0B010801","0B160906","","",
-  "02010701","02160716","07010201","07160216","0B010801","0B160906","","",
-  "02010701","02160716","07010201","07160216","0B010801","0B160906","","",
-  "","","","","","","","","","","","","","","","",
+  "02010701","02160716","07010201","07160216","0B010801","0B160906",,,
+  "02010701","02160716","07010201","07160216","0B010801","0B160906",,,
+  "02010701","02160716","07010201","07160216","0B010801","0B160906",,,
+  "02010701","02160716","07010201","07160216","0B010801","0B160906",,,
+  "02010701","02160716","07010201","07160216","0B010801","0B160906",,,
+  "02010701","02160716","07010201","07160216","0B010801","0B160906",,,
+  "02010701","02160716","07010201","07160216","0B010801","0B160906",,,
+  "02010701","02160716","07010201","07160216","0B010801","0B160906",,,
+  ,,,,,,,,,,,,,,,,
   "0112","0112","0112","0112","0112","0112","0112","0112",
   "0112","0112","0112","0112","0112","0112","0112","0112",
-  "","","",
+  ,,,
   "07160204",
-  "","","","",
+  [],
+  [],,,
   "0906","071602160906",
   "0901","071602160901",
   "10010D02","10160D02","0D020F01","0D020F16",
@@ -259,7 +230,7 @@ Operands = [
   "0A01","0A01","0A01","0A01","0A01","0A01","0A01","0A01",
   ["02010801","02010801","02010801","02010801","02010801","02010801","02010801","02010801"],
   ["02160806","02160806","02160806","02160806","02160806","02160806","02160806","02160806"],
-  "",
+  ,
   ["02160801","02160801","02160801","02160801","02160801","02160801","02160801","02160801"],
   "02010701","02160716",
   "07010201","07160216",
@@ -267,14 +238,10 @@ Operands = [
   "07010201","07160216",
   "02020700","07160200",
   "07000202",
-  ["0212","","","","","","",""],
+  ["0212"],
   "0B160116","0B160116","0B160116","0B160116","0B160116","0B160116","0B160116","0B160116",
-  ["","",""], //goes by size the middle is when no size is set first element is Operand override last is Rex.W
-  ["","",""],
-  "","",
-  ["","",""],
-  ["","",""],
-  "","",
+  [],[],,"",
+  [],[],"","",
   "0B010601","0B160616",
   "06010B01","06160B16",
   "10010F01","10160F16",
@@ -285,19 +252,17 @@ Operands = [
   "01160906","01160906","01160906","01160906","01160906","01160906","01160906","01160906",
   ["02010801","02010801","02010801","02010801","02010801","02010801","02010801","02010801"],
   ["02160801","02160801","02160801","02160801","02160801","02160801","02160801","02160801"],
-  "0802","",
-  "","",
-  ["02010801","","","","","","",""],
-  ["02160906","","","","","","",""],
-  "08020801","",
-  "0802","","",
-  "0801","",
-  ["","",""],
+  "0802","",,,
+  ["02010801"],
+  ["02160906"],
+  "08020801","","0802","",
+  "","0801","",
+  [],
   ["02011300","02011300","02011300","02011300","02011300","02011300","02011300","02011300"],
   ["02161300","02161300","02161300","02161300","02161300","02161300","02161300","02161300"],
   ["02010C01","02010C01","02010C01","02010C01","02010C01","02010C01","02010C01","02010C01"],
   ["02160C01","02160C01","02160C01","02160C01","02160C01","02160C01","02160C01","02160C01"],
-  "","","",
+  ,,,
   "1101",
   //------------------------------------------------------------------------------------------------------------------------
   //X87 FPU
@@ -310,27 +275,27 @@ Operands = [
     ["0304","","0304","0304","0300","0302","0300","0302"],
     [
       "0300","0300",
-      ["","","","","","","",""],
+      [""],
       "0300",
+      ["","",,,"",""],
+      ["","","","","","",""],
       ["","","","","","","",""],
-      ["","","","","","","",""],
-      ["","","","","","","",""],
-      ["","","","","","","",""]
+      ["","","","","","",""]
     ]
   ],
   [
     ["0304","0304","0304","0304","0304","0304","0304","0304"],
     [
-      "12000304","12000304","12000304","12000304","",
-      ["","","","","","","",""],"",""
+      "12000304","12000304","12000304","12000304",,
+      [,""]
     ]
   ],
   [
-    ["0304","0304","0304","0304","","0320","","0320",""],
+    ["0304","0304","0304","0304",,"0320",,"0320"],
     [
       "12000304","12000304","12000304","12000304",
-      ["","","","","","","",""],
-      "12000304","12000304",""
+      ["","","","",""],
+      "12000304","12000304"
     ]
   ],
   [
@@ -338,25 +303,23 @@ Operands = [
     ["03101200","03101200","0310","0310","03101200","03101200","03101200","03101200"]
   ],
   [
-    ["0310","0310","0310","0310","0310","","0300","0302"],
-    ["0310","0310","0310","0310","0310","0310","",""]
+    ["0310","0310","0310","0310","0310",,"0300","0302"],
+    ["0310","0310","0310","0310","0310","0310"]
   ],
   [
     ["0302","0302","0302","0302","0302","0302","0302","0302"],
     [
       "03021200","03021200","0302",
-      ["","","","","","","",""],
-      "03021200","03021200",
-      "","","",""
+      [,""],
+      "03021200","03021200"
     ]
   ],
   [
     ["0302","0302","0302","0302","0320","0310","0320","0310"],
     [
       "0302","0302","0302","0302",
-      ["0B02","","","","","","",""],
-      "12000302","12000302",
-      "","","","",""
+      ["0B02"],
+      "12000302","12000302"
     ]
   ],
   //------------------------------------------------------------------------------------------------------------------------
@@ -366,18 +329,18 @@ Operands = [
   "0B010801","0B160801",
   "08010B01","08010B16",
   "0A04","0A04",
-  "",
+  ,
   "0A01",
   "0B010D02","0B160D02",
   "0D020B01","0D020B16",
   "","","","","","",
-  ["02010801","","0201","0201","0B010201","0201","0B010201","0201"],
-  ["02160906","","0216","0216","0B160216","0216","0B160216","0B160216"],
+  ["02010801",,"0201","0201","0B010201","0201","0B010201","0201"],
+  ["02160906",,"0216","0216","0B160216","0216","0B160216","0B160216"],
   "","","","","","",
-  ["0201","0201","","","","","",""],
+  ["0201","0201"],
   [
-    ["0216","0216","0216","022C","0216","022C","0216",""],
-    ["0216","0216","0216","","0216","","0216",""]
+    ["0216","0216","0216","022C","0216","022C","0216"],
+    ["0216","0216","0216",,"0216",,"0216"]
   ],
   //------------------------------------------------------------------------------------------------------------------------
   //Two Byte operations
@@ -389,25 +352,24 @@ Operands = [
   [
     ["0208","0208","0208","0208","0202",,"0202","0200"],
     [
-      ["","","","","","","",""],
+      [,"","","",""],
       ["0B100C100D10","0B100C10"],
-      ["","","","","","","",""],
+      ["",""],
       ["0B10","","0B10","0B10","","","0B04","0B100C04"],
-      "0216","",
+      "0216",,
       "0202",
-      ["","","","","","","",""],""
+      ["",""]
     ]
   ],
-  "07160216","07160216","",
+  "07160216","07160216",,
   "","","","",
-  "","","","",
+  "",,"",,
   [
-    ["0200","0200","","","","","",""],
-    ["","","","","","","",""]
+    ["0200","0200"],
+    []
   ],
-  "","",
-  ["07820540","07820504","07820540","07820510"], //SSE Instructions have four Prefix modes
-  ["05400782","05040782","05400782","05100782"] //SSE Instructions have four Prefix modes
+  "",,
+  ["07820540","07820504","07820540","07820510"]
 ];
 
 //-------------------------------------------------------------------------------------------------------------------------
@@ -1567,10 +1529,10 @@ function DecodeOprandStr(HexStr)
 }
 
 //------------------------------------------------------------------------------------------------------------------------
-//The Formated Operand
+//The Operands
 //------------------------------------------------------------------------------------------------------------------------
 
-var FOperands = function(T, S, OpNum)
+var SOperands = function(T, S, OpNum)
 {
   return(
     {
@@ -1582,10 +1544,10 @@ var FOperands = function(T, S, OpNum)
 }
 
 //------------------------------------------------------------------------------------------------------------------------
-//Sorts out what operand must be decoded first Based on X86-64 instruction format
+//Sorts out what operand must be decoded first
 //------------------------------------------------------------------------------------------------------------------------
 
-function FormatOperands(Operands)
+function SortOperands(Operands)
 {
   var out = new Array(); //stores the operands under there scheduled elements
 
@@ -1900,7 +1862,7 @@ function DecodeInstruction()
   {
     //if SSE2 Scalar Double (F2 hex Prefix)
 
-    if(Prefix == Mnemonics[0xF2])
+    if(Prefix == "REPNE ")
     {
       Prefix = "";
       Name = Name[4];
@@ -1917,7 +1879,7 @@ function DecodeInstruction()
 
     //SSE1 Scalar Single (F3 hex Prefix)
 
-    else if(Prefix == Mnemonics[0xF3])
+    else if(Prefix == "REP ")
     {
       Prefix = "";
       Name = Name[2];
@@ -1934,9 +1896,23 @@ function DecodeInstruction()
 
   }
  
+  //if the operation code has no mnemonic set it to three question marks
+ 
+  if(Name == undefined)
+  {
+    Name = "???";
+  }
+  
+  //if there is no Operand set it to a empty string to stop undefined string errors for the Decode operand function
+  
+  if(Type == undefined)
+  {
+      Type = "";
+  }
+ 
   //decode the operand string and sort it for the X86-64 instruction format decode order
  
-  var X86Format = FormatOperands(DecodeOprandStr(Type));
+  var X86Format = SortOperands(DecodeOprandStr(Type));
  
   //The X86Format array decodes the available operands in order however the OperandNum which is
   //added by the SortOperands function is a value specifies which operand element it really goes under in the output array
