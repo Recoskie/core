@@ -32,13 +32,13 @@ Mnemonics = [
   "INS ","INS ","OUTS ","OUTS ",
   "JO ","JNO ","JB ","JAE ","JE ","JNE ","JBE ","JA ",
   "JS ","JNS ","JP ","JNP ","JL ","JGE ","JLE ","JG ",
-  ["ADD ","OR ","ADC ","SBB ","AND ","SUB ","XOR ","CMP "], //*ModR/M byte is used as a secondary opcode seletion by reg/Opcode value of the ModR/M byte
-  ["ADD ","OR ","ADC ","SBB ","AND ","SUB ","XOR ","CMP "], //*ModR/M byte is used as a secondary opcode seletion by reg/Opcode value of the ModR/M byte
+  ["ADD ","OR ","ADC ","SBB ","AND ","SUB ","XOR ","CMP "], //*ModR/M byte is used as a secondary opcode selection by reg/Opcode value of the ModR/M byte
+  ["ADD ","OR ","ADC ","SBB ","AND ","SUB ","XOR ","CMP "], //*ModR/M byte is used as a secondary opcode selection by reg/Opcode value of the ModR/M byte
   "???",
   ["ADD ","OR ","ADC ","SBB ","AND ","SUB ","XOR ","CMP "], //*ModR/M byte is used as a secondary opcode seletion by reg/Opcode value of the ModR/M byte
   "TEST ","TEST ","XCHG ","XCHG ",
   "MOV ","MOV ","MOV ","MOV ","MOV ","LEA ","MOV ",
-  ["POP ","???","???","???","???","???","???","???"], //*ModR/M byte is used as a secondary opcode seletion by reg/Opcode value of the ModR/M byte
+  ["POP ","???","???","???","???","???","???","???"], //*ModR/M byte is used as a secondary opcode selection by reg/Opcode value of the ModR/M byte
   "XCHG ","XCHG ","XCHG ","XCHG ","XCHG ","XCHG ","XCHG ","XCHG ",
   ["*","CBW","CWDE","CDQE"], //*Operation code goes by size
   ["*","CWD","CDQ","CQO"],  //*Operation code goes by size
@@ -56,34 +56,34 @@ Mnemonics = [
   "SCAS ","SCAS ",
   "MOV ","MOV ","MOV ","MOV ","MOV ","MOV ","MOV ","MOV ",
   "MOV ","MOV ","MOV ","MOV ","MOV ","MOV ","MOV ","MOV ",
-  ["ROL ","ROR ","RCL ","RCR ","SHL ","SHR ","SAL ","SAR "], //*ModR/M byte is used as a secondary opcode seletion by reg/Opcode value of the ModR/M byte
-  ["ROL ","ROR ","RCL ","RCR ","SHL ","SHR ","SAL ","SAR "], //*ModR/M byte is used as a secondary opcode seletion by reg/Opcode value of the ModR/M byte
+  ["ROL ","ROR ","RCL ","RCR ","SHL ","SHR ","SAL ","SAR "], //*ModR/M byte is used as a secondary opcode selection by reg/Opcode value of the ModR/M byte
+  ["ROL ","ROR ","RCL ","RCR ","SHL ","SHR ","SAL ","SAR "], //*ModR/M byte is used as a secondary opcode selection by reg/Opcode value of the ModR/M byte
   "RET ","RET",
   "???","???",
-  ["MOV ","???","???","???","???","???","???","???"], //*ModR/M byte is used as a secondary opcode seletion by reg/Opcode value of the ModR/M byte
-  ["MOV ","???","???","???","???","???","???","???"], //*ModR/M byte is used as a secondary opcode seletion by reg/Opcode value of the ModR/M byte
+  ["MOV ","???","???","???","???","???","???","???"], //*ModR/M byte is used as a secondary opcode selection by reg/Opcode value of the ModR/M byte
+  ["MOV ","???","???","???","???","???","???","???"], //*ModR/M byte is used as a secondary opcode selection by reg/Opcode value of the ModR/M byte
   "ENTER ","LEAVE","RETF ","RETF","INT 3","INT ","INTO",
   ["*","IRET","IRETD","IRETQ"],
+  ["ROL ","ROR ","RCL ","RCR ","SHL ","SHR ","SAL ","SAR "], //*ModR/M byte is used as a secondary opcode selection by reg/Opcode value of the ModR/M byte
   ["ROL ","ROR ","RCL ","RCR ","SHL ","SHR ","SAL ","SAR "], //*ModR/M byte is used as a secondary opcode seletion by reg/Opcode value of the ModR/M byte
   ["ROL ","ROR ","RCL ","RCR ","SHL ","SHR ","SAL ","SAR "], //*ModR/M byte is used as a secondary opcode seletion by reg/Opcode value of the ModR/M byte
-  ["ROL ","ROR ","RCL ","RCR ","SHL ","SHR ","SAL ","SAR "], //*ModR/M byte is used as a secondary opcode seletion by reg/Opcode value of the ModR/M byte
-  ["ROL ","ROR ","RCL ","RCR ","SHL ","SHR ","SAL ","SAR "], //*ModR/M byte is used as a secondary opcode seletion by reg/Opcode value of the ModR/M byte
+  ["ROL ","ROR ","RCL ","RCR ","SHL ","SHR ","SAL ","SAR "], //*ModR/M byte is used as a secondary opcode selection by reg/Opcode value of the ModR/M byte
   "???","???","???",
   "XLAT ",
   //------------------------------------------------------------------------------------------------------------------------
   //X87 FPU
   //------------------------------------------------------------------------------------------------------------------------
   [
-    ["FADD ","FMUL ","FCOM ","FCOMP ","FSUB ","FSUBR ","FDIV ","FDIVR "], //*ModR/M byte is used as a secondary opcode in a seprated Memory Address operand types
-    ["FADD ","FMUL ","FCOM ","FCOMP ","FSUB ","FSUBR ","FDIV ","FDIVR "]  //*ModR/M byte is used as a secondary opcode seletion by register value under Register mode operand type changes
+    ["FADD ","FMUL ","FCOM ","FCOMP ","FSUB ","FSUBR ","FDIV ","FDIVR "], //*ModR/M byte is used as a secondary opcode in a separated Memory Address operand types
+    ["FADD ","FMUL ","FCOM ","FCOMP ","FSUB ","FSUBR ","FDIV ","FDIVR "]  //*ModR/M byte is used as a secondary opcode selection by register value under Register mode operand type changes
   ],
   [
-    ["FLD ","???","FST ","FSTP ","FLDENV ","FLDCW ","FNSTENV ","FNSTCW "], //*ModR/M byte is used as a secondary opcode seletion by register value Memory Address mode ModR/M
+    ["FLD ","???","FST ","FSTP ","FLDENV ","FLDCW ","FNSTENV ","FNSTCW "], //*ModR/M byte is used as a secondary opcode selection by register value Memory Address mode ModR/M
     [
       "FLD ", //The Secondary Operation reg/Opcode if 000 in value uses this operation with the Register value of R/M bits
       "FXCH ", //The Secondary Operation reg/Opcode if 001 in value uses this operation with the Register value of R/M bits
-      ["FNOP","???","???","???","???","???","???","???"], //If the Reg/Opcode bits are 010 uses the Register value of the R/M bits to selecet a static operation code rather than a register
-      "FSTP1 ", //FSTP1 uses Reigister Mode Thus register value of R/M bits only if the ModR/M Reg/Opcode bits is operation value 011 bin
+      ["FNOP","???","???","???","???","???","???","???"], //If the Reg/Opcode bits are 010 uses the Register value of the R/M bits to select a static operation code rather than a register
+      "FSTP1 ", //FSTP1 uses Register Mode Thus register value of R/M bits only if the ModR/M Reg/Opcode bits is operation value 011 bin
       ["FCHS","FABS","???","???","FTST","FXAM","???","???"], //Static Opcode selection under digit operation code 100 bin
       ["FLD1","FLDL2T","FLDL2E","FLDPI","FLDLG2","FLDLN2","FLDZ","???"], //Static Opcode selection under Reg/Opcode operation code 101
       ["F2XM1","FYL2X","FPTAN","FPATAN","FXTRACT","FPREM1","FDECSTP","FINCSTP"], //Static Opcode selection under Reg/Opcode 110 bin
@@ -97,7 +97,7 @@ Mnemonics = [
       "FCMOVE ", //Reg/Opcode 001
       "FCMOVBE ", //Reg/Opcode 010
       "FCMOVU ", //Reg/Opcode 011
-      "???", //Reg/Opcode 100 invaild operation code
+      "???", //Reg/Opcode 100 invalid operation code
       [
         "???", //Reg/Opcode 101 R/M bit 000 = static operation code hex is 11 (Register Mode), 101 (Reg/Opcode), 000 (R/M) is E8 hex
         "FUCOMPP", //Reg/Opcode 101 R/M bit 001 = static operation code hex is 11 (Register Mode), 101 (Reg/Opcode), 001 (R/M) is E9 hex is static FPU operation FUCOMPP
