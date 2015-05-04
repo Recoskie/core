@@ -1900,7 +1900,7 @@ function DecodeInstruction()
   {
     //if SSE2 Scalar Double (F2 hex Prefix)
 
-    if(Prefix == "REPNE ")
+    if(Prefix == Mnemonics[0xF2])
     {
       Prefix = "";
       Name = Name[4];
@@ -1917,7 +1917,7 @@ function DecodeInstruction()
 
     //SSE1 Scalar Single (F3 hex Prefix)
 
-    else if(Prefix == "REP ")
+    else if(Prefix == Mnemonics[0xF3])
     {
       Prefix = "";
       Name = Name[2];
