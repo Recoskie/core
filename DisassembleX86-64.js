@@ -187,7 +187,7 @@ Mnemonics = [
     ]
   ],
   "LAR ","LSL "
-  ];
+];
 
 //------------------------------------------------------------------------------------------------------------------------
 //The Operand type array each operation code can use different operands that must be decoded in the X86-64 instruction format order.
@@ -351,7 +351,7 @@ Operands = [
     ]
   ],
   "07160216","07160216"
-   ];
+];
 
 //-------------------------------------------------------------------------------------------------------------------------
 //The Hex String stores the Bytes of decoded instruction it is shown to the left side of the disassembled instruction
