@@ -4,6 +4,12 @@
 
 var BinCode = new Array();
 
+//-------------------------------------------------------------------------------------------------------------------------
+//Opcode Base value changes when code 0F is used which makes the next opcode start at 255+ in the Mnemonic array, and operamd type.
+//-------------------------------------------------------------------------------------------------------------------------
+
+var OpBase = 0;
+
 //------------------------------------------------------------------------------------------------------------------------
 //The Mnemonic array each operation code value has a Mnemonic Name
 //------------------------------------------------------------------------------------------------------------------------
@@ -95,7 +101,11 @@ Mnemonics = [
     ]
   ],
   [
-    ["FILD ","FISTTP ","FIST ","FISTP ",,"FLD ",,"FSTP "],
+    ["FILD ",
+    
+    "FISTTP ",  //Intel SSE3 Instruction
+    
+    "FIST ","FISTP ",,"FLD ",,"FSTP "],
     [
       "CMOVNB ","FCMOVNE ","FCMOVNBE ","FCMOVNU ",
       ["FENI ","FDISI ","FNCLEX ","FNINIT ","FSETPM "],
@@ -107,7 +117,11 @@ Mnemonics = [
     ["FADD ","FMUL ","FCOM2 ","FCOMP3 ","FSUBR ","FSUB ","FDIVR ","FDIV "]
   ],
   [
-    ["FLD ","FISTTP ","FST ","FSTP ","FRSTOR ",,"FNSAVE ","FNSTSW "],
+    ["FLD ",
+    
+    "FISTTP ", //Intel SSE3 Instruction
+    
+    "FST ","FSTP ","FRSTOR ",,"FNSAVE ","FNSTSW "],
     ["FFREE ","FXCH4 ","FST ","FSTP ","FUCOM ","FUCOMP "]
   ],
 
@@ -120,7 +134,11 @@ Mnemonics = [
     ]
   ],
   [
-    ["FILD ","FISTTP ","FIST ","FISTP ","FBLD ","FILD ","FBSTP ","FISTP "],
+    ["FILD ",
+    
+    "FISTTP ", //Intel SSE3 Instruction
+    
+    "FIST ","FISTP ","FBLD ","FILD ","FBSTP ","FISTP "],
     [
       "FFREEP ","FXCH7 ","FSTP8 ","FSTP9 ",
       ["FNSTSW "],
@@ -147,10 +165,28 @@ Mnemonics = [
   [
     ["INC ","DEC ","CALL ","CALL ","JMP ","JMP ","PUSH "],
     ["INC ","DEC ","CALL ",,"JMP ",,"PUSH "]
-  ]
+  ],
   //------------------------------------------------------------------------------------------------------------------------
-  //Two Byte operations start here
+  //Two Byte operations
   //------------------------------------------------------------------------------------------------------------------------
+  [
+    ["SLDT ","STR ","LLDT ","LTR ","VERR ","VERW ","JMPE "],
+    ["SLDT ","STR ","LLDT ","LTR ","VERR ","VERW ","JMPE "]
+  ],
+  [
+    ["SGDT ","SIDT ","LGDT ","LIDT ","SMSW ",,"LMSW ","INVLPG "],
+    [
+      [,"VMCALL","VMLAUNCH","VMRESUME","VMXOFF"], //Intel VMX Instrictions
+      ["MONITOR ","MWAIT "], //Intel SSE3 Instructions
+      ["XGETBV","XSETBV"],
+      ["VMRUN ","VMMCALL","VMLOAD ","VMSAVE ", //Intel VMX Instrictions
+      "STGI","CLGI","SKINIT ","INVLPGA "],
+      "SMSW ",,
+      "LMSW ",
+      ["SWAPGS","RDTSCP"]
+    ]
+  ],
+  "LAR ","LSL "
   ];
 
 //------------------------------------------------------------------------------------------------------------------------
@@ -294,10 +330,27 @@ Operands = [
   [
     ["0216","0216","0216","022C","0216","022C","0216"],
     ["0216","0216","0216",,"0216",,"0216"]
-  ]
+  ],
   //------------------------------------------------------------------------------------------------------------------------
   //Two Byte operations start here
   //------------------------------------------------------------------------------------------------------------------------
+  [
+    ["0202","0202","0202","0202","0202","0202","0216"],
+    ["0216","0216","0216","0216","0216","0216","0216"]
+  ],
+  [
+    ["0208","0208","0208","0208","0202",,"0202","0200"],
+    [
+      [,"","","",""],
+      ["0B100C100D10","0B100C10"],
+      ["",""],
+      ["0B10","","0B10","0B10","","","0B04","0B100C04"],
+      "0216",,
+      "0202",
+      ["",""]
+    ]
+  ],
+  "07160216","07160216"
    ];
 
 //-------------------------------------------------------------------------------------------------------------------------
@@ -1633,6 +1686,14 @@ function DecodeInstruction()
     return(DecodeInstruction());
   }
 
+  //if 0F hex start at 255 for Opcode alowing two byte operation codes
+
+  if(Opcode == 0x0F)
+  {
+    OpBase = 256;
+    return(DecodeInstruction());
+  }
+
  
   //*******************************instruction Decode logic*****************************
   //The output array will hold the operand decoded strings under the elements the operands go under
@@ -1645,11 +1706,11 @@ function DecodeInstruction()
  
   //get the Operation name by the operations byte value
  
-  var Name = Mnemonics[Opcode];
+  var Name = Mnemonics[OpBase + Opcode];
  
   //get the Operands for this opcode it follows the same array structure as Mnemonics array
  
-  var Type = Operands[Opcode];
+  var Type = Operands[OpBase + Opcode];
 
   //PFX is used to signify Prefix decoding for SSE instructions and Mnemonic by size
 
@@ -1994,6 +2055,7 @@ function DecodeInstruction()
   OvRam = false;
   Rex[4] = false;
   Prefix = "";
+  OpBase = 0;
  
   //return the instruction
  
