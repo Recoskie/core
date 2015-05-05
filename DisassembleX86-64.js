@@ -63,7 +63,7 @@ Mnemonics = [
   ["MOV ","???","???","???","???","???","???","???"], //*ModR/M byte is used as a secondary opcode selection by reg/Opcode value of the ModR/M byte
   ["MOV ","???","???","???","???","???","???","???"], //*ModR/M byte is used as a secondary opcode selection by reg/Opcode value of the ModR/M byte
   "ENTER ","LEAVE","RETF ","RETF","INT 3","INT ","INTO",
-  ["IRET","IRETD","IRETQ"],
+  ["*","IRET","IRETD","IRETQ"],
   ["ROL ","ROR ","RCL ","RCR ","SHL ","SHR ","SAL ","SAR "], //*ModR/M byte is used as a secondary opcode selection by reg/Opcode value of the ModR/M byte
   ["ROL ","ROR ","RCL ","RCR ","SHL ","SHR ","SAL ","SAR "], //*ModR/M byte is used as a secondary opcode seletion by reg/Opcode value of the ModR/M byte
   ["ROL ","ROR ","RCL ","RCR ","SHL ","SHR ","SAL ","SAR "], //*ModR/M byte is used as a secondary opcode seletion by reg/Opcode value of the ModR/M byte
@@ -206,7 +206,7 @@ Mnemonics = [
   "UD2","???",
   [
     ["PREFETCH ","PREFETCHW ","???","???","???","???","???","???"], //*used under Memory address mode only for the ModR/M
-    ["???","???","???","???","???","???","???","???"]  //*Not used under Register mode for the ModR/M
+    "???"  //*No Register mode for the ModR/M
   ],
   "FEMMS",
   "???",
@@ -229,6 +229,27 @@ Mnemonics = [
       "MOVHLPS ","MOVSLDUP ", //SSE1 Single Precision goes Packed, or Scalar
       "???","MOVDDUP " //SSE2 Double Precision goes Scalar only
     ]
+  ],
+  [
+    ["MOVLPS ","???","MOVLPS ","???"],
+    "???" //*no register mode
+  ],
+  ["UNPCKLPS ","???","UNPCKLPD ","???"],
+  ["UNPCKHPS ","???","UNPCKHPD ","???"],
+  [
+    ["MOVHPS ","MOVSHDUP ","MOVHPD ","???"],
+    ["MOVLHPS ","MOVSHDUP ","???","???"]
+  ],
+  [
+    ["MOVHPS ","???","MOVHPS ","???"],
+    "???" //*no rregister mode
+  ],
+  [
+    [
+      "PREFETCHNTA ","PREFETCHT0 ","PREFETCHT1 ","PREFETCHT2 ",  //Prefetch Data Into Caches
+      "???","???","???","???"
+    ],
+    "???" //*no register mode
   ]
 ];
 
@@ -405,7 +426,7 @@ Operands = [
   "","","","",
   [
     ["0200","0200","","","","","",""],
-    ["","","","","","","",""]
+    "" //*No Register Mode
   ],
   "","",
   ["07820540","07820504","07820540","07820510"], //SSE Instructions have four Prefix modes
@@ -415,6 +436,33 @@ Operands = [
     ["07820210","07820540","07820210","07820510"], //SSE Instructions have four Prefix modes
     //SSE Register mode
     ["07820540","07820540","","07820510"] //SSE Instructions have four Prefix modes
+  ],
+  [
+    //SSE pointer mode
+    ["02100782","","02100782",""], //SSE Instructions have four Prefix modes
+    //SSE Register mode
+    "" //*No Register Mode
+  ],
+  ["07820540","","07820540",""], //SSE Instructions have four Prefix modes
+  ["07820540","","07820540",""], //SSE Instructions have four Prefix modes
+  [
+    //SSE pointer mode
+    ["07820210","07820540","07820210",""],
+    //SSE Register mode
+    ["07820540","07820540","",""]
+  ],
+  [
+    //SSE pointer mode
+    ["02100782","","02100782",""], //SSE Instructions have four Prefix modes
+    //SSE Register mode
+    "" //*No Register Mode
+  ],
+  [
+    [
+      "0200","0200","0200","0200",  //Prefetch Data Into Caches
+      "","","",""
+    ],
+    "" //*no register mode
   ]
 ];
 
