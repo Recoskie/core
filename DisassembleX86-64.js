@@ -1975,7 +1975,7 @@ function DecodeInstruction()
  
   if(typeof X86Format[2] != "undefined")
   {
-    out[ X86Format[2].OperandNum ] = DecodeRegValue(ModRMValues[1], X86Format[2].Size, Rex[0] & Rex[2]); //extends under the REX.R prefix
+    out[ X86Format[2].OperandNum ] = DecodeRegValue(ModRMValues[1], X86Format[2].Size, Rex[2] & Rex[4]); //extends under the REX.R prefix
   }
  
   //element 3 which is the first Immediate input
