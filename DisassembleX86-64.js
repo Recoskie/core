@@ -268,7 +268,17 @@ Mnemonics = [
   [
     "???", //No Memory Pointer mode
     "MOV " //register mode only Move register 64 to Debug register
-  ]
+  ],
+  [
+    "???", //No Memory Pointer mode
+    "MOV " //register mode only Move TR register to register 64
+  ],
+  "???",
+  [
+    "???", //No Memory Pointer mode
+    "MOV " //register mode only Move register 64 to TR register
+  ],
+  "???"
 ];
 
 //------------------------------------------------------------------------------------------------------------------------
@@ -499,7 +509,17 @@ Operands = [
   [
     "", //No Memory Pointer mode
     "07840210" //register mode only Move register 64 to Debug register
-  ]
+  ],
+  [
+    "", //No Memory Pointer mode
+    "02100785" //register mode only Move TR register to register 64
+  ],
+  "",
+  [
+    "", //No Memory Pointer mode
+    "07850210" //register mode only Move register 64 to TR register
+  ],
+  ""
 ];
 
 //-------------------------------------------------------------------------------------------------------------------------
@@ -800,6 +820,20 @@ REG=[
     //debug registers extended index 8 though 15
     
     "DR8","DR9","DR10","DR11","DR12","DR13","DR14","DR15"
+    
+  ],
+  
+  //REG array element 13
+
+  [
+    
+    //TR registers index 0 to 7
+    
+    "TR0","TR1","TR2","TR3","TR4","TR5","TR6","TR7",
+    
+    //TR registers extended index 8 though 15
+    
+    "TR0","TR1","TR2","TR3","TR4","TR5","TR6","TR7"
     
   ]
 
