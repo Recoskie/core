@@ -62,7 +62,7 @@ Mnemonics = [
   "???","???",
   ["MOV ","???","???","???","???","???","???","???"], //*ModR/M byte is used as a secondary opcode selection by reg/Opcode value of the ModR/M byte
   ["MOV ","???","???","???","???","???","???","???"], //*ModR/M byte is used as a secondary opcode selection by reg/Opcode value of the ModR/M byte
-  "ENTER ","LEAVE","RETF ","RETF","INT 3","INT ","INTO",
+  "ENTER ","LEAVE","RETF ","RETF","INT ","INT ","INTO",
   ["*","IRET","IRETD","IRETQ"],
   ["ROL ","ROR ","RCL ","RCR ","SHL ","SHR ","SAL ","SAR "], //*ModR/M byte is used as a secondary opcode selection by reg/Opcode value of the ModR/M byte
   ["ROL ","ROR ","RCL ","RCR ","SHL ","SHR ","SAL ","SAR "], //*ModR/M byte is used as a secondary opcode seletion by reg/Opcode value of the ModR/M byte
@@ -281,11 +281,11 @@ Operands = [
   ["02010801","","","","","","",""],
   ["02160906","","","","","","",""],
   "08020801","",
-  "0802","","",
+  "0802","","1303",
   "0801","",
   ["","",""],
-  ["02011300","02011300","02011300","02011300","02011300","02011300","02011300","02011300"],
-  ["02161300","02161300","02161300","02161300","02161300","02161300","02161300","02161300"],
+  ["02011301","02011301","02011301","02011301","02011301","02011301","02011301","02011301"],
+  ["02161301","02161301","02161301","02161301","02161301","02161301","02161301","02161301"],
   ["02010C01","02010C01","02010C01","02010C01","02010C01","02010C01","02010C01","02010C01"],
   ["02160C01","02160C01","02160C01","02160C01","02160C01","02160C01","02160C01","02160C01"],
   "","","",
@@ -2030,11 +2030,11 @@ function DecodeInstruction()
       out[ X86Format[i].OperandNum ] = "ST";
     }
  
-    //The Explicit Operand is always a forward input of 1
+    //The Explicit Operand is always a forward input of a static number value
     
     else if(X86Format[i].Type == 19)
     {
-      out[ X86Format[i].OperandNum ] = "1";
+      out[ X86Format[i].OperandNum ] = X86Format[i].Size+"";
     }
   }
  
@@ -2056,8 +2056,8 @@ function DecodeInstruction()
   if(ShowInstructionHex)
   {
     InstructionHex = InstructionHex.toUpperCase(); //make it uppercase
-    for(; InstructionHex.length < 15;InstructionHex = InstructionHex + " "); //pad it 16 in length
-    Name = InstructionHex + " " + Name; //add it behind the operation Name and optional Prefix string
+    for(; InstructionHex.length < 17;InstructionHex = InstructionHex + " ");
+    Name = InstructionHex + "\x09" + Name; //add it behind the operation Name and optional Prefix string
     InstructionHex = ""; //reset the hex decode string for the next operation code
   }
 
@@ -2065,7 +2065,7 @@ function DecodeInstruction()
 
   if(ShowInstructionPos)
   {
-    Name = InstructionPos + " " + Name; //add it behind the operation Name, and optional Perfix, and Operation hex code if the hex code display setting is active
+    Name = InstructionPos + "\x09" + Name; //add it behind the operation Name, and optional Perfix, and Operation hex code if the hex code display setting is active
     InstructionPos = ""; //set the position black to load the position in again for the next instruction
   }
   
@@ -2079,7 +2079,7 @@ function DecodeInstruction()
  
   //return the instruction
  
-  return(Name+out+"\r\n");
+  return(Name+"\x09"+out+"\r\n");
  
 }
 
@@ -2096,12 +2096,30 @@ function Disassemble(Code)
   while(CodePos32<BinCode.length)
   {
     try
-      {
-        Out += DecodeInstruction(); //Decode One Instruction at a time
-      }
+    {
+      Out += DecodeInstruction(); //Decode One Instruction at a time
+    }
     catch(e) //Binary code Array index out of bounds
     {
-      Out +=  InstructionPos+" "+InstructionHex+" "+"???\r\n";
+      if(ShowInstructionHex)
+      {
+        InstructionHex = InstructionHex.toUpperCase();
+        for(; InstructionHex.length < 17;InstructionHex = InstructionHex + " ");
+      }
+      else
+      {
+        InstructionHex = "";
+      }
+
+      //add the 64 bit address of the instruction if ShowInstructionPos decoding is active
+      
+      if(!ShowInstructionPos)
+      {
+        InstructionPos = "";
+      }
+      
+      Out +=  InstructionPos+"\x09"+InstructionHex+"\x09"+"Incomplete Instruction Code\r\n";
+      
       InstructionPos = "";
       InstructionHex = "";
     }
@@ -2109,7 +2127,7 @@ function Disassemble(Code)
 
   CodePos32 = 0; //reset the Code position
 
-   //return the decoded binary code
+  //return the decoded binary code
 
   return(Out);
 }
