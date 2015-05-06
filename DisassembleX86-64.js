@@ -204,81 +204,23 @@ Mnemonics = [
   "SYSCALL","CLTS","SYSRET","INVD",
   "WBINVD","???",
   "UD2","???",
-  [
-    ["PREFETCH ","PREFETCHW ","???","???","???","???","???","???"], //*used under Memory address mode only for the ModR/M
-    "???"  //*No Register mode for the ModR/M
-  ],
-  "FEMMS",
-  "???",
-  [
-    "MOVUPS ","MOVSS ", //SSE1 Single Precision goes Packed, or Scalar
-    "MOVUPD ","MOVSD " //SSE2 Double Precision goes Packed, or Scalar
-  ],
-  [
-    "MOVUPS ","MOVSS ", //SSE1 Single Precision goes Packed, or Scalar
-    "MOVUPD ","MOVSD " //SSE2 Double Precision goes Packed, or Scalar
-  ],
-  [
-    //SSE pointer mode
-    [
-      "MOVLPS ","MOVSLDUP ", //SSE1 Single Precision goes Packed, or Scalar
-      "MOVSLDUP ","MOVDDUP " //SSE2 Double Precision goes Packed, or Scalar
-    ],
-    //SSE Register mode
-    [
-      "MOVHLPS ","MOVSLDUP ", //SSE1 Single Precision goes Packed, or Scalar
-      "???","MOVDDUP " //SSE2 Double Precision goes Scalar only
-    ]
-  ],
-  [
-    ["MOVLPS ","???","MOVLPS ","???"],
-    "???" //no register mode
-  ],
-  ["UNPCKLPS ","???","UNPCKLPD ","???"],
-  ["UNPCKHPS ","???","UNPCKHPD ","???"],
-  [
-    ["MOVHPS ","MOVSHDUP ","MOVHPD ","???"],
-    ["MOVLHPS ","MOVSHDUP ","???","???"]
-  ],
-  [
-    ["MOVHPS ","???","MOVHPS ","???"],
-    "???" //no rregister mode
-  ],
-  [
-    [
-      "PREFETCHNTA ","PREFETCHT0 ","PREFETCHT1 ","PREFETCHT2 ",  //Prefetch Data Into Caches
-      "???","???","???","???"
-    ],
-    "???" //no register mode
-  ],
-  "???","???","???","???","???","???",
-  "NOP ",
-  [
-    "???", //No Memory Pointer mode
-    "MOV " //register mode only Move Control register to 64 Register
-  ],
-  [
-    "???", //No Memory Pointer mode
-    "MOV " //register mode only Move Debug register to 64 Register
-  ],
-  [
-    "???", //No Memory Pointer mode
-    "MOV " //register mode only Move register 64 to Control register
-  ],
-  [
-    "???", //No Memory Pointer mode
-    "MOV " //register mode only Move register 64 to Debug register
-  ],
-  [
-    "???", //No Memory Pointer mode
-    "MOV " //register mode only Move TR register to register 64
-  ],
-  "???",
-  [
-    "???", //No Memory Pointer mode
-    "MOV " //register mode only Move register 64 to TR register
-  ],
-  "???"
+  [["PREFETCH ","PREFETCHW ","???","???","???","???","???","???"],"???"],
+  "FEMMS","???",
+  ["MOVUPS ","MOVSS ","MOVUPD ","MOVSD "], //SSE1 Single Precision Packed, and Scalar or SSE2 Double Precision Packed, and Scalar
+  ["MOVUPS ","MOVSS ","MOVUPD ","MOVSD "], //SSE1 Single Precision Packed, and Scalar or SSE2 Double Precision Packed, and Scalar
+  [["MOVLPS ","MOVSLDUP ","MOVSLDUP ","MOVDDUP "],["MOVHLPS ","MOVSLDUP ","???","MOVDDUP "]], //SSE1 Single Precision Packed, and Scalar or SSE2 Double Precision Packed, and Scalar
+  [["MOVLPS ","???","MOVLPS ","???"],"???"], //SSE1 Single Precision Packed or SSE2 Double Precision Packed
+  ["UNPCKLPS ","???","UNPCKLPD ","???"], //SSE1 Single Precision Packed or SSE2 Double Precision Packed
+  ["UNPCKHPS ","???","UNPCKHPD ","???"], //SSE1 Single Precision Packed or SSE2 Double Precision Packed
+  [["MOVHPS ","MOVSHDUP ","MOVHPD ","???"],["MOVLHPS ","MOVSHDUP ","???","???"]], //SSE1 Single Precision Packed, and Scalar or SSE2 Double Precision Packed
+  [["MOVHPS ","???","MOVHPS ","???"],"???"], //SSE1 Single Precision Packed or SSE2 Double Precision Packed
+  [["PREFETCHNTA ","PREFETCHT0 ","PREFETCHT1 ","PREFETCHT2 ","???","???","???","???"],"???"], //SSE1
+  "???","???","???","???","???","???","NOP ",
+  ["???","MOV "],["???","MOV "], //CR and DR register Move
+  ["???","MOV "],["???","MOV "], //CR and DR register Move
+  ["???","MOV "],"???", //TR (TASK REGISTER) register Move
+  ["???","MOV "],"???", //TR (TASK REGISTER) register Move
+  
 ];
 
 //------------------------------------------------------------------------------------------------------------------------
@@ -320,11 +262,9 @@ Operands = [
   "07000202",
   ["0212","","","","","","",""],
   "0B160116","0B160116","0B160116","0B160116","0B160116","0B160116","0B160116","0B160116",
-  ["","",""], //goes by size the Middle is when no size is set first element is Operand override last is Rex.W
-  ["","",""],
+  ["","",""],["","",""],
   "","",
-  ["","",""],
-  ["","",""],
+  ["","",""],["","",""],
   "","",
   "0B010601","0B160616",
   "06010B01","06160B16",
@@ -452,74 +392,22 @@ Operands = [
   "07160216","07160216","",
   "","","","",
   "","","","",
-  [
-    ["0200","0200","","","","","",""],
-    "" //No Register Mode
-  ],
+  [["0200","0200","","","","","",""],""],
   "","",
-  ["07820540","07820504","07820540","07820510"], //SSE Instructions have four Prefix modes
-  ["05400782","05040782","05400782","05100782"], //SSE Instructions have four Prefix modes
-  [
-    //SSE pointer mode
-    ["07820210","07820540","07820210","07820510"], //SSE Instructions have four Prefix modes
-    //SSE Register mode
-    ["07820540","07820540","","07820510"] //SSE Instructions have four Prefix modes
-  ],
-  [
-    //SSE pointer mode
-    ["02100782","","02100782",""], //SSE Instructions have four Prefix modes
-    //SSE Register mode
-    "" //No Register Mode
-  ],
-  ["07820540","","07820540",""], //SSE Instructions have four Prefix modes
-  ["07820540","","07820540",""], //SSE Instructions have four Prefix modes
-  [
-    //SSE pointer mode
-    ["07820210","07820540","07820210",""],
-    //SSE Register mode
-    ["07820540","07820540","",""]
-  ],
-  [
-    //SSE pointer mode
-    ["02100782","","02100782",""], //SSE Instructions have four Prefix modes
-    //SSE Register mode
-    "" //*No Register Mode
-  ],
-  [
-    [
-      "0200","0200","0200","0200",  //Prefetch Data Into Caches
-      "","","",""
-    ],
-    "" //no register mode
-  ],
-  "","","","","","",
-  "0216",
-  [
-    "", //No Memory Pointer mode
-    "02100783" //register mode only Move control register to 64 Register
-  ],
-  [
-    "", //No Memory Pointer mode
-    "02100784" //register mode only Move Debug register to 64 Register
-  ],
-  [
-    "", //No Memory Pointer mode
-    "07830210" //register mode only Move register 64 to Control register
-  ],
-  [
-    "", //No Memory Pointer mode
-    "07840210" //register mode only Move register 64 to Debug register
-  ],
-  [
-    "", //No Memory Pointer mode
-    "02100785" //register mode only Move TR register to register 64
-  ],
-  "",
-  [
-    "", //No Memory Pointer mode
-    "07850210" //register mode only Move register 64 to TR register
-  ],
-  ""
+  ["07820540","07820504","07820540","07820510"],
+  ["05400782","05040782","05400782","05100782"],
+  [["07820210","07820540","07820210","07820510"],["07820540","07820540","","07820510"]],
+  [["02100782","","02100782",""],""],
+  ["07820540","","07820540",""],
+  ["07820540","","07820540",""],
+  [["07820210","07820540","07820210",""],["07820540","07820540","",""]],
+  [["02100782","","02100782",""],""],
+  [["0200","0200","0200","0200","","","",""],""],
+  "","","","","","","0216",
+  ["","02100783"],["","02100784"],
+  ["","07830210"],["","07840210"],
+  ["","02100785"],"",
+  ["","07850210"],""
 ];
 
 //-------------------------------------------------------------------------------------------------------------------------
