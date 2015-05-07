@@ -156,8 +156,8 @@ Mnemonics = [
   //Two Byte operations
   //------------------------------------------------------------------------------------------------------------------------
   [
-    ["SLDT ","STR ","LLDT ","LTR ","VERR ","VERW ","JMPE "],
-    ["SLDT ","STR ","LLDT ","LTR ","VERR ","VERW ","JMPE "]
+    ["SLDT ","STR ","LLDT ","LTR ","VERR ","VERW ","JMPE ","???"],
+    ["SLDT ","STR ","LLDT ","LTR ","VERR ","VERW ","JMPE ","???"]
   ],
   [
     ["SGDT ","SIDT ","LGDT ","LIDT ","SMSW ","???","LMSW ","INVLPG "],
@@ -205,7 +205,10 @@ Mnemonics = [
   "GETSEC",
   "Three Byte Op-codes Not supported yet!", //*Note Add three byte op-code section to array after tow byte op-codes are programmed in.
   "???", //???
-  "Secondary Three Byte Op-codes Not supported yet!" //*Note Add three byte op-code section to array after tow byte op-codes are programmed in.
+  "Secondary Three Byte Op-codes Not supported yet!", //*Note Add three byte op-code section to array after tow byte op-codes are programmed in.
+  "???","???","???","???","???",
+  "CMOVO ","CMOVNO ","CMOVB ","CMOVAE ","CMOVE ","CMOVNE ","CMOVBE ","CMOVA ",
+  "CMOVS ","CMOVNS ","CMOVP ","CMOVNP ","CMOVL ","CMOVGE ","CMOVLE ","CMOVG "
 ];
 
 //------------------------------------------------------------------------------------------------------------------------
@@ -359,8 +362,8 @@ Operands = [
   //Two Byte operations
   //------------------------------------------------------------------------------------------------------------------------
   [
-    ["0202","0202","0202","0202","0202","0202","0216"],
-    ["0216","0216","0216","0216","0216","0216","0216"]
+    ["0202","0202","0202","0202","0202","0202","0216",""],
+    ["0216","0216","0216","0216","0216","0216","0216",""]
   ],
   [
     ["0208","0208","0208","0208","0202",,"0202","0200"],
@@ -406,7 +409,10 @@ Operands = [
   "",
   "", //*Note Add three byte op-code section to array after tow byte op-codes are programmed in.
   "",
-  "" //*Note Add three byte op-code section to array after tow byte op-codes are programmed in.
+  "", //*Note Add three byte op-code section to array after tow byte op-codes are programmed in.
+  "","","","","",
+  "07160216","07160216","07160216","07160216","07160216","07160216","07160216","07160216",
+  "07160216","07160216","07160216","07160216","07160216","07160216","07160216","07160216"
 ];
 
 //-------------------------------------------------------------------------------------------------------------------------
@@ -1730,44 +1736,49 @@ function DecodeInstruction()
  
   //******************************check overrides and prefixes*******************************
  
-  //Operand override Prefix
- 
-  if(Opcode == 0x66)
+  if(OpBase < 256) //Prefixes do not exist in tow byte instruction codes, however Prefixes can be used before 0F hex which switches to a second byte code for instruction selection.
   {
-    OvOperands = true;
-    return(DecodeInstruction());
-  }
- 
-  //Ram address size override 32
- 
-  if(Opcode == 0x67)
-  {
-    OvRam = true;
-    return(DecodeInstruction());
-  }
- 
-  //The Rex prefix bit decode
- 
-  if( Opcode >= 0x40 & Opcode <= 0x4F)
-  {
-    Rex = [ Opcode & 0x01, ( Opcode & 0x02 ) >> 1, ( Opcode & 0x04 ) >> 2, ( Opcode & 0x08 ) >> 3, 1 ];
-    return(DecodeInstruction());
-  }
 
-  //The Prefixes that use a Mnemonic byte value that have a name that is added before the operation code
+    //Operand override Prefix
+ 
+    if(Opcode == 0x66)
+    {
+      OvOperands = true;
+      return(DecodeInstruction());
+    }
+ 
+    //Ram address size override 32
+ 
+    if(Opcode == 0x67)
+    {
+      OvRam = true;
+      return(DecodeInstruction());
+    }
+ 
+    //The Rex prefix bit decode
+ 
+    if( Opcode >= 0x40 & Opcode <= 0x4F)
+    {
+      Rex = [ Opcode & 0x01, ( Opcode & 0x02 ) >> 1, ( Opcode & 0x04 ) >> 2, ( Opcode & 0x08 ) >> 3, 1 ];
+      return(DecodeInstruction());
+    }
 
-  if(Opcode == 0xF0 | Opcode == 0xF2 | Opcode == 0xF3)
-  {
-    Prefix = Mnemonics[Opcode]; //set the Prefix string
-    return(DecodeInstruction());
-  }
+    //The Prefixes that use a Mnemonic byte value that have a name that is added before the operation code
 
-  //if 0F hex start at 256 for Opcode alowing two byte operation codes
+    if(Opcode == 0xF0 | Opcode == 0xF2 | Opcode == 0xF3)
+    {
+      Prefix = Mnemonics[Opcode]; //set the Prefix string
+      return(DecodeInstruction());
+    }
 
-  if(Opcode == 0x0F & OpBase != 256)
-  {
-    OpBase = 256;
-    return(DecodeInstruction());
+    //if 0F hex start at 256 for Opcode allowing two byte operation codes
+
+    if(Opcode == 0x0F)
+    {
+      OpBase = 256;
+      return(DecodeInstruction());
+    }
+
   }
 
  
