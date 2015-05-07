@@ -32,20 +32,20 @@ Mnemonics = [
   "INS ","INS ","OUTS ","OUTS ",
   "JO ","JNO ","JB ","JAE ","JE ","JNE ","JBE ","JA ",
   "JS ","JNS ","JP ","JNP ","JL ","JGE ","JLE ","JG ",
-  ["ADD ","OR ","ADC ","SBB ","AND ","SUB ","XOR ","CMP "], //*ModR/M byte is used as a secondary opcode selection by reg/Opcode value of the ModR/M byte
-  ["ADD ","OR ","ADC ","SBB ","AND ","SUB ","XOR ","CMP "], //*ModR/M byte is used as a secondary opcode selection by reg/Opcode value of the ModR/M byte
+  ["ADD ","OR ","ADC ","SBB ","AND ","SUB ","XOR ","CMP "],
+  ["ADD ","OR ","ADC ","SBB ","AND ","SUB ","XOR ","CMP "],
   "???",
-  ["ADD ","OR ","ADC ","SBB ","AND ","SUB ","XOR ","CMP "], //*ModR/M byte is used as a secondary opcode seletion by reg/Opcode value of the ModR/M byte
+  ["ADD ","OR ","ADC ","SBB ","AND ","SUB ","XOR ","CMP "],
   "TEST ","TEST ","XCHG ","XCHG ",
   "MOV ","MOV ","MOV ","MOV ","MOV ","LEA ","MOV ",
-  ["POP ","???","???","???","???","???","???","???"], //*ModR/M byte is used as a secondary opcode selection by reg/Opcode value of the ModR/M byte
+  ["POP ","???","???","???","???","???","???","???"],
   "XCHG ","XCHG ","XCHG ","XCHG ","XCHG ","XCHG ","XCHG ","XCHG ",
-  ["CBW","CWDE","CDQE"], //*Operation code goes by size
-  ["CWD","CDQ","CQO"],  //*Operation code goes by size
+  ["CBW","CWDE","CDQE"],
+  ["CWD","CDQ","CQO"],
   "???",
   "WAIT",
-  ["PUSHF","PUSHFQ","PUSHFQ"], //*Operation code goes by size
-  ["POPF","POPFQ","POPFQ"], //*Operation code goes by size
+  ["PUSHF","PUSHFQ","PUSHFQ"],
+  ["POPF","POPFQ","POPFQ"],
   "SAHF","LAHF",
   "MOV ","MOV ","MOV ","MOV ",
   "MOVS ","MOVS ",
@@ -56,68 +56,50 @@ Mnemonics = [
   "SCAS ","SCAS ",
   "MOV ","MOV ","MOV ","MOV ","MOV ","MOV ","MOV ","MOV ",
   "MOV ","MOV ","MOV ","MOV ","MOV ","MOV ","MOV ","MOV ",
-  ["ROL ","ROR ","RCL ","RCR ","SHL ","SHR ","SAL ","SAR "], //*ModR/M byte is used as a secondary opcode selection by reg/Opcode value of the ModR/M byte
-  ["ROL ","ROR ","RCL ","RCR ","SHL ","SHR ","SAL ","SAR "], //*ModR/M byte is used as a secondary opcode selection by reg/Opcode value of the ModR/M byte
+  ["ROL ","ROR ","RCL ","RCR ","SHL ","SHR ","SAL ","SAR "],
+  ["ROL ","ROR ","RCL ","RCR ","SHL ","SHR ","SAL ","SAR "],
   "RET ","RET",
   "???","???",
-  ["MOV ","???","???","???","???","???","???","???"], //*ModR/M byte is used as a secondary opcode selection by reg/Opcode value of the ModR/M byte
-  ["MOV ","???","???","???","???","???","???","???"], //*ModR/M byte is used as a secondary opcode selection by reg/Opcode value of the ModR/M byte
+  ["MOV ","???","???","???","???","???","???","???"],
+  ["MOV ","???","???","???","???","???","???","???"],
   "ENTER ","LEAVE","RETF ","RETF","INT ","INT ","INTO",
   ["*","IRET","IRETD","IRETQ"],
-  ["ROL ","ROR ","RCL ","RCR ","SHL ","SHR ","SAL ","SAR "], //*ModR/M byte is used as a secondary opcode selection by reg/Opcode value of the ModR/M byte
-  ["ROL ","ROR ","RCL ","RCR ","SHL ","SHR ","SAL ","SAR "], //*ModR/M byte is used as a secondary opcode seletion by reg/Opcode value of the ModR/M byte
-  ["ROL ","ROR ","RCL ","RCR ","SHL ","SHR ","SAL ","SAR "], //*ModR/M byte is used as a secondary opcode seletion by reg/Opcode value of the ModR/M byte
-  ["ROL ","ROR ","RCL ","RCR ","SHL ","SHR ","SAL ","SAR "], //*ModR/M byte is used as a secondary opcode selection by reg/Opcode value of the ModR/M byte
+  ["ROL ","ROR ","RCL ","RCR ","SHL ","SHR ","SAL ","SAR "],
+  ["ROL ","ROR ","RCL ","RCR ","SHL ","SHR ","SAL ","SAR "],
+  ["ROL ","ROR ","RCL ","RCR ","SHL ","SHR ","SAL ","SAR "],
+  ["ROL ","ROR ","RCL ","RCR ","SHL ","SHR ","SAL ","SAR "],
   "???","???","???",
   "XLAT ",
   //------------------------------------------------------------------------------------------------------------------------
   //X87 FPU
   //------------------------------------------------------------------------------------------------------------------------
   [
-    ["FADD ","FMUL ","FCOM ","FCOMP ","FSUB ","FSUBR ","FDIV ","FDIVR "], //*ModR/M byte is used as a secondary opcode in a separated Memory Address operand types
-    ["FADD ","FMUL ","FCOM ","FCOMP ","FSUB ","FSUBR ","FDIV ","FDIVR "]  //*ModR/M byte is used as a secondary opcode selection by register value under Register mode operand type changes
+    ["FADD ","FMUL ","FCOM ","FCOMP ","FSUB ","FSUBR ","FDIV ","FDIVR "],
+    ["FADD ","FMUL ","FCOM ","FCOMP ","FSUB ","FSUBR ","FDIV ","FDIVR "]
   ],
   [
-    ["FLD ","???","FST ","FSTP ","FLDENV ","FLDCW ","FNSTENV ","FNSTCW "], //*ModR/M byte is used as a secondary opcode selection by register value Memory Address mode ModR/M
+    ["FLD ","???","FST ","FSTP ","FLDENV ","FLDCW ","FNSTENV ","FNSTCW "],
     [
-      "FLD ", //The Secondary Operation reg/Opcode if 000 in value uses this operation with the Register value of R/M bits
-      "FXCH ", //The Secondary Operation reg/Opcode if 001 in value uses this operation with the Register value of R/M bits
-      ["FNOP","???","???","???","???","???","???","???"], //If the Reg/Opcode bits are 010 uses the Register value of the R/M bits to select a static operation code rather than a register
-      "FSTP1 ", //FSTP1 uses Register Mode Thus register value of R/M bits only if the ModR/M Reg/Opcode bits is operation value 011 bin
-      ["FCHS","FABS","???","???","FTST","FXAM","???","???"], //Static Opcode selection under digit operation code 100 bin
-      ["FLD1","FLDL2T","FLDL2E","FLDPI","FLDLG2","FLDLN2","FLDZ","???"], //Static Opcode selection under Reg/Opcode operation code 101
-      ["F2XM1","FYL2X","FPTAN","FPATAN","FXTRACT","FPREM1","FDECSTP","FINCSTP"], //Static Opcode selection under Reg/Opcode 110 bin
-      ["FPREM","FYL2XP1","FSQRT","FSINCOS","FRNDINT","FSCALE","FSIN","???"] //Static Opcode selection under Reg/Opcode 111 bin
+      "FLD ",
+      "FXCH ",
+      ["FNOP","???","???","???","???","???","???","???"],
+      "FSTP1 ",
+      ["FCHS","FABS","???","???","FTST","FXAM","???","???"],
+      ["FLD1","FLDL2T","FLDL2E","FLDPI","FLDLG2","FLDLN2","FLDZ","???"],
+      ["F2XM1","FYL2X","FPTAN","FPATAN","FXTRACT","FPREM1","FDECSTP","FINCSTP"],
+      ["FPREM","FYL2XP1","FSQRT","FSINCOS","FRNDINT","FSCALE","FSIN","???"]
     ]
   ],
   [
     ["FIADD ","FIMUL ","FICOM ","FICOMP ","FISUB ","FISUBR ","FIDIV ","FIDIVR "],
     [
-      "FCMOVB ", //Reg/Opcode 000
-      "FCMOVE ", //Reg/Opcode 001
-      "FCMOVBE ", //Reg/Opcode 010
-      "FCMOVU ", //Reg/Opcode 011
-      "???", //Reg/Opcode 100 invalid operation code
-      [
-        "???", //Reg/Opcode 101 R/M bit 000 = static operation code hex is 11 (Register Mode), 101 (Reg/Opcode), 000 (R/M) is E8 hex
-        "FUCOMPP", //Reg/Opcode 101 R/M bit 001 = static operation code hex is 11 (Register Mode), 101 (Reg/Opcode), 001 (R/M) is E9 hex is static FPU operation FUCOMPP
-        "???", //Reg/Opcode 101 R/M bit 000 = static operation code hex is 11 (Register Mode), 101 (Reg/Opcode), 010 (R/M) is EA hex
-        "???", //Reg/Opcode 101 R/M bit 000 = static operation code hex is 11 (Register Mode), 101 (Reg/Opcode), 011 (R/M) is EB hex
-        "???", //Reg/Opcode 101 R/M bit 000 = static operation code hex is 11 (Register Mode), 101 (Reg/Opcode), 100 (R/M) is EC hex
-        "???", //Reg/Opcode 101 R/M bit 000 = static operation code hex is 11 (Register Mode), 101 (Reg/Opcode), 101 (R/M) is ED hex
-        "???", //Reg/Opcode 101 R/M bit 000 = static operation code hex is 11 (Register Mode), 101 (Reg/Opcode), 110 (R/M) is EE hex
-        "???"  //Reg/Opcode 101 R/M bit 000 = static operation code hex is 11 (Register Mode), 101 (Reg/Opcode), 111 (R/M) is EF hex
-      ],
-      "???", //Reg/Opcode 110 R/M bit 000 = static operation code hex is 11 (Register Mode), 110 (Reg/Opcode), 000 (R/M) is F0 hex the R/M bits is register value, But is a Invaild operation code
-      "???" //Reg/Opcode 111 R/M bit 000 = static operation code hex is 11 (Register Mode), 111 (Reg/Opcode), 000 (R/M) is F8 hex the R/M bits is register value, But is a Invaild operation code
+      "FCMOVB ","FCMOVE ","FCMOVBE ","FCMOVU ","???",
+      ["???","FUCOMPP","???","???","???","???","???","???"],
+      "???","???"
     ]
   ],
   [
-    ["FILD ",
-    
-    "FISTTP ",  //Intel SSE3 Instruction
-    
-    "FIST ","FISTP ","???","FLD ","???","FSTP "],
+    ["FILD ","FISTTP ","FIST ","FISTP ","???","FLD ","???","FSTP "],
     [
       "CMOVNB ","FCMOVNE ","FCMOVNBE ","FCMOVNU ",
       ["FENI ","FDISI ","FNCLEX ","FNINIT ","FSETPM "],
@@ -129,11 +111,7 @@ Mnemonics = [
     ["FADD ","FMUL ","FCOM2 ","FCOMP3 ","FSUBR ","FSUB ","FDIVR ","FDIV "]
   ],
   [
-    ["FLD ",
-    
-    "FISTTP ", //Intel SSE3 Instruction
-    
-    "FST ","FSTP ","FRSTOR ","???","FNSAVE ","FNSTSW "],
+    ["FLD ","FISTTP ","FST ","FSTP ","FRSTOR ","???","FNSAVE ","FNSTSW "],
     ["FFREE ","FXCH4 ","FST ","FSTP ","FUCOM ","FUCOMP ","???","???"]
   ],
 
@@ -146,11 +124,7 @@ Mnemonics = [
     ]
   ],
   [
-    ["FILD ",
-    
-    "FISTTP ", //Intel SSE3 Instruction
-    
-    "FIST ","FISTP ","FBLD ","FILD ","FBSTP ","FISTP "],
+    ["FILD ","FISTTP ","FIST ","FISTP ","FBLD ","FILD ","FBSTP ","FISTP "],
     [
       "FFREEP ","FXCH7 ","FSTP8 ","FSTP9 ",
       ["FNSTSW ","???","???","???","???","???","???","???"],
@@ -175,27 +149,25 @@ Mnemonics = [
   "CLC","STC","CLI","CTI","CLD","STD",
   ["INC ","DEC ","???","???","???","???","???","???"],
   [
-    ["INC ","DEC ","CALL ","CALL ","JMP ","JMP ","PUSH ","???"], //*invaild instructions very betwean Memory Mode, and Register Mode of the ModR/M
-    ["INC ","DEC ","CALL ","???","JMP ","???","PUSH ","???"] //*invaild instructions very betwean Memory Mode, and Register Mode of the ModR/M
+    ["INC ","DEC ","CALL ","CALL ","JMP ","JMP ","PUSH ","???"],
+    ["INC ","DEC ","CALL ","???","JMP ","???","PUSH ","???"]
   ],
   //------------------------------------------------------------------------------------------------------------------------
   //Two Byte operations
   //------------------------------------------------------------------------------------------------------------------------
   [
-    ["SLDT ","STR ","LLDT ","LTR ","VERR ","VERW ","JMPE "], //*The operand input type verys betwean Memory Mode, and Register Mode of the ModR/M
-    ["SLDT ","STR ","LLDT ","LTR ","VERR ","VERW ","JMPE "] //*The operand input type verys betwean Memory Mode, and Register Mode of the ModR/M
+    ["SLDT ","STR ","LLDT ","LTR ","VERR ","VERW ","JMPE "],
+    ["SLDT ","STR ","LLDT ","LTR ","VERR ","VERW ","JMPE "]
   ],
   [
     ["SGDT ","SIDT ","LGDT ","LIDT ","SMSW ","???","LMSW ","INVLPG "],
     [
-      ["???","VMCALL","VMLAUNCH","VMRESUME","VMXOFF","???","???","???"], //Intel VMX Instrictions
-      ["MONITOR ","MWAIT ","???","???","???","???","???","???"], //Intel SSE3 Instructions
+      ["???","VMCALL","VMLAUNCH","VMRESUME","VMXOFF","???","???","???"],
+      ["MONITOR ","MWAIT ","???","???","???","???","???","???"],
       ["XGETBV","XSETBV","???","???","???","???","???","???"],
-      ["VMRUN ","VMMCALL","VMLOAD ","VMSAVE ", //Intel VMX Instrictions
+      ["VMRUN ","VMMCALL","VMLOAD ","VMSAVE ",
       "STGI","CLGI","SKINIT ","INVLPGA "],
-      "SMSW ",
-      "???",
-      "LMSW ",
+      "SMSW ","???","LMSW ",
       ["SWAPGS","RDTSCP","???","???","???","???","???","???"]
     ]
   ],
@@ -206,21 +178,34 @@ Mnemonics = [
   "UD2","???",
   [["PREFETCH ","PREFETCHW ","???","???","???","???","???","???"],"???"],
   "FEMMS","???",
-  ["MOVUPS ","MOVSS ","MOVUPD ","MOVSD "], //SSE1 Single Precision Packed, and Scalar or SSE2 Double Precision Packed, and Scalar
-  ["MOVUPS ","MOVSS ","MOVUPD ","MOVSD "], //SSE1 Single Precision Packed, and Scalar or SSE2 Double Precision Packed, and Scalar
-  [["MOVLPS ","MOVSLDUP ","MOVSLDUP ","MOVDDUP "],["MOVHLPS ","MOVSLDUP ","???","MOVDDUP "]], //SSE1 Single Precision Packed, and Scalar or SSE2 Double Precision Packed, and Scalar
-  [["MOVLPS ","???","MOVLPS ","???"],"???"], //SSE1 Single Precision Packed or SSE2 Double Precision Packed
-  ["UNPCKLPS ","???","UNPCKLPD ","???"], //SSE1 Single Precision Packed or SSE2 Double Precision Packed
-  ["UNPCKHPS ","???","UNPCKHPD ","???"], //SSE1 Single Precision Packed or SSE2 Double Precision Packed
-  [["MOVHPS ","MOVSHDUP ","MOVHPD ","???"],["MOVLHPS ","MOVSHDUP ","???","???"]], //SSE1 Single Precision Packed, and Scalar or SSE2 Double Precision Packed
-  [["MOVHPS ","???","MOVHPS ","???"],"???"], //SSE1 Single Precision Packed or SSE2 Double Precision Packed
-  [["PREFETCHNTA ","PREFETCHT0 ","PREFETCHT1 ","PREFETCHT2 ","???","???","???","???"],"???"], //SSE1
+  ["MOVUPS ","MOVSS ","MOVUPD ","MOVSD "],
+  ["MOVUPS ","MOVSS ","MOVUPD ","MOVSD "],
+  [["MOVLPS ","MOVSLDUP ","MOVSLDUP ","MOVDDUP "],["MOVHLPS ","MOVSLDUP ","???","MOVDDUP "]],
+  [["MOVLPS ","???","MOVLPS ","???"],["???","???","???","???"]],
+  ["UNPCKLPS ","???","UNPCKLPD ","???"],
+  ["UNPCKHPS ","???","UNPCKHPD ","???"],
+  [["MOVHPS ","MOVSHDUP ","MOVHPD ","???"],["MOVLHPS ","MOVSHDUP ","???","???"]],
+  [["MOVHPS ","???","MOVHPS ","???"],["???","???","???","???"]],
+  [["PREFETCHNTA ","PREFETCHT0 ","PREFETCHT1 ","PREFETCHT2 ","???","???","???","???"],"???"],
   "???","???","???","???","???","???","NOP ",
   ["???","MOV "],["???","MOV "], //CR and DR register Move
   ["???","MOV "],["???","MOV "], //CR and DR register Move
   ["???","MOV "],"???", //TR (TASK REGISTER) register Move
   ["???","MOV "],"???", //TR (TASK REGISTER) register Move
-  
+  ["MOVAPS ","???","MOVAPD ","???"],
+  ["MOVAPS ","???","MOVAPD ","???"],
+  ["CVTPI2PS ","CVTSI2SS ","CVTPI2PD ","CVTSI2SD "],
+  [["MOVNTPS ","MOVNTSS ","MOVNTPD ","MOVNTSD "],["???","???","???","???"]],
+  ["CVTTPS2PI ","CVTTSS2SI ","CVTTPD2PI ","CVTTSD2SI "],
+  ["CVTPS2PI ","CVTSS2SI ","CVTPD2PI ","CVTSD2SI "],
+  ["UCOMISS ","???","UCOMISD ","???"],
+  ["COMISS ","???","COMISD ","???"],
+  "WRMSR","RDTSC","RDMSR","RDPMC",
+  "???","???","???",
+  "GETSEC",
+  "Three Byte Op-codes Not supported yet!", //*Note Add three byte op-code section to array after tow byte op-codes are programmed in.
+  "???", //???
+  "Secondary Three Byte Op-codes Not supported yet!" //*Note Add three byte op-code section to array after tow byte op-codes are programmed in.
 ];
 
 //------------------------------------------------------------------------------------------------------------------------
@@ -397,17 +382,31 @@ Operands = [
   ["07820540","07820504","07820540","07820510"],
   ["05400782","05040782","05400782","05100782"],
   [["07820210","07820540","07820210","07820510"],["07820540","07820540","","07820510"]],
-  [["02100782","","02100782",""],""],
+  [["02100782","","02100782",""],["","","",""]],
   ["07820540","","07820540",""],
   ["07820540","","07820540",""],
   [["07820210","07820540","07820210",""],["07820540","07820540","",""]],
-  [["02100782","","02100782",""],""],
+  [["02100782","","02100782",""],["","","",""]],
   [["0200","0200","0200","0200","","","",""],""],
   "","","","","","","0216",
   ["","02100783"],["","02100784"],
   ["","07830210"],["","07840210"],
   ["","02100785"],"",
-  ["","07850210"],""
+  ["","07850210"],"",
+  ["07820540","","07820540",""],
+  ["05400782","","05400782",""],
+  ["07820410","07820204","07820410","07820204"],
+  [["05400782","05040782","05400782","02100782"],["","","",""]],
+  ["07810510","07040504","07810540","07040510"],
+  ["07810510","07040504","07810540","07040510"],
+  ["07820504","","07820510",""],
+  ["07820504","","07820510",""],
+  "","","","",
+  "","","",
+  "",
+  "", //*Note Add three byte op-code section to array after tow byte op-codes are programmed in.
+  "",
+  "" //*Note Add three byte op-code section to array after tow byte op-codes are programmed in.
 ];
 
 //-------------------------------------------------------------------------------------------------------------------------
@@ -1763,9 +1762,9 @@ function DecodeInstruction()
     return(DecodeInstruction());
   }
 
-  //if 0F hex start at 255 for Opcode alowing two byte operation codes
+  //if 0F hex start at 256 for Opcode alowing two byte operation codes
 
-  if(Opcode == 0x0F)
+  if(Opcode == 0x0F & OpBase != 256)
   {
     OpBase = 256;
     return(DecodeInstruction());
