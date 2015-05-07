@@ -1718,7 +1718,7 @@ function DecodeInstruction()
 
   //get the byte value for the operation code from the binary code array
  
-  var Opcode = BinCode[CodePos32];
+  var Opcode = BinCode[CodePos32] + OpBase;
 
   //Add the byte as a hex byte to the current bytes read for decoding the instruction which will be showen next to the decoded instruction
 
@@ -1735,52 +1735,46 @@ function DecodeInstruction()
   IncreasePos();
  
   //******************************check overrides and prefixes*******************************
+
+  //Operand override Prefix
  
-  if(OpBase < 256) //Prefixes do not exist in tow byte instruction codes, however Prefixes can be used before 0F hex which switches to a second byte code for instruction selection.
+  if(Opcode == 0x66)
   {
-
-    //Operand override Prefix
+    OvOperands = true;
+    return(DecodeInstruction());
+  }
  
-    if(Opcode == 0x66)
-    {
-      OvOperands = true;
-      return(DecodeInstruction());
-    }
+  //Ram address size override 32
  
-    //Ram address size override 32
+  if(Opcode == 0x67)
+  {
+    OvRam = true;
+    return(DecodeInstruction());
+  }
  
-    if(Opcode == 0x67)
-    {
-      OvRam = true;
-      return(DecodeInstruction());
-    }
+  //The Rex prefix bit decode
  
-    //The Rex prefix bit decode
- 
-    if( Opcode >= 0x40 & Opcode <= 0x4F)
-    {
-      Rex = [ Opcode & 0x01, ( Opcode & 0x02 ) >> 1, ( Opcode & 0x04 ) >> 2, ( Opcode & 0x08 ) >> 3, 1 ];
-      return(DecodeInstruction());
-    }
-
-    //The Prefixes that use a Mnemonic byte value that have a name that is added before the operation code
-
-    if(Opcode == 0xF0 | Opcode == 0xF2 | Opcode == 0xF3)
-    {
-      Prefix = Mnemonics[Opcode]; //set the Prefix string
-      return(DecodeInstruction());
-    }
-
-    //if 0F hex start at 256 for Opcode allowing two byte operation codes
-
-    if(Opcode == 0x0F)
-    {
-      OpBase = 256;
-      return(DecodeInstruction());
-    }
-
+  if( Opcode >= 0x40 & Opcode <= 0x4F)
+  {
+    Rex = [ Opcode & 0x01, ( Opcode & 0x02 ) >> 1, ( Opcode & 0x04 ) >> 2, ( Opcode & 0x08 ) >> 3, 1 ];
+    return(DecodeInstruction());
   }
 
+  //The Prefixes that use a Mnemonic byte value that have a name that is added before the operation code
+
+  if(Opcode == 0xF0 | Opcode == 0xF2 | Opcode == 0xF3)
+  {
+    Prefix = Mnemonics[Opcode]; //set the Prefix string
+    return(DecodeInstruction());
+  }
+
+  //if 0F hex start at 256 for Opcode allowing two byte operation codes
+
+  if(Opcode == 0x0F)
+  {
+    OpBase = 256;
+    return(DecodeInstruction());
+  }
  
   //*******************************instruction Decode*****************************
   //The output array will hold the operand decoded strings under the elements the operands go under
@@ -1793,11 +1787,11 @@ function DecodeInstruction()
  
   //get the Operation name by the operations byte value
  
-  var Name = Mnemonics[OpBase + Opcode];
+  var Name = Mnemonics[Opcode];
  
   //get the Operands for this opcode it follows the same array structure as Mnemonics array
  
-  var Type = Operands[OpBase + Opcode];
+  var Type = Operands[Opcode];
  
   //if the Mnemonic is an array two in size then Register Mode and memory more are separate from each other
  
