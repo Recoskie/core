@@ -1784,7 +1784,7 @@ function DecodeInstruction()
 
   //get the byte value for the operation code from the binary code array
  
-  var Opcode = BinCode[CodePos32] + OpBase;
+  var Opcode = BinCode[CodePos32];
 
   //Add the byte as a hex byte to the current bytes read for decoding the instruction which will be showen next to the decoded instruction
 
@@ -1795,6 +1795,8 @@ function DecodeInstruction()
     InstructionHex += t; //add it to the current bytes used for the decode instruction
     t = null; //set the temporary string used for padding it to a hex byte null
   }
+  
+  Opcode += OpBase;
 
   //Move to next byte position
  
