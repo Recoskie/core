@@ -277,7 +277,7 @@ Mnemonics = [
   ["???","???","HSUBPD ","HSUBPS "],
   ["MOVD ","MOVQ ","MOVD ","???"],
   ["MOVQ ","MOVDQU ","MOVDQA ","???"],
-    "JO ","JNO ","JB ","JAE ","JE ","JNE ","JBE ","JA ",
+  "JO ","JNO ","JB ","JAE ","JE ","JNE ","JBE ","JA ",
   "JS ","JNS ","JP ","JNP ","JL ","JGE ","JLE ","JG ",
   "SETO ","SETNO ","SETB ","SETAE ","SETE ","SETNE ","SETBE ","SETA ",
   "SETS ","SETNS ","SETP ","SETNP ","SETL ","SETGE ","SETLE ","SETG ",
