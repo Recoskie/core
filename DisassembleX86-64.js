@@ -63,7 +63,7 @@ Mnemonics = [
   ["MOV ","???","???","???","???","???","???","???"],
   ["MOV ","???","???","???","???","???","???","???"],
   "ENTER ","LEAVE","RETF ","RETF","INT ","INT ","INTO",
-  ["*","IRET","IRETD","IRETQ"],
+  ["IRET","IRETD","IRETQ"],
   ["ROL ","ROR ","RCL ","RCR ","SHL ","SHR ","SAL ","SAR "],
   ["ROL ","ROR ","RCL ","RCR ","SHL ","SHR ","SAL ","SAR "],
   ["ROL ","ROR ","RCL ","RCR ","SHL ","SHR ","SAL ","SAR "],
