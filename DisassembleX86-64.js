@@ -2179,6 +2179,13 @@ function DecodeInstruction()
     {
       out[ X86Format[i].OperandNum ] = X86Format[i].Size+"";
     }
+    
+    //The Static FS, and GS registers
+    
+    else if(X86Format[i].Type == 20 | X86Format[i].Type == 21)
+    {
+      out[ X86Format[i].OperandNum ] = REG[0][X86Format[i].Type - 16];
+    }
   }
  
   //If Opcode 90 instruction is not XCHG EAX,EAX even though that is what it should be decoded as
