@@ -59,7 +59,8 @@ Mnemonics = [
   ["ROL ","ROR ","RCL ","RCR ","SHL ","SHR ","SAL ","SAR "],
   ["ROL ","ROR ","RCL ","RCR ","SHL ","SHR ","SAL ","SAR "],
   "RET ","RET",
-  "???","???",
+  "???",
+  "AVX not supported yet!",
   ["MOV ","???","???","???","???","???","???","???"],
   ["MOV ","???","???","???","???","???","???","???"],
   "ENTER ","LEAVE","RETF ","RETF","INT ","INT ","INTO",
@@ -224,52 +225,53 @@ Mnemonics = [
   ["MINPS ","MINSS ","MINPD ","MINSD "],
   ["DIVPS ","DIVSS ","DIVPD ","DIVSD "],
   ["MAXPS ","MAXSS ","MAXPD ","MAXSD "],
-  ["PUNPCKLBW ","???","PUNPCKLBW ","???"],
-  ["PUNPCKLWD ","???","PUNPCKLWD ","???"],
-  ["PUNPCKLDQ ","???","PUNPCKLDQ ","???"],
-  ["PACKSSWB ","???","PACKSSWB ","???"],
-  ["PCMPGTB ","???","PCMPGTB ","???"],
-  ["PCMPGTW ","???","PCMPGTW ","???"],
-  ["PCMPGTD ","???","PCMPGTD ","???"],
-  ["PACKUSWB ","???","PACKUSWB ","???"],
-  ["PUNPCKHBW ","???","PUNPCKHBW ","???"],
-  ["PUNPCKHWD ","???","PUNPCKHWD ","???"],
-  ["PUNPCKHDQ ","???","PUNPCKHDQ ","???"],
-  ["PACKSSDW ","???","PACKSSDW ","???"],
+  ["PUNPCKLBW ","","PUNPCKLBW ",""],
+  ["PUNPCKLWD ","","PUNPCKLWD ",""],
+  ["PUNPCKLDQ ","","PUNPCKLDQ ",""],
+  ["PACKSSWB ","","PACKSSWB ",""],
+  ["PCMPGTB ","","PCMPGTB ",""],
+  ["PCMPGTW ","","PCMPGTW ",""],
+  ["PCMPGTD ","","PCMPGTD ",""],
+  ["PACKUSWB ","","PACKUSWB ",""],
+  ["PUNPCKHBW ","","PUNPCKHBW ",""],
+  ["PUNPCKHWD ","","PUNPCKHWD ",""],
+  ["PUNPCKHDQ ","","PUNPCKHDQ ",""],
+  ["PACKSSDW ","","PACKSSDW ",""],
   ["???","???","PUNPCKLQDQ ","???"],
   ["???","???","PUNPCKHQDQ ","???"],
-  ["MOVD ","???","MOVD ","???"],
+  ["MOVD ","","MOVD ",""],
   ["MOVQ ","MOVDQU ","MOVDQA ","???"],
   ["PSHUFW ","PSHUFHW ","PSHUFD ","PSHUFLW "],
   [
     "???",
-    ["???","???",
-      ["PSRLW ","???","PSRLW ","???"],"???",
-      ["PSRAW ","???","PSRAW ","???"],"???",
-      ["PSLLW ","???","PSLLW ","???"],"???"
+    [
+      "???","???",
+      ["PSRLW ","","PSRLW ",""],"???",
+      ["PSRAW ","","PSRAW ",""],"???",
+      ["PSLLW ","","PSLLW ",""],"???"
     ]
   ],
   [
     "???",
     [
       "???","???",
-      ["PSRLD ","???","PSRLD ","???"],"???",
-      ["PSRAD ","???","PSRAD ","???"],"???",
-      ["PSLLD ","???","PSLLD ","???"],"???"
+      ["PSRLD ","","PSRLD ",""],"???",
+      ["PSRAD ","","PSRAD ",""],"???",
+      ["PSLLD ","","PSLLD ",""],"???"
     ]
   ],
   [
     "???",
     [
       "???","???",
-      ["PSRLQ ","???","PSRLQ ","???"],["???","???","PSRLDQ ","???"],
+      ["PSRLQ ","","PSRLQ ",""],["???","???","PSRLDQ ","???"],
       "???","???",
-      ["PSLLQ ","???","PSLLQ ","???"],["???","???","PSLLDQ ","???"]
+      ["PSLLQ ","","PSLLQ ",""],["???","???","PSLLDQ ","???"]
     ]
   ],
-  ["PCMPEQB ","???","PCMPEQB ","???"],
-  ["PCMPEQW ","???","PCMPEQW ","???"],
-  ["PCMPEQD ","???","PCMPEQD ","???"],
+  ["PCMPEQB ","","PCMPEQB ",""],
+  ["PCMPEQW ","","PCMPEQW ",""],
+  ["PCMPEQD ","","PCMPEQD ",""],
   "EMMS",
   [
     ["VMREAD ","???","???","???"],
@@ -313,9 +315,9 @@ Mnemonics = [
     ]
   ],
   "IMUL ",
-  "CMPXCHG ","CMPXCH ",
-  "LSS ","BTR ",
-  "LFS ","LGS ",
+  "CMPXCHG ","CMPXCHG ",
+  ["LSS ","???"],"BTR ",
+  ["LFS ","???"],"LGS ",
   "MOVZX ","MOVZX ",
   ["JMPE ","POPCNT ","???","???"],
   "???",
@@ -325,8 +327,8 @@ Mnemonics = [
   "XADD ","XADD ",
   ["CMPPS ","CMPSS ","CMPPD ","CMPSD "],
   ["MOVNTI ","???"],
-  [["PINSRW ","???","PINSRW ","???"],["PINSRW ","???","PINSRW ","???"]],
-  [["???","???","???","???"],["PEXTRW ","???","PEXTRW ","???"]],
+  [["PINSRW ","","PINSRW ",""],["PINSRW ","","PINSRW ",""]],
+  [["???","???","???","???"],["PEXTRW ","","PEXTRW ",""]],
   ["SHUFPS ","???","SHUFPD ","???"],
   [
     [
@@ -344,52 +346,52 @@ Mnemonics = [
   ],
   "BSWAP ","BSWAP ","BSWAP ","BSWAP ","BSWAP ","BSWAP ","BSWAP ","BSWAP ",
   ["???","???","ADDSUBPD ","ADDSUBPS "],
-  ["PSRLW ","???","PSRLW ","???"],
-  ["PSRLD ","???","PSRLD ","???"],
-  ["PSRLQ ","???","PSRLQ ","???"],
-  ["PADDQ ","???","PADDQ ","???"],
-  ["PMULLW ","???","PMULLW ","???"],
+  ["PSRLW ","","PSRLW ",""],
+  ["PSRLD ","","PSRLD ",""],
+  ["PSRLQ ","","PSRLQ ",""],
+  ["PADDQ ","","PADDQ ",""],
+  ["PMULLW ","","PMULLW ",""],
   ["???","???","MOVQ ","MOVDQ2Q "],
-  [["???","???","???","???"],["PMOVMSKB ","???","PMOVMSKB ","???"]],
-  ["PSUBUSB ","???","PSUBUSB ","???"],
-  ["PSUBUSW ","???","PSUBUSW ","???"],
-  ["PMINUB ","???","PMINUB ","???"],
-  ["PADD ","???","PADD ","???"],
-  ["PADDUSB ","???","PADDUSB ","???"],
-  ["PADDUSW ","???","PADDUSW ","???"],
-  ["PMAXUB ","???","PMAXUB ","???"],
-  ["PADDN ","???","PADDN ","???"],
-  ["PAVGB ","???","PAVGB ","???"],
-  ["PSRAW ","???","PSRAW ","???"],
-  ["PSRAD ","???","PSRAD ","???"],
-  ["PAVGW ","???","PAVGW ","???"],
-  ["PMULHUW ","???","PMULHUW ","???"],
-  ["PMULHW ","???","PMULHW ","???"],
+  [["???","???","???","???"],["PMOVMSKB ","","PMOVMSKB ",""]],
+  ["PSUBUSB ","","PSUBUSB ",""],
+  ["PSUBUSW ","","PSUBUSW ",""],
+  ["PMINUB ","","PMINUB ",""],
+  ["PADD ","","PADD ",""],
+  ["PADDUSB ","","PADDUSB ",""],
+  ["PADDUSW ","","PADDUSW ",""],
+  ["PMAXUB ","","PMAXUB ",""],
+  ["PADDN ","","PADDN ",""],
+  ["PAVGB ","","PAVGB ",""],
+  ["PSRAW ","","PSRAW ",""],
+  ["PSRAD ","","PSRAD ",""],
+  ["PAVGW ","","PAVGW ",""],
+  ["PMULHUW ","","PMULHUW ",""],
+  ["PMULHW ","","PMULHW ",""],
   ["???","CVTDQ2PD ","CVTTPD2DQ ","CVTPD2DQ "],
-  [["???","???","???","???"],["MOVNTQ ","???","MOVNTDQ ","???"]],
-  ["PSUBSB ","???","PSUBSB ","???"],
-  ["PSUBSW ","???","PSUBSW ","???"],
-  ["PMINSW ","???","PMINSW ","???"],
-  ["POR ","???","POR ","???"],
-  ["PADDSB ","???","PADDSB ","???"],
-  ["PADDSW ","???","PADDSW ","???"],
-  ["PMAXSW ","???","PMAXSW ","???"],
-  ["PXOR ","???","PXOR ","???"],
+  [["MOVNTQ ","???","MOVNTDQ ","???"],["???","???","???","???"]],
+  ["PSUBSB ","","PSUBSB ",""],
+  ["PSUBSW ","","PSUBSW ",""],
+  ["PMINSW ","","PMINSW ",""],
+  ["POR ","","POR ",""],
+  ["PADDSB ","","PADDSB ",""],
+  ["PADDSW ","","PADDSW ",""],
+  ["PMAXSW ","","PMAXSW ",""],
+  ["PXOR ","","PXOR ",""],
   [["???","???","???","LDDQU "],["???","???","???","???"]],
-  ["PSLLW ","???","PSLLW ","???"],
-  ["PSLLD ","???","PSLLD ","???"],
-  ["PSLLQ ","???","PSLLQ ","???"],
-  ["PMULUDQ ","???","PMULUDQ ","???"],
-  ["PMADDWD ","???","PMADDWD ","???"],
-  ["PSADBW ","???","PSADBW ","???"],
+  ["PSLLW ","","PSLLW ",""],
+  ["PSLLD ","","PSLLD ",""],
+  ["PSLLQ ","","PSLLQ ",""],
+  ["PMULUDQ ","","PMULUDQ ",""],
+  ["PMADDWD ","","PMADDWD ",""],
+  ["PSADBW ","","PSADBW ",""],
   [["???","???","???","???"],["MASKMOVQ ","???","MASKMOVDQU ","???"]],
-  ["PSUBB ","???","PSUBB ","???"],
-  ["PSUBW ","???","PSUBW ","???"],
-  ["PSUBD ","???","PSUBD ","???"],
-  ["PSUBQ ","???","PSUBQ ","???"],
-  ["PADDB ","???","PADDB ","???"],
-  ["PADDW ","???","PADDW ","???"],
-  ["PADDD ","???","PADDD ","???"],
+  ["PSUBB ","","PSUBB ",""],
+  ["PSUBW ","","PSUBW ",""],
+  ["PSUBD ","","PSUBD ",""],
+  ["PSUBQ ","","PSUBQ ",""],
+  ["PADDB ","","PADDB ",""],
+  ["PADDW ","","PADDW ",""],
+  ["PADDD ","","PADDD ",""],
   "???"
 ];
 
@@ -701,8 +703,8 @@ Operands = [
   ],
   "07160216",
   "02010701","02160716",
-  "0716022C","02160716",
-  "0716022C","0716022C",
+  ["0716022C",""],"02160716",
+  ["0716022C",""],"0716022C",
   "07160201","07160202",
   ["0A04","07060206","",""],"",
   ["","","","","02160801","02160801","02160801","02160801"],
@@ -752,7 +754,7 @@ Operands = [
   ["07810410","","07820540",""],
   ["07810410","","07820540",""],
   ["","07820510","07820540","07820540"],
-  [["","","",""],["07810410","","07820540",""]],
+  [["04100781","","05400782",""],["","","",""]],
   ["07810410","","07820540",""],
   ["07810410","","07820540",""],
   ["07810410","","07820540",""],
@@ -2246,7 +2248,7 @@ function DecodeInstruction()
   {
     //if SSE2 Scalar Double (F2 hex Prefix)
 
-    if(Prefix == Mnemonics[0xF2])
+    if(Prefix == Mnemonics[0xF2] & Name[3] != "")
     {
       Prefix = "";
       Name = Name[3];
@@ -2263,7 +2265,7 @@ function DecodeInstruction()
 
     //SSE1 Scalar Single (F3 hex Prefix)
 
-    else if(Prefix == Mnemonics[0xF3])
+    else if(Prefix == Mnemonics[0xF3] & Name[1] != "")
     {
       Prefix = "";
       Name = Name[1];
@@ -2422,6 +2424,16 @@ function DecodeInstruction()
   {
     Name = "NOP";
     out="";
+  }
+  
+  //If the REP prefix is used on the CR, DR, and TR register move instructions prefix changes to XRELEASE
+  
+  if(Opcode >= 0x120 & Opcode <= 0x126)
+  {
+    if(Prefix == Mnemonics[0xF3] & Opcode != 0x125)
+    {
+      Prefix="XRELEASE ";
+    }
   }
 
   //add the Prefix string before the operation code
