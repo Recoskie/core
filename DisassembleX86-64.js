@@ -809,17 +809,828 @@ var Pos64=0x00000000,Pos32=0x00000000;
 //The actual position in the Binary code array is bellow
 //-------------------------------------------------------------------------------------------------------------------------
 
+//-------------------------------------------------------------------------------------------------------------------------
+//Binary byte code array
+//-------------------------------------------------------------------------------------------------------------------------
+
+var BinCode = new Array();
+
+//------------------------------------------------------------------------------------------------------------------------
+//The Mnemonic array each operation code value has a Mnemonic Name
+//------------------------------------------------------------------------------------------------------------------------
+ 
+Mnemonics = [
+  //------------------------------------------------------------------------------------------------------------------------
+  //First Byte operations
+  //------------------------------------------------------------------------------------------------------------------------
+  "ADD ","ADD ","ADD ","ADD ","ADD ","ADD ","???","???",
+  "OR ","OR ","OR ","OR ","OR ","OR ","???",
+  "", //*Two byte instructions prefix
+  "ADC ","ADC ","ADC ","ADC ","ADC ","ADC ","???","???",
+  "SBB ","SBB ","SBB ","SBB ","SBB ","SBB ","???","???",
+  "AND ","AND ","AND ","AND ","AND ","AND ","???","???",
+  "SUB ","SUB ","SUB ","SUB ","SUB ","SUB ","???","???",
+  "XOR ","XOR ","XOR ","XOR ","XOR ","XOR ","???","???",
+  "CMP ","CMP ","CMP ","CMP ","CMP ","CMP ","???","???",
+  "","","","","","","","","","","","","","","","", //*The Rex Prefix
+  "PUSH ","PUSH ","PUSH ","PUSH ","PUSH ","PUSH ","PUSH ","PUSH ",
+  "POP ","POP ","POP ","POP ","POP ","POP ","POP ","POP ",
+  "???","???","???",
+  "MOVSXD ",
+  "FS:","GS:",
+  "???","???",
+  "PUSH ","IMUL ","PUSH ","IMUL ",
+  "INS ","INS ","OUTS ","OUTS ",
+  "JO ","JNO ","JB ","JAE ","JE ","JNE ","JBE ","JA ",
+  "JS ","JNS ","JP ","JNP ","JL ","JGE ","JLE ","JG ",
+  ["ADD ","OR ","ADC ","SBB ","AND ","SUB ","XOR ","CMP "],
+  ["ADD ","OR ","ADC ","SBB ","AND ","SUB ","XOR ","CMP "],
+  "???",
+  ["ADD ","OR ","ADC ","SBB ","AND ","SUB ","XOR ","CMP "],
+  "TEST ","TEST ","XCHG ","XCHG ",
+  "MOV ","MOV ","MOV ","MOV ","MOV ","LEA ","MOV ",
+  ["POP ","???","???","???","???","???","???","???"],
+  "XCHG ","XCHG ","XCHG ","XCHG ","XCHG ","XCHG ","XCHG ","XCHG ",
+  ["CBW","CWDE","CDQE"],
+  ["CWD","CDQ","CQO"],
+  "???",
+  "WAIT",
+  ["PUSHF","PUSHFQ","PUSHFQ"],
+  ["POPF","POPFQ","POPFQ"],
+  "SAHF","LAHF",
+  "MOV ","MOV ","MOV ","MOV ",
+  "MOVS ","MOVS ",
+  "CMPS ","CMPS ",
+  "TEST ","TEST ",
+  "STOS ","STOS ",
+  "LODS ","LODS ",
+  "SCAS ","SCAS ",
+  "MOV ","MOV ","MOV ","MOV ","MOV ","MOV ","MOV ","MOV ",
+  "MOV ","MOV ","MOV ","MOV ","MOV ","MOV ","MOV ","MOV ",
+  ["ROL ","ROR ","RCL ","RCR ","SHL ","SHR ","SAL ","SAR "],
+  ["ROL ","ROR ","RCL ","RCR ","SHL ","SHR ","SAL ","SAR "],
+  "RET ","RET",
+  "???",
+  "AVX not supported yet!",
+  ["MOV ","???","???","???","???","???","???","???"],
+  ["MOV ","???","???","???","???","???","???","???"],
+  "ENTER ","LEAVE","RETF ","RETF","INT ","INT ","INTO",
+  ["IRET","IRETD","IRETQ"],
+  ["ROL ","ROR ","RCL ","RCR ","SHL ","SHR ","SAL ","SAR "],
+  ["ROL ","ROR ","RCL ","RCR ","SHL ","SHR ","SAL ","SAR "],
+  ["ROL ","ROR ","RCL ","RCR ","SHL ","SHR ","SAL ","SAR "],
+  ["ROL ","ROR ","RCL ","RCR ","SHL ","SHR ","SAL ","SAR "],
+  "???","???","???",
+  "XLAT ",
+  //------------------------------------------------------------------------------------------------------------------------
+  //X87 FPU
+  //------------------------------------------------------------------------------------------------------------------------
+  [
+    ["FADD ","FMUL ","FCOM ","FCOMP ","FSUB ","FSUBR ","FDIV ","FDIVR "],
+    ["FADD ","FMUL ","FCOM ","FCOMP ","FSUB ","FSUBR ","FDIV ","FDIVR "]
+  ],
+  [
+    ["FLD ","???","FST ","FSTP ","FLDENV ","FLDCW ","FNSTENV ","FNSTCW "],
+    [
+      "FLD ",
+      "FXCH ",
+      ["FNOP","???","???","???","???","???","???","???"],
+      "FSTP1 ",
+      ["FCHS","FABS","???","???","FTST","FXAM","???","???"],
+      ["FLD1","FLDL2T","FLDL2E","FLDPI","FLDLG2","FLDLN2","FLDZ","???"],
+      ["F2XM1","FYL2X","FPTAN","FPATAN","FXTRACT","FPREM1","FDECSTP","FINCSTP"],
+      ["FPREM","FYL2XP1","FSQRT","FSINCOS","FRNDINT","FSCALE","FSIN","???"]
+    ]
+  ],
+  [
+    ["FIADD ","FIMUL ","FICOM ","FICOMP ","FISUB ","FISUBR ","FIDIV ","FIDIVR "],
+    [
+      "FCMOVB ","FCMOVE ","FCMOVBE ","FCMOVU ","???",
+      ["???","FUCOMPP","???","???","???","???","???","???"],
+      "???","???"
+    ]
+  ],
+  [
+    ["FILD ","FISTTP ","FIST ","FISTP ","???","FLD ","???","FSTP "],
+    [
+      "CMOVNB ","FCMOVNE ","FCMOVNBE ","FCMOVNU ",
+      ["FENI ","FDISI ","FNCLEX ","FNINIT ","FSETPM "],
+      "FUCOMI ","FCOMI ","???"
+    ]
+  ],
+  [
+    ["FADD ","FMUL ","FCOM ","DCOMP ","FSUB ","FSUBR ","FDIV ","FDIVR "],
+    ["FADD ","FMUL ","FCOM2 ","FCOMP3 ","FSUBR ","FSUB ","FDIVR ","FDIV "]
+  ],
+  [
+    ["FLD ","FISTTP ","FST ","FSTP ","FRSTOR ","???","FNSAVE ","FNSTSW "],
+    ["FFREE ","FXCH4 ","FST ","FSTP ","FUCOM ","FUCOMP ","???","???"]
+  ],
+
+  [
+    ["FIADD ","FIMUL ","FICOM ","FICOMP ","FISUB ","FISUBR ","FIDIV ","FIDIVR "],
+    [
+      "FADDP ","FMULP ","FCOMP5 ",
+      ["???","FCOMPP ","???","???","???","???","???","???"],
+      "FSUBRP ","FSUBP ","???","???"
+    ]
+  ],
+  [
+    ["FILD ","FISTTP ","FIST ","FISTP ","FBLD ","FILD ","FBSTP ","FISTP "],
+    [
+      "FFREEP ","FXCH7 ","FSTP8 ","FSTP9 ",
+      ["FNSTSW ","???","???","???","???","???","???","???"],
+      "FUCOMIP ","FCOMIP ","???"
+    ]
+  ],
+  //------------------------------------------------------------------------------------------------------------------------
+  //End of X87 FPU
+  //------------------------------------------------------------------------------------------------------------------------
+  "LOOPNE ","LOOPE ","LOOP ","JRCXZ ",
+  "IN ","IN ","OUT ","OUT ",
+  "CALL ","JMP ",
+  "???",
+  "JMP ",
+  "IN ","IN ","OUT ","OUT ",
+  "LOCK ",
+  "Reserved Op-Code!",
+  "REPNE ","REP ",
+  "HLT","CMC",
+  ["TEST ","???","NOT ","NEG ","MUL ","IMUL ","DIV ","IDIV "],
+  ["TEST ","???","NOT ","NEG ","MUL ","IMUL ","DIV ","IDIV "],
+  "CLC","STC","CLI","CTI","CLD","STD",
+  ["INC ","DEC ","???","???","???","???","???","???"],
+  [
+    ["INC ","DEC ","CALL ","CALL ","JMP ","JMP ","PUSH ","???"],
+    ["INC ","DEC ","CALL ","???","JMP ","???","PUSH ","???"]
+  ],
+  //------------------------------------------------------------------------------------------------------------------------
+  //Two Byte operations
+  //------------------------------------------------------------------------------------------------------------------------
+  [
+    ["SLDT ","STR ","LLDT ","LTR ","VERR ","VERW ","JMPE ","???"],
+    ["SLDT ","STR ","LLDT ","LTR ","VERR ","VERW ","JMPE ","???"]
+  ],
+  [
+    ["SGDT ","SIDT ","LGDT ","LIDT ","SMSW ","???","LMSW ","INVLPG "],
+    [
+      ["???","VMCALL","VMLAUNCH","VMRESUME","VMXOFF","???","???","???"],
+      ["MONITOR ","MWAIT ","CLAC","STAC","???","???","???","???"],
+      ["XGETBV","XSETBV","???","???","???","XEND","XTEST","???"],
+      ["VMRUN ","VMMCALL","VMLOAD ","VMSAVE ","STGI","CLGI","SKINIT ","INVLPGA "],
+      "SMSW ","???","LMSW ",
+      ["SWAPGS","RDTSCP","???","???","???","???","???","???"]
+    ]
+  ],
+  ["LAR ","LAR "],["LSL ","LSL "],
+  "???",
+  "SYSCALL","CLTS","SYSRET","INVD",
+  "WBINVD","???",
+  "UD2","???",
+  [["PREFETCH ","PREFETCHW ","???","???","???","???","???","???"],"???"],
+  "FEMMS","???",
+  ["MOVUPS ","MOVSS ","MOVUPD ","MOVSD "],
+  ["MOVUPS ","MOVSS ","MOVUPD ","MOVSD "],
+  [["MOVLPS ","MOVSLDUP ","MOVLPD ","MOVDDUP "],["MOVHLPS ","MOVSLDUP ","???","MOVDDUP "]],
+  [["MOVLPS ","???","MOVLPD ","???"],["???","???","???","???"]],
+  ["UNPCKLPS ","???","UNPCKLPD ","???"],
+  ["UNPCKHPS ","???","UNPCKHPD ","???"],
+  [["MOVHPS ","MOVSHDUP ","MOVHPD ","???"],["MOVLHPS ","MOVSHDUP ","???","???"]],
+  [["MOVHPS ","???","MOVHPD ","???"],["???","???","???","???"]],
+  [["PREFETCHNTA ","PREFETCHT0 ","PREFETCHT1 ","PREFETCHT2 ","???","???","???","???"],"???"],
+  "???","???","???","???","???","???","NOP ",
+  ["???","MOV "],["???","MOV "], //CR and DR register Move
+  ["???","MOV "],["???","MOV "], //CR and DR register Move
+  ["???","MOV "],"???", //TR (TASK REGISTER) register Move
+  ["???","MOV "],"???", //TR (TASK REGISTER) register Move
+  ["MOVAPS ","???","MOVAPD ","???"],
+  ["MOVAPS ","???","MOVAPD ","???"],
+  ["CVTPI2PS ","CVTSI2SS ","CVTPI2PD ","CVTSI2SD "],
+  [["MOVNTPS ","MOVNTSS ","MOVNTPD ","MOVNTSD "],["???","???","???","???"]],
+  ["CVTTPS2PI ","CVTTSS2SI ","CVTTPD2PI ","CVTTSD2SI "],
+  ["CVTPS2PI ","CVTSS2SI ","CVTPD2PI ","CVTSD2SI "],
+  ["UCOMISS ","???","UCOMISD ","???"],
+  ["COMISS ","???","COMISD ","???"],
+  "WRMSR","RDTSC","RDMSR","RDPMC",
+  "SYSENTER","SYSEXIT","???",
+  "GETSEC",
+  "Not supported yet!", //*Note Add in last.
+  "???",
+  "Not supported yet!", //*Note Add in last.
+  "???","???","???","???","???",
+  "CMOVO ","CMOVNO ","CMOVB ","CMOVAE ","CMOVE ","CMOVNE ","CMOVBE ","CMOVA ",
+  "CMOVS ","CMOVNS ","CMOVP ","CMOVNP ","CMOVL ","CMOVGE ","CMOVLE ","CMOVG ",
+  [["???","???","???","???"],["MOVMSKPS ","???","MOVMSKPD","???"]],
+  ["SQRTPS ","SQRTSS ","SQRTPD ","SQRTSD "],
+  ["RSQRTPS ","RSQRTSS ","???","???"],
+  ["RCPPS ","RCPSS ","???","???"],
+  ["ANDPS ","???","ANDPD ","???"],
+  ["ANDNPS ","???","ANDNPD ","???"],
+  ["ORPS ","???","ORPD ","???"],
+  ["XORPS ","???","XORPD ","???"],
+  ["ADDPS ","ADDSS ","ADDPD ","ADDSD "],
+  ["MULPS ","MULSS ","MULPD ","MULSD "],
+  ["CVTPS2PD ","CVTSS2SD ","CVTPD2PS ","CVTSD2SS "],
+  ["CVTDQ2PS ","CVTTPS2DQ ","CVTPS2DQ ","???"],
+  ["SUBPS ","SUBSS ","SUBPD ","SUBSD "],
+  ["MINPS ","MINSS ","MINPD ","MINSD "],
+  ["DIVPS ","DIVSS ","DIVPD ","DIVSD "],
+  ["MAXPS ","MAXSS ","MAXPD ","MAXSD "],
+  ["PUNPCKLBW ","","PUNPCKLBW ",""],
+  ["PUNPCKLWD ","","PUNPCKLWD ",""],
+  ["PUNPCKLDQ ","","PUNPCKLDQ ",""],
+  ["PACKSSWB ","","PACKSSWB ",""],
+  ["PCMPGTB ","","PCMPGTB ",""],
+  ["PCMPGTW ","","PCMPGTW ",""],
+  ["PCMPGTD ","","PCMPGTD ",""],
+  ["PACKUSWB ","","PACKUSWB ",""],
+  ["PUNPCKHBW ","","PUNPCKHBW ",""],
+  ["PUNPCKHWD ","","PUNPCKHWD ",""],
+  ["PUNPCKHDQ ","","PUNPCKHDQ ",""],
+  ["PACKSSDW ","","PACKSSDW ",""],
+  ["???","???","PUNPCKLQDQ ","???"],
+  ["???","???","PUNPCKHQDQ ","???"],
+  ["MOVD ","","MOVD ",""],
+  ["MOVQ ","MOVDQU ","MOVDQA ","???"],
+  ["PSHUFW ","PSHUFHW ","PSHUFD ","PSHUFLW "],
+  [
+    "???",
+    [
+      "???","???",
+      ["PSRLW ","","PSRLW ",""],"???",
+      ["PSRAW ","","PSRAW ",""],"???",
+      ["PSLLW ","","PSLLW ",""],"???"
+    ]
+  ],
+  [
+    "???",
+    [
+      "???","???",
+      ["PSRLD ","","PSRLD ",""],"???",
+      ["PSRAD ","","PSRAD ",""],"???",
+      ["PSLLD ","","PSLLD ",""],"???"
+    ]
+  ],
+  [
+    "???",
+    [
+      "???","???",
+      ["PSRLQ ","","PSRLQ ",""],["???","???","PSRLDQ ","???"],
+      "???","???",
+      ["PSLLQ ","","PSLLQ ",""],["???","???","PSLLDQ ","???"]
+    ]
+  ],
+  ["PCMPEQB ","","PCMPEQB ",""],
+  ["PCMPEQW ","","PCMPEQW ",""],
+  ["PCMPEQD ","","PCMPEQD ",""],
+  "EMMS",
+  [
+    ["VMREAD ","???","???","???"],
+    ["VMREAD ","???","EXTRQ","INSERTQ"]
+  ],
+  [
+    ["VMWRITE ","???","???","???"],
+    ["VMWRITE ","???","EXTRQ","INSERTQ"]
+  ],
+  "???","???",
+  ["???","???","HADDPD ","HADDPS "],
+  ["???","???","HSUBPD ","HSUBPS "],
+  ["MOVD ","MOVQ ","MOVD ","???"],
+  ["MOVQ ","MOVDQU ","MOVDQA ","???"],
+  "JO ","JNO ","JB ","JAE ","JE ","JNE ","JBE ","JA ",
+  "JS ","JNS ","JP ","JNP ","JL ","JGE ","JLE ","JG ",
+  "SETO ","SETNO ","SETB ","SETAE ","SETE ","SETNE ","SETBE ","SETA ",
+  "SETS ","SETNS ","SETP ","SETNP ","SETL ","SETGE ","SETLE ","SETG ",
+  "PUSH ","POP ",
+  "CPUID", //Identifies the CPU and which Instructions the current CPU can use.
+  "BT ",
+  "SHLD ","SHLD ",
+  "XBTS ","IBTS ",
+  "PUSH ","POP ",
+  "RSM ",
+  "BTS ",
+  "SHRD ","SHRD",
+  [
+    [
+      ["???","FXSAVE ","FXSAVE64 "],["???","FXRSTOR ","FXRSTOR64 "],
+      "LDMXCSR ","STMXCSR ",
+      ["???","XSAVE ","XSAVE64 "],["???","XRSTOR ","XRSTOR64 "],
+      ["???","XSAVEOPT ","XSAVEOPT64 "],
+      "CLFLUSH "
+    ],
+    [
+      "???","???","???","???","???",
+      ["LFENCE","???","???","???","???","???"],
+      ["MFENCE","???","???","???","???","???"],
+      ["SFENCE","???","???","???","???","???"]
+    ]
+  ],
+  "IMUL ",
+  "CMPXCHG ","CMPXCHG ",
+  ["LSS ","???"],"BTR ",
+  ["LFS ","???"],"LGS ",
+  "MOVZX ","MOVZX ",
+  ["JMPE ","POPCNT ","???","???"],
+  "???",
+  ["???","???","???","???","BT ","BTS ","BTR ","BTC "],
+  "BTC ","BSF ","BSR ",
+  "MOVSX ","MOVSX ",
+  "XADD ","XADD ",
+  ["CMPPS ","CMPSS ","CMPPD ","CMPSD "],
+  ["MOVNTI ","???"],
+  [["PINSRW ","","PINSRW ",""],["PINSRW ","","PINSRW ",""]],
+  [["???","???","???","???"],["PEXTRW ","","PEXTRW ",""]],
+  ["SHUFPS ","???","SHUFPD ","???"],
+  [
+    [
+      "???",
+      ["CMPXCHG8B ","CMPXCHG8B ","CMPXCHG16B "],
+      "???","???","???","???",
+      ["VMPTRLD ","VMXON ","VMCLEAR ","???"],["VMPTRST ","???","???","???"]
+    ],
+    [
+      "???",
+      "VMGETINFO ",
+      "???","???","???","???",
+      "RDRAND ","RDSEED "
+    ]
+  ],
+  "BSWAP ","BSWAP ","BSWAP ","BSWAP ","BSWAP ","BSWAP ","BSWAP ","BSWAP ",
+  ["???","???","ADDSUBPD ","ADDSUBPS "],
+  ["PSRLW ","","PSRLW ",""],
+  ["PSRLD ","","PSRLD ",""],
+  ["PSRLQ ","","PSRLQ ",""],
+  ["PADDQ ","","PADDQ ",""],
+  ["PMULLW ","","PMULLW ",""],
+  ["???","???","MOVQ ","MOVDQ2Q "],
+  [["???","???","???","???"],["PMOVMSKB ","","PMOVMSKB ",""]],
+  ["PSUBUSB ","","PSUBUSB ",""],
+  ["PSUBUSW ","","PSUBUSW ",""],
+  ["PMINUB ","","PMINUB ",""],
+  ["PADD ","","PADD ",""],
+  ["PADDUSB ","","PADDUSB ",""],
+  ["PADDUSW ","","PADDUSW ",""],
+  ["PMAXUB ","","PMAXUB ",""],
+  ["PADDN ","","PADDN ",""],
+  ["PAVGB ","","PAVGB ",""],
+  ["PSRAW ","","PSRAW ",""],
+  ["PSRAD ","","PSRAD ",""],
+  ["PAVGW ","","PAVGW ",""],
+  ["PMULHUW ","","PMULHUW ",""],
+  ["PMULHW ","","PMULHW ",""],
+  ["???","CVTDQ2PD ","CVTTPD2DQ ","CVTPD2DQ "],
+  [["MOVNTQ ","???","MOVNTDQ ","???"],["???","???","???","???"]],
+  ["PSUBSB ","","PSUBSB ",""],
+  ["PSUBSW ","","PSUBSW ",""],
+  ["PMINSW ","","PMINSW ",""],
+  ["POR ","","POR ",""],
+  ["PADDSB ","","PADDSB ",""],
+  ["PADDSW ","","PADDSW ",""],
+  ["PMAXSW ","","PMAXSW ",""],
+  ["PXOR ","","PXOR ",""],
+  [["???","???","???","LDDQU "],["???","???","???","???"]],
+  ["PSLLW ","","PSLLW ",""],
+  ["PSLLD ","","PSLLD ",""],
+  ["PSLLQ ","","PSLLQ ",""],
+  ["PMULUDQ ","","PMULUDQ ",""],
+  ["PMADDWD ","","PMADDWD ",""],
+  ["PSADBW ","","PSADBW ",""],
+  [["???","???","???","???"],["MASKMOVQ ","???","MASKMOVDQU ","???"]],
+  ["PSUBB ","","PSUBB ",""],
+  ["PSUBW ","","PSUBW ",""],
+  ["PSUBD ","","PSUBD ",""],
+  ["PSUBQ ","","PSUBQ ",""],
+  ["PADDB ","","PADDB ",""],
+  ["PADDW ","","PADDW ",""],
+  ["PADDD ","","PADDD ",""],
+  "???"
+];
+
+//------------------------------------------------------------------------------------------------------------------------
+//The Operand type array each operation code can use different operands that must be decoded in the X86-64 instruction format order.
+//------------------------------------------------------------------------------------------------------------------------
+ 
+Operands = [
+  //------------------------------------------------------------------------------------------------------------------------
+  //First Byte operations
+  //------------------------------------------------------------------------------------------------------------------------
+  "02010701","02160716","07010201","07160216","0B010801","0B160906","","",
+  "02010701","02160716","07010201","07160216","0B010801","0B160906","","",
+  "02010701","02160716","07010201","07160216","0B010801","0B160906","","",
+  "02010701","02160716","07010201","07160216","0B010801","0B160906","","",
+  "02010701","02160716","07010201","07160216","0B010801","0B160906","","",
+  "02010701","02160716","07010201","07160216","0B010801","0B160906","","",
+  "02010701","02160716","07010201","07160216","0B010801","0B160906","","",
+  "02010701","02160716","07010201","07160216","0B010801","0B160906","","",
+  "","","","","","","","","","","","","","","","",
+  "0112","0112","0112","0112","0112","0112","0112","0112",
+  "0112","0112","0112","0112","0112","0112","0112","0112",
+  "","","",
+  "07160204",
+  "","","","",
+  "0906","071602160906",
+  "0901","071602160901",
+  "10010D02","10160D02","0D020F01","0D020F16",
+  "0A01","0A01","0A01","0A01","0A01","0A01","0A01","0A01",
+  "0A01","0A01","0A01","0A01","0A01","0A01","0A01","0A01",
+  ["02010801","02010801","02010801","02010801","02010801","02010801","02010801","02010801"],
+  ["02160806","02160806","02160806","02160806","02160806","02160806","02160806","02160806"],
+  "",
+  ["02160801","02160801","02160801","02160801","02160801","02160801","02160801","02160801"],
+  "02010701","02160716",
+  "07010201","07160216",
+  "02010701","02160716",
+  "07010201","07160216",
+  "02020700","07160200",
+  "07000202",
+  ["0212","","","","","","",""],
+  "0B160116","0B160116","0B160116","0B160116","0B160116","0B160116","0B160116","0B160116",
+  ["","",""],["","",""],
+  "","",
+  ["","",""],["","",""],
+  "","",
+  "0B010601","0B160616",
+  "06010B01","06160B16",
+  "10010F01","10160F16",
+  "0F011001","0F161016",
+  "0B010801","0B160906",
+  "1001","1016","0F01","0F16","1001","1016",
+  "01010801","01010801","01010801","01010801","01010801","01010801","01010801","01010801",
+  "01160906","01160906","01160906","01160906","01160906","01160906","01160906","01160906",
+  ["02010801","02010801","02010801","02010801","02010801","02010801","02010801","02010801"],
+  ["02160801","02160801","02160801","02160801","02160801","02160801","02160801","02160801"],
+  "0802","",
+  "","",
+  ["02010801","","","","","","",""],
+  ["02160906","","","","","","",""],
+  "08020801","",
+  "0802","","1303",
+  "0801","",
+  ["","",""],
+  ["02011301","02011301","02011301","02011301","02011301","02011301","02011301","02011301"],
+  ["02161301","02161301","02161301","02161301","02161301","02161301","02161301","02161301"],
+  ["02010C01","02010C01","02010C01","02010C01","02010C01","02010C01","02010C01","02010C01"],
+  ["02160C01","02160C01","02160C01","02160C01","02160C01","02160C01","02160C01","02160C01"],
+  "","","",
+  "1101",
+  //------------------------------------------------------------------------------------------------------------------------
+  //X87 FPU
+  //------------------------------------------------------------------------------------------------------------------------
+  [
+    ["0304","0304","0304","0304","0304","0304","0304","0304"],
+    ["12000304","12000304","0304","0304","12000304","12000304","12000304","12000304"]
+  ],
+  [
+    ["0304","","0304","0304","0300","0302","0300","0302"],
+    [
+      "0300","0300",
+      ["","","","","","","",""],
+      "0300",
+      ["","","","","","","",""],
+      ["","","","","","","",""],
+      ["","","","","","","",""],
+      ["","","","","","","",""]
+    ]
+  ],
+  [
+    ["0304","0304","0304","0304","0304","0304","0304","0304"],
+    [
+      "12000304","12000304","12000304","12000304","",
+      ["","","","","","","",""],"",""
+    ]
+  ],
+  [
+    ["0304","0304","0304","0304","","0320","","0320",""],
+    [
+      "12000304","12000304","12000304","12000304",
+      ["","","","","","","",""],
+      "12000304","12000304",""
+    ]
+  ],
+  [
+    ["0310","0310","0310","0310","0310","0310","0310","0310"],
+    ["03101200","03101200","0310","0310","03101200","03101200","03101200","03101200"]
+  ],
+  [
+    ["0310","0310","0310","0310","0310","","0300","0302"],
+    ["0310","0310","0310","0310","0310","0310","",""]
+  ],
+  [
+    ["0302","0302","0302","0302","0302","0302","0302","0302"],
+    [
+      "03021200","03021200","0302",
+      ["","","","","","","",""],
+      "03021200","03021200",
+      "","","",""
+    ]
+  ],
+  [
+    ["0302","0302","0302","0302","0320","0310","0320","0310"],
+    [
+      "0302","0302","0302","0302",
+      ["0B02","","","","","","",""],
+      "12000302","12000302",
+      "","","","","",
+    ]
+  ],
+  //------------------------------------------------------------------------------------------------------------------------
+  //End of X87 FPU
+  //------------------------------------------------------------------------------------------------------------------------
+  "0A01","0A01","0A01","0A01",
+  "0B010801","0B160801",
+  "08010B01","08010B16",
+  "0A04","0A04",
+  "",
+  "0A01",
+  "0B010D02","0B160D02",
+  "0D020B01","0D020B16",
+  "","","","","","",
+  ["02010801","","0201","0201","0B010201","0201","0B010201","0201"],
+  ["02160906","","0216","0216","0B160216","0216","0B160216","0B160216"],
+  "","","","","","",
+  ["0201","0201","","","","","",""],
+  [
+    ["0216","0216","0216","022C","0216","022C","0216",""],
+    ["0216","0216","0216","","0216","","0216",""]
+  ],
+  //------------------------------------------------------------------------------------------------------------------------
+  //Two Byte operations
+  //------------------------------------------------------------------------------------------------------------------------
+  [
+    ["0202","0202","0202","0202","0202","0202","0216",""],
+    ["0216","0216","0202","0202","0202","0202","0216",""]
+  ],
+  [
+    ["0220","0220","0220","0220","0202","","0202","0200"],
+    [
+      ["","","","","","","",""],
+      ["0B100C100D10","0B100C10","","","","","",""],
+      ["","","","","","","",""],
+      ["0B10","","0B10","0B10","","","0B04","0B100C04"],
+      "0216","","0202",
+      ["","","","","","","",""]
+    ]
+  ],
+  ["07160202","07160216"],["07160202","07160216"],"",
+  "","","","",
+  "","","","",
+  [["0200","0200","","","","","",""],""],
+  "","",
+  ["07820540","07820504","07820540","07820510"],
+  ["05400782","05040782","05400782","05100782"],
+  [["07820210","07820540","07820210","07820510"],["07820540","07820540","","07820510"]],
+  [["02100782","","02100782",""],["","","",""]],
+  ["07820540","","07820540",""],
+  ["07820540","","07820540",""],
+  [["07820210","07820540","07820210",""],["07820540","07820540","",""]],
+  [["02100782","","02100782",""],["","","",""]],
+  [["0200","0200","0200","0200","","","",""],""],
+  "","","","","","","0216",
+  ["","02100783"],["","02100784"],
+  ["","07830210"],["","07840210"],
+  ["","02100785"],"",
+  ["","07850210"],"",
+  ["07820540","","07820540",""],
+  ["05400782","","05400782",""],
+  ["07820410","07820214","07820410","07820214"],
+  [["05400782","05040782","05400782","02100782"],["","","",""]],
+  ["07810510","07140504","07810540","07140510"],
+  ["07810510","07140504","07810540","07140510"],
+  ["07820504","","07820510",""],
+  ["07820504","","07820510",""],
+  "","","","",
+  "","","",
+  "",
+  "", //*Note Add in Last
+  "",
+  "", //*Note Add in Last
+  "","","","","",
+  "07160216","07160216","07160216","07160216","07160216","07160216","07160216","07160216",
+  "07160216","07160216","07160216","07160216","07160216","07160216","07160216","07160216",
+  [["","","",""],["07040540","","07040540",""]],
+  ["07820540","07820504","07820540","07820510"],
+  ["07820540","07820504","",""],
+  ["07820540","07820504","",""],
+  ["07820540","","07820540",""],
+  ["07820540","","07820540",""],
+  ["07820540","","07820540",""],
+  ["07820540","","07820540",""],
+  ["07820540","07820504","07820540","07820510"],
+  ["07820540","07820504","07820540","07820510"],
+  ["07820510","07820504","07820540","07820510"],
+  ["07820540","07820540","07820540",""],
+  ["07820540","07820504","07820540","07820510"],
+  ["07820540","07820504","07820540","07820510"],
+  ["07820540","07820504","07820540","07820510"],
+  ["07820540","07820504","07820540","07820510"],
+  ["07810404","","07820540",""],
+  ["07810404","","07820540",""],
+  ["07810404","","07820540",""],
+  ["07810410","","07820540",""],
+  ["07810410","","07820540",""],
+  ["07810410","","07820540",""],
+  ["07810410","","07820540",""],
+  ["07810410","","07820540",""],
+  ["07810410","","07820540",""],
+  ["07810410","","07820540",""],
+  ["07810410","","07820540",""],
+  ["07810410","","07820540",""],
+  ["","","07820540",""],
+  ["","","07820540",""],
+  ["07810214","","07820214",""],
+  ["07810410","07820540","07820540",""],
+  ["078104100801","078205400801","078205400801","078205400801"],
+  [
+    "",
+    [
+      "","",
+      ["04100801","","05400801",""],"",
+      ["04100801","","05400801",""],"",
+      ["04100801","","05400801",""],""
+    ]
+  ],
+  [
+    "",
+    [
+      "","",
+      ["04100801","","05400801",""],"",
+      ["04100801","","05400801",""],"",
+      ["04100801","","05400801",""],""
+    ]
+  ],
+  [
+    "",
+    [
+      "","",
+      ["04100801","","05400801",""],["","","05400801",""],
+      "","",
+      ["04100801","","05400801",""],["","","05400801",""]
+    ]
+  ],
+  ["07810410","","07820540",""],
+  ["07810410","","07820540",""],
+  ["07810410","","07820540",""],
+  "",
+  [
+    ["02100710","","",""],
+    ["02100710","","078208010801","0782054008010801"]
+  ],
+  [
+    ["07100210","","",""],
+    ["07100210","","07820540","07820540"]
+  ],
+  "","",
+  ["","","07820540","07820540"],
+  ["","","07820540","07820540"],
+  ["02140781","07820510","02140782",""],
+  ["04100781","05400782","05400782",""],
+  "0A04","0A04","0A04","0A04","0A04","0A04","0A04","0A04",
+  "0A04","0A04","0A04","0A04","0A04","0A04","0A04","0A04",
+  "0201","0201","0201","0201","0201","0201","0201","0201",
+  "0201","0201","0201","0201","0201","0201","0201","0201",
+  "1400","1400",
+  "",
+  "02160716",
+  "021607160801","021607160C01",
+  "07160216","02160716",
+  "1500","1500",
+  "",
+  "02160716",
+  "021607160801","021607160C01",
+  [
+    [
+      ["","0200","0200"],["","0200","0200"],
+      "0204","0204",
+      ["","0200","0200"],["","0200","0200"],
+      ["","0200","0200"],
+      "0200"
+    ],
+    [
+      "","","","","",
+      ["","","","","",""],
+      ["","","","","",""],
+      ["","","","","",""]
+    ]
+  ],
+  "07160216",
+  "02010701","02160716",
+  ["0716022C",""],"02160716",
+  ["0716022C",""],"0716022C",
+  "07160201","07160202",
+  ["0A04","07060206","",""],"",
+  ["","","","","02160801","02160801","02160801","02160801"],
+  "07160216","07160216","07160216",
+  "07160201","07160202",
+  "02010701","02160716",
+  ["078205400801","078205040801","078205400801","078205100801"],
+  ["02140714",""],
+  [["078102020801","","078202020801",""],["078102040801","","078202040801",""]],
+  [["","","",""],["071404100801","","071405100801",""]],
+  ["078205400801","","078205400801",""],
+  [
+    [
+      "",
+      ["0210","0210","0240"],
+      "","","","",
+      ["0210","0210","0210",""],["0210","","",""]
+    ],
+    [
+      "",
+      "",
+      "","","","",
+      "0216","0216"
+    ]
+  ],
+  "0116","0116","0116","0116","0116","0116","0116","0116",
+  ["","","07820540","07820540"],
+  ["07810410","","07820540",""],
+  ["07810410","","07820540",""],
+  ["07810410","","07820540",""],
+  ["07810410","","07820540",""],
+  ["07810410","","07820540",""],
+  ["","","05100782","07810540"],
+  [["","","",""],["07140410","","07140540",""]],
+  ["07810410","","07820540",""],
+  ["07810410","","07820540",""],
+  ["07810410","","07820540",""],
+  ["07810410","","07820540",""],
+  ["07810410","","07820540",""],
+  ["07810410","","07820540",""],
+  ["07810410","","07820540",""],
+  ["07810410","","07820540",""],
+  ["07810410","","07820540",""],
+  ["07810410","","07820540",""],
+  ["07810410","","07820540",""],
+  ["07810410","","07820540",""],
+  ["07810410","","07820540",""],
+  ["07810410","","07820540",""],
+  ["","07820510","07820540","07820540"],
+  [["04100781","","05400782",""],["","","",""]],
+  ["07810410","","07820540",""],
+  ["07810410","","07820540",""],
+  ["07810410","","07820540",""],
+  ["07810410","","07820540",""],
+  ["07810410","","07820540",""],
+  ["07810410","","07820540",""],
+  ["07810410","","07820540",""],
+  ["07810410","","07820540",""],
+  [["","","","07820540"],["","","",""]],
+  ["07810410","","07820540",""],
+  ["07810410","","07820540",""],
+  ["07810410","","07820540",""],
+  ["07810410","","07820540",""],
+  ["07810410","","07820540",""],
+  ["07810410","","07820540",""],
+  [["","","",""],["07810410","","07820540",""]],
+  ["07810410","","07820540",""],
+  ["07810410","","07820540",""],
+  ["07810410","","07820540",""],
+  ["07810410","","07820540",""],
+  ["07810410","","07820540",""],
+  ["07810410","","07820540",""],
+  ["07810410","","07820540",""],
+  ""
+];
+
+//-------------------------------------------------------------------------------------------------------------------------
+//The Hex String stores the Bytes of decoded instruction it is shown to the left side of the disassembled instruction
+//-------------------------------------------------------------------------------------------------------------------------
+
+var InstructionHex = "";
+
+//-------------------------------------------------------------------------------------------------------------------------
+//The Instruction Position String stores the start position of a decoded binary instruction in memory
+//-------------------------------------------------------------------------------------------------------------------------
+
+var InstructionPos = "";
+
+//-------------------------------------------------------------------------------------------------------------------------
+//Opcode Base value changes when code 0F is used which makes the next opcode start at 255+ in the Mnemonic array, and operamd type.
+//-------------------------------------------------------------------------------------------------------------------------
+
+var OpBase = 0;
+
+//-------------------------------------------------------------------------------------------------------------------------
+//The simulated 64 bit address binary location uses two 32 bit integers bellow
+//-------------------------------------------------------------------------------------------------------------------------
+
+var Pos64=0x00000000,Pos32=0x00000000;
+
+//-------------------------------------------------------------------------------------------------------------------------
+//The actual position in the Binary code array is bellow Javascript array uses UInt32 for the index.
+//-------------------------------------------------------------------------------------------------------------------------
+
 var CodePos32=0x00000000;
 
 //-------------------------------------------------------------------------------------------------------------------------
-//Decoding display options 
+//Decoding display options.
 //-------------------------------------------------------------------------------------------------------------------------
 
-var ShowInstructionHex = true; //setting to show the hex code of the instruction beside the decoded instruction output
-var ShowInstructionPos = true; //setting to show the instruction address position
+var ShowInstructionHex = true; //setting to show the hex code of the instruction beside the decoded instruction output.
+var ShowInstructionPos = true; //setting to show the instruction address position.
 
 //-------------------------------------------------------------------------------------------------------------------------
-//The Rex prefix setting bits
+//The Rex prefix setting bits.
 //-------------------------------------------------------------------------------------------------------------------------
 
 var Rex = [
@@ -827,26 +1638,34 @@ var Rex = [
   0, //index 1 of the Rex array is the Rex.X Bit
   0, //index 2 of the Rex array is the Rex.R Bit
   0, //index 3 of the Rex array is the Rex.W Bit
-  0  //index 4 of the Rex array is used to check if an
-  //instruction did not already completely decode because this bit is
-  //set 0 after a decoded instruction it is set one if a Rex byte is
-  //read before the instruction it effects
+  0  //index 4 of the Rex array is used to identifies the REX prefix effects the current instruction
+     //index 4 is set 1 in value when the REX Prefix is used Then the REX prefix setting values apply to the attributes of the operation operands
+     //after a operation decodes index 4 is set back to 0 stooping the REX prefix from effecting the next instruction unless used.
   ];
 
 //-------------------------------------------------------------------------------------------------------------------------
-//The Override Operands size prefix
+//The Override Operands size prefix. If used is set true however after a operation decodes is set false, unless used again same thing as the REX prefix just effects different attributes of the operands.
+//Note is also used as a Precision size override prefix for a SSE type operation code.
 //-------------------------------------------------------------------------------------------------------------------------
 
 var OvOperands = false;
 
 //--------------------------------------------------------------------------------------------------
-//When the RAM override prefix is active the registers used for the ModR/M address change to 32 bit they are normally 64 bit
+//When the RAM override prefix is active the registers used for the ModR/M address change to 32 bit they are normally 64 bit.
+//If used is set true however after a operation decodes is set false.
+//Works The same as the REX Prefix and Override Operands size prefix however effects different operand attributes.
 //--------------------------------------------------------------------------------------------------
 
 var OvRam = false;
 
 //--------------------------------------------------------------------------------------------------
-//The prefix string holds the Repate and Lock prefix if used is added before the operation code
+//The prefix string holds the REP, and Lock prefix if used. After a operation code decodes it is set back to a empty string.
+//if any mnemonic is used such as F0, F2, or F3 the mnemonic name goes into the Prefix string because F0 is the lock prefix etcetera.
+//The REP prefix repeats the operation till the counting register is 0 such as F3 which is the REP mnemonic.
+//Only one prefix like this can be used over top an operation code as it applies to the hole operation and must be shown before the disassembled operation code.
+//Remember The prefix string holds the REP, and Lock prefix if used. After a operation code decodes it is set back to a empty string.
+//The added prefix is the last Prefix used before the Operation code and the Prefix variable is added before the disassemble instruction string.
+//if no Lock or REP prefix is used the Disassembled instruction is a empty string.
 //--------------------------------------------------------------------------------------------------
 
 var Prefix = "";
@@ -854,8 +1673,7 @@ var Prefix = "";
 //--------------------------------------------------------------------------------------------------
 //RAM Pointer sizes are controlled by the GetOperandSize function which uses the Size Setting attributes for the address
 //the Selected Pointer index that is used is the value given back from the GetOperandSize function based on the Size setting
-//attributes given to The Decode_ModRM_SIB_Address function, and the possible Multimedia RegMode, But only well using it as a Memory address
-//Pointer addresses are not used under Register mode when the Mod bits are value 11
+//attributes given to The Decode_ModRM_SIB_Address function, and the possible Multimedia RegMode.
 //--------------------------------------------------------------------------------------------------
 
 
@@ -873,6 +1691,7 @@ PTRS=[
 //--------------------------------------------------------------------------------------------------
 //SIB byte scale Note the Scale bits value is the selected index of the array bellow only used under
 //a Memory address that uses the SIB Address mode which uses another byte for the address selection
+//used by the Decode_ModRM_SIB_Address function.
 //--------------------------------------------------------------------------------------------------
 
 var scale=[
@@ -885,7 +1704,7 @@ var scale=[
 //-------------------------------------------------------------------------------------------------------------------------
 //The Register array holds arrays in order from 0 though 7 for the GetOperandSize Which are called your General use registers Which is controlled by the size setting Attributes
 //A SizeSetting attribute higher in value that is not a valid Size Setting attribute uses the Register groups STi, MM, XMM, CR, DR They are separate from the General use registers that change by Size Attributes and operand size setting prefixes
-//The function DecodeRegValue Handles decoding a Register values
+//The function DecodeRegValue Handles decoding a Register values.
 //-------------------------------------------------------------------------------------------------------------------------
 
 REG=[
@@ -908,13 +1727,13 @@ REG=[
 
   //The second array which is at element 1 of this REG array
   //Is used only if the value returned from the GetOperandSize function is 1 in value
-  //which is the 8 bit registers names
+  //which is the 8 bit size names and selection of the general use registers.
   //However this array element has two arrays of 8 bit registers The reason is that the
-  //Register names change under 8 bit register selection if any rex prefix is used
+  //Register names change under 8 bit register selection if any rex prefix is used reason is explained bellow.
 
   [
     
-    //8 bit registers without any rex prefix active is the normal low byte to high byte order of the first 4 registers using 8 bits
+    //8 bit registers without any rex prefix active is the normal low byte to high byte order of the first 4 general use registers using 8 bits
     
     [
       
@@ -923,7 +1742,7 @@ REG=[
       "AL","CL","DL","BL","AH","CH","DH","BH",
       
       //Registers 8 bit names without any rex prefix index 8 to 15
-      //In order to extend to registers 8 to 15 requires the REX prefix so the registers are shown as unknown
+      //In order to extend to registers 8 to 15 requires the REX prefix so the registers are shown as empty.
       
       "","","","","","","",""
       
@@ -947,7 +1766,7 @@ REG=[
 
   //The third array which is element 2 of this REG array
   //Is used only if the value returned from the GetOperandSize function is 2 in value
-  //which bellow is the register names 16 in size
+  //which bellow is the general use register names 16 in size
 
   [
     
@@ -963,7 +1782,7 @@ REG=[
   
   //The fourth array which is element 3 of this REG array
   //Is used only if the value from the GetOperandSize function is 3 in value
-  //which bellow is the register names 32 in size
+  //which bellow is the general use register names 32 in size
   
   [
     
@@ -977,14 +1796,14 @@ REG=[
     
   ],
   
-  //The fith array which is element 4 of this REG array is registers 48 in size, But there is no Registers 48 in size
+  //The fith array which is element 4 of this REG array is general use registers 48 in size, But there is no general use Registers 48 in size
   //so this array column remains nothing
   
   [],
 
   //The sixth array which is element 5 of this REG array
   //Is used only if the value returned from the GetOperandSize function is 5 in value
-  //which bellow is the register names 64 in size
+  //which bellow is the general use register names 64 in size
   
   [
     
@@ -998,12 +1817,12 @@ REG=[
     
   ],
   
-  //The seventh array which is element 6 of this REG array is registers 80 in size, But there is no Registers 80 in size
+  //The seventh array which is element 6 of this REG array is general use registers 80 in size, But there is no general use Registers 80 in size
   //so this array column remains nothing.
   
   [],
   
-  //The eight array which is element 7 of this REG array is registers 128 in size, But there is no Registers 128 in size
+  //The eight array which is element 7 of this REG array is general use registers 128 in size, But there is no general use Registers 128 in size
   //so this array column remains nothing.
   
   [],
@@ -1041,6 +1860,8 @@ REG=[
   ],
   
   //REG array element 10
+  //Note I plan on putting in sub arrays into YMM, ZMM registers 0 to 31 for AVX in this XMM element section.
+  //However I am deciding between two methods That I am coming up with and visualizing based on how the Vectorization instructions work, but before I do this I still have to add SSE4.1 and 4.2 also SSSE3.
 
   [
     
@@ -1048,7 +1869,7 @@ REG=[
     
     "XMM0","XMM1","XMM2","XMM3","XMM4","XMM5","XMM6","XMM7",
     
-    //Register MM names extended index 8 though 15
+    //Register XMM names extended index 8 though 15
     
     "XMM8","XMM9","XMM10","XMM11","XMM12","XMM13","XMM14","XMM15"
     
@@ -1159,7 +1980,7 @@ function GetPosition()
 
 //-------------------------------------------------------------------------------------------------------------------------
 //Different operands in the X86 processor have different Size Attributes controlled by the prefix instructions.
-//The size setting is a binary number that uses 7 bits like this 0000000
+//The size setting are codded in for each operation which use a binary number that uses 7 bits like this 0000000
 //an zero indicates a size setting is false well a one in value indicates it is settable to that size
 //0=128 BIT, 0=80 BIT, 0=64 BIT, 0=48 BIT, 0=32 BIT, 0=16 BIT, 0=8 BIT
 //A size setting of 0101011 means the following bellow
