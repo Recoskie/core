@@ -26,4 +26,4 @@ var DisAsm = Disassemble(ByteArray);
 
 //Display the output
 
-document.write('<textarea rows="30" cols="115">'+DisAsm+'</textarea>');
+document.write('&lt;textarea rows="30" cols="115"&gt;'+DisAsm+'&lt;/textarea&gt;');
