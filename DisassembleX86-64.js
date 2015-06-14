@@ -1169,16 +1169,24 @@ var OvRam = false;
 //if no Lock or REP prefix is used the Disassembled instruction is a empty string.
 //--------------------------------------------------------------------------------------------------
 
-var PrefixG1 = "",PrefixG2 = "";
+var PrefixG1 = "", PrefixG2 = ""; //Note the lock prefix trades places with the XRelease, and XAcquire HLE prefix depending on prefix order.
 
 //--------------------------------------------------------------------------------------------------
-//Switches the the Prefix hex code f3 for Rep to The XRelease for intel HLE instructions
+//The variable Bellow is set true to when the Repeat prefix is read so if the lock setting prefix is read after it is set false this tells us that the Repeat prefixes do not come after the LOCK Setting then G1, and G2 do not need to trade places,
+//however when the variable is true then G1, and G2 have to trade places because of the order the the lock and repeat prefixes are the other way around.
+//The LOCK prefix, and REPNE, or REP prefix must be used together otherwise the REPNE stays the REPNE prefix and does not switch to XAcquire even if the operation allows it as an HLE.
+//--------------------------------------------------------------------------------------------------
+
+var HLEFlipG1G2 = false;
+
+//--------------------------------------------------------------------------------------------------
+//Switches the the Prefix hex code f3 for Rep to The XRelease for intel HLE instructions.
 //--------------------------------------------------------------------------------------------------
 
 var XRelease = false;
 
 //--------------------------------------------------------------------------------------------------
-//Switches the the Prefix hex code f2 for Repne to The XAcquire prefix for Intel HLE instructions
+//Switches the the Prefix hex code f2 for Repne to The XAcquire prefix for Intel HLE instructions.
 //--------------------------------------------------------------------------------------------------
 
 var XAcquire = false;
@@ -2098,7 +2106,7 @@ function Decode_ModRM_SIB_Address(ModRMArray,RegMode,SizeSetting)
 
   var out = ""; //the variable out is what stores the decoded address
 
-  //check if the Mode bits are a Memory address Mode Address
+  //check if the Mode bits are a Memory address Mode.
   //ModR/M Memory address Pointer modes are 0,1,and 2 while Mode 3 is register Mode
 
   var s = GetOperandSize(SizeSetting);
@@ -2344,8 +2352,8 @@ var FOperands = function(T,S,OpNum)
 {
   return(
     {
-      Type:T,//The operand type
-      Size:S,//Size Attributes
+      Type:T, //The operand type
+      Size:S, //Size Attributes
       OperandNum:OpNum //The operand number this operand actually goes under
     }
   );
@@ -2357,7 +2365,6 @@ var FOperands = function(T,S,OpNum)
 
 function FormatOperands(Operands)
 {
-    takesModRM = false;
 
   var out = new Array(); //stores the operands under there scheduled elements
 
@@ -2379,8 +2386,9 @@ function FormatOperands(Operands)
 
       if(typeof out[0] == "undefined")
       {
-        out[0] = new FOperands( Operands[i],//Type
-        Operands[i + 1],//Size
+        out[0] = new FOperands(
+        Operands[i], //Type
+        Operands[i + 1], //Size
         OpNum++ //Operand Iteration number for which operand it is
         );
       }
@@ -2395,8 +2403,9 @@ function FormatOperands(Operands)
 
       if(typeof out[1] == "undefined")
       {
-        out[1] = new FOperands(Operands[i],//Type
-        Operands[i + 1],//Size
+        out[1] = new FOperands(
+        Operands[i], //Type
+        Operands[i + 1], //Size
         OpNum++ //Operand Iteration number for which operand it is
         );
       }
@@ -2410,8 +2419,9 @@ function FormatOperands(Operands)
 
       if(typeof out[2] == "undefined")
       {
-        out[2] = new FOperands(Operands[i],//Type
-        Operands[i + 1],//Size
+        out[2] = new FOperands(
+        Operands[i], //Type
+        Operands[i + 1], //Size
         OpNum++ //Operand Iteration number for which operand it is
         );
       }
@@ -2423,8 +2433,9 @@ function FormatOperands(Operands)
     {
       if(IMM <= 4) //note elements 3 and 4 is where the Immediate input Operands are stored
       {
-        out[IMM] = new FOperands(Operands[i],//Type
-        Operands[i + 1],//Size
+        out[IMM] = new FOperands(
+        Operands[i], //Type
+        Operands[i + 1], //Size
         OpNum++ //Operand Iteration number for which operand it is
         );
 
@@ -2434,8 +2445,9 @@ function FormatOperands(Operands)
 
     else if(Operands[i] > 10)
     {
-      out[Explicit] = new FOperands(Operands[i],//Type
-      Operands[i + 1],//Size
+      out[Explicit] = new FOperands(
+      Operands[i], //Type
+      Operands[i + 1], //Size
       OpNum++ //Operand Iteration number for which operand it is
       );
 
@@ -2537,17 +2549,19 @@ function DecodeInstruction()
 
   //if repeat Prefixes F2 hex REP,or F3 hex RENP
 
-  if(Opcode == 0xF2 | Opcode == 0xF3)
+  if (Opcode == 0xF2 | Opcode == 0xF3)
   {
     PrefixG1 = Mnemonics[Opcode]; //set the Prefix string
+    HLEFlipG1G2 = true; //set Filp HLE in case this is the last prefix read, and LOCK was set in string G2 first for HLE.
     return(DecodeInstruction());
   }
-  
-  //if the lock prefix note the lock prefix is seprate
+
+  //if the lock prefix note the lock prefix is separate
 
   if (Opcode == 0xF0)
   {
     PrefixG2 = Mnemonics[Opcode]; //set the Prefix string
+    HLEFlipG1G2 = false; //set Flip HLE false in case this is the last prefix read, and REP, or REPNE was set in string G2 first for HLE.
     return(DecodeInstruction());
   }
 
@@ -2746,25 +2760,32 @@ function DecodeInstruction()
   //Array Element eight = "Explicit operand" if available in the operand string format
 
   //**The operation type is now identified for if it is a HLE,or MPX,or HT,HNT.
-  //if Prefix is REP switch it to XRELEASE if operation is a HLE instruction and XRELEASE is allowed
+    //if REP prefix, and LOCK prefix and the curent decoded operation allows HLE XRELEASE
 
-  if (PrefixG1 == Mnemonics[0xF3] & XRelease)
+  if(PrefixG1 == Mnemonics[0xF3] & PrefixG2 == Mnemonics[0xF0] & XRelease)
   {
-    PrefixG1 = "XRELEASE ";
+    PrefixG1 = "XRELEASE "; //Then change REP to XRELEASE
   }
 
-  //if Prefix is REPNE switch it to XACQUIRE if operation is a HLE instruction and XACQUIRE is allowed
+  //if REPNE prefix, and LOCK prefix and the current decoded operation allows HLE XACQUIRE
 
-  if (PrefixG1 == Mnemonics[0xF2] & XAcquire)
+  if(PrefixG1 == Mnemonics[0xF2] & PrefixG2 == Mnemonics[0xF0] & XAcquire)
   {
-    PrefixG1 = "XACQUIRE ";
+    PrefixG1 = "XACQUIRE "; //Then change REP to XACQUIRE
   }
 
   //else if Prefix is REPNE switch it to BND if operation is a MPX instruction
 
-  else if (PrefixG1 == Mnemonics[0xF2] & BND)
+  else if(PrefixG1 == Mnemonics[0xF2] & BND)
   {
     PrefixG1 = "BND ";
+  }
+
+  //if PrefixG1 ends up being one of the HLE instructions Flip G1 with G2 if HLEFlipG1G2 it is true.
+
+  if((PrefixG1 == "XRELEASE " | PrefixG1 == "XACQUIRE ") & HLEFlipG1G2)
+  {
+    var t = PrefixG1; PrefixG1 = PrefixG2; PrefixG2 = t; t = null;
   }
  
   //element 0 which is the Reg opcode binary encoding which is the first thing to decode if used
