@@ -2743,14 +2743,14 @@ function DecodeInstruction()
   //Array Element eight = "Explicit operand" if available in the operand string format
   
   //**The operation type is now identified for if it is a HLE,or MPX,or HT,HNT.
-  //if REP prefix, and LOCK prefix and the curent decoded operation allows HLE XRELEASE
+  //if REP prefix, and LOCK prefix are used together, and the curent decoded operation allows HLE XRELEASE
 
   if(PrefixG1 == Mnemonics[0xF3] & PrefixG2 == Mnemonics[0xF0] & XRelease)
   {
     PrefixG1 = "XRELEASE "; //Then change REP to XRELEASE
   }
 
-  //if REPNE prefix, and LOCK prefix and the current decoded operation allows HLE XACQUIRE
+  //if REPNE prefix, and LOCK prefix are used together, and the current decoded operation allows HLE XACQUIRE
 
   if(PrefixG1 == Mnemonics[0xF2] & PrefixG2 == Mnemonics[0xF0] & XAcquire)
   {
@@ -2764,7 +2764,6 @@ function DecodeInstruction()
     PrefixG1 = "BND ";
   }
   
-  
   //if HT is active then it is a jump instruction check and adjust for the HT,and HNT prefix
 
   if(HT)
@@ -2772,13 +2771,11 @@ function DecodeInstruction()
     if (SegOverride == Mnemonics[0x2E])
     {
       PrefixG1 = "HNT ";
-      return(DecodeInstruction());
     }
 
     else if (SegOverride == Mnemonics[0x3E])
     {
       PrefixG1 = "HT ";
-      return(DecodeInstruction());
     }
   }
 
