@@ -2498,23 +2498,6 @@ function DecodeInstruction()
  
   //******************************check overrides and prefixes*******************************
 
-  //if HT is active then it is a jump instruction check and adjust for the HT,and HNT prefix
-
-  if(HT)
-  {
-    if (Opcode == 0x2E)
-    {
-      PrefixG1 = "HNT ";
-      return(DecodeInstruction());
-    }
-
-    else if (Opcode == 0x3E)
-    {
-      PrefixG1 = "HT ";
-      return(DecodeInstruction());
-    }
-  }
-
   //Segment overrides
 
   if (Opcode == 0x2E | Opcode == 0x36 | Opcode == 0x3E | Opcode == 0x64 | Opcode == 0x65)
@@ -2758,9 +2741,9 @@ function DecodeInstruction()
   //Array Element six = "Explicit operand" if available in the operand string format
   //Array Element seven = "Explicit operand" if available in the operand string format
   //Array Element eight = "Explicit operand" if available in the operand string format
-
+  
   //**The operation type is now identified for if it is a HLE,or MPX,or HT,HNT.
-    //if REP prefix, and LOCK prefix and the curent decoded operation allows HLE XRELEASE
+  //if REP prefix, and LOCK prefix and the curent decoded operation allows HLE XRELEASE
 
   if(PrefixG1 == Mnemonics[0xF3] & PrefixG2 == Mnemonics[0xF0] & XRelease)
   {
@@ -2779,6 +2762,24 @@ function DecodeInstruction()
   else if(PrefixG1 == Mnemonics[0xF2] & BND)
   {
     PrefixG1 = "BND ";
+  }
+  
+  
+  //if HT is active then it is a jump instruction check and adjust for the HT,and HNT prefix
+
+  if(HT)
+  {
+    if (SegOverride == Mnemonics[0x2E])
+    {
+      PrefixG1 = "HNT ";
+      return(DecodeInstruction());
+    }
+
+    else if (SegOverride == Mnemonics[0x3E])
+    {
+      PrefixG1 = "HT ";
+      return(DecodeInstruction());
+    }
   }
 
   //if PrefixG1 ends up being one of the HLE instructions Flip G1 with G2 if HLEFlipG1G2 it is true.
