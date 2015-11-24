@@ -1292,7 +1292,7 @@ function DecodePrefixAdjustments()
   if (Prefix == 0x2E | Prefix == 0x36 | Prefix == 0x3E | Prefix == 0x64 | Prefix == 0x65)
   {
     SegOverride = Mnemonics[Prefix]; //Set the Left Bracket for the ModR/M memory address.
-    return(DecodeInstruction()); //restart function decode more prefix settings that can effect the decode instruction.
+    return(DecodePrefixAdjustments()); //restart function decode more prefix settings that can effect the decode instruction.
   }
 
   //Operand override Prefix
