@@ -1250,10 +1250,10 @@ function DecodePrefixAdjustments()
       Prefix = BinCode[CodePos32]; //read EVEX byte settings.
       NextBytePos(); //Move to the next byte.
       //-------------------------------------------------------------------------------------------------------------------------
-      Prefix = Prefix | ( BinCode[CodePos32] >> 8 ); //read next EVEX byte settings.
+      Prefix = Prefix | ( BinCode[CodePos32] << 8 ); //read next EVEX byte settings.
       NextBytePos(); //Move to the next byte.
       //-------------------------------------------------------------------------------------------------------------------------
-      Prefix = Prefix | ( BinCode[CodePos32] >> 16 ); //read next EVEX byte settings.
+      Prefix = Prefix | ( BinCode[CodePos32] << 16 ); //read next EVEX byte settings.
       NextBytePos(); //Move to the next byte.
       //-------------------------------------------------------------------------------------------------------------------------
 
