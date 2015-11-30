@@ -152,6 +152,7 @@ var SegOverride = "[";
 
 /*-------------------------------------------------------------------------------------------------------------------------
 MMQ is used as an separator for 64 in size registers, and 64 in size vector MM instructions.
+Note that MMQ 64 encoded instructions can not be used with VEX, or EVEX Extensions.
 ^used by function Decode_ModRM_SIB_Address, and DecodeRegValue^
 -------------------------------------------------------------------------------------------------------------------------*/
 
@@ -252,7 +253,7 @@ REG = [
       "RAX", "RCX", "RDX", "RBX", "RSP", "RBP", "RSI", "RDI", "R8", "R9", "R10", "R11", "R12", "R13", "R14", "R15"
     ],
 
-    //Intel MM qword technology
+    //Intel MM qword technology SSE vector instructions that use these can not be used with Vector extensions.
 
     [
       //Register MM names index 0 to 7
@@ -353,9 +354,7 @@ REG = [
   //REG Array Index 13 uses the K registers as an operand.
 
   [
-    //K registers index 0 to 7
-
-    "K0", "K1", "K2", "K3", "K4", "K5", "K6", "K7"
+    //K registers index 0 to 7 "
   ]
 
 ]; //end of REG array structure
@@ -382,7 +381,7 @@ PTR = [
 
   //Pointer array index 0 when GetOperandSize returns size 0 then times 2 for 8 bit pointer.
   //In plus 16 bit shift array index 0 is added by 1 making 0+1=1 no pointer name is used for a 28 bit pointers (mathematically 8+16=24). 
-  "BYTE PTR ", "",
+  "BYTE PTR ", "ERROR PTR ",
 
   //Pointer array index 2 when GetOperandSize returns size 1 then times 2 for 16 bit pointer alignment.
   //In plus 16 bit shift index 2 is added by 1 making 2+1=3 The 32 bit pointer name is used (mathematically 16+16=32).
@@ -397,18 +396,20 @@ PTR = [
   //In plus 16 bit shift index 6 is added by 1 making 6+1=7 the 80 bit TBYTE pointer name is used (mathematically 64+16=80).
   ["QWORD PTR ", "MMWORD PTR "], "TBYTE PTR ",
 
+
   //Pointer array index 8 when GetOperandSize returns size 4 then multiply by 2 gives index 8 for the 128 bit pointer.
-  //The Non shifted 128 bit pointer has two types the 128 bit "XMM" Vector, and regular "OWORD" used in the Bound instructions.
   //In plus 16 bit shift index 8 is added by 1 making 8+1=9 there is no 144 bit pointer name (mathematically 128+16=144).
-  ["OWORD PTR ", "XMMWORD PTR "], "",
+  //However the 128 bit "OWORD" is used under 144 because it is used separately with 128-bit-long bound registers and cannot change size.
+  //This allows the vector pointers to go by vector size. Note 144 aliases to 128 bit size.
+  "XMMWORD PTR ", "OWORD PTR ",
 
   //Pointer array index 10 when GetOperandSize returns size 5 then multiply by 2 gives index 10 for the 256 bit pointer.
   //In plus 16 bit shift index 10 is added by 1 making 10+1=11 there is no 275 bit pointer name (mathematically 256+16=275).
-  "YMMWORD PTR ", "",
+  "YMMWORD PTR ", "ERROR PTR ",
 
   //Pointer array index 12 when GetOperandSize returns size 6 then multiply by 2 gives index 12 for the 512 bit pointer.
   //In plus 16 bit shift index 12 is added by 1 making 12+1=13 there is no 528 bit pointer name (mathematically 5126+16=528).
-  "ZMMWORD PTR ", ""
+  "ZMMWORD PTR ", "ERROR PTR "
 ];
 
 /*--------------------------------------------------------------------------------------------------
@@ -843,11 +844,11 @@ function DecodeRegValue(RValue, BySize, Setting) {
   {
     //if any Rex Prefix
 
-    if (RexActive) { return (REG[0][1][RValue + RegExtend]); }
+    if (RexActive) { return (REG[0][1][RegExtend | RValue]); }
 
     //else use high low order
 
-    else { return (REG[0][0][RValue + RegExtend]); }
+    else { return (REG[0][0][RegExtend | RValue]); }
   }
 
   //if Reg 64 can go R64/MM
@@ -856,11 +857,11 @@ function DecodeRegValue(RValue, BySize, Setting) {
   {
     //if MMQ
 
-    if (MMQ) { return (REG[3][1][RValue + RegExtend]); }
+    if (MMQ) { return (REG[3][1][RegExtend | RValue]); }
 
     //else R64
 
-    else { return (REG[3][0][RValue + RegExtend]); }
+    else { return (REG[3][0][RegExtend | RValue]); }
   }
 
   //No other Separations.
@@ -869,7 +870,7 @@ function DecodeRegValue(RValue, BySize, Setting) {
 
   //Return the Register.
 
-  return (REG[Setting][RValue + RegExtend]);
+  return (REG[Setting][RegExtend | RValue]);
 }
 
 /*-------------------------------------------------------------------------------------------------------------------------
@@ -886,7 +887,7 @@ function Decode_ModRM_SIB_Address(ModRM, BySize, Setting)
 
   if (BySize)
   {
-    Setting = GetOperandSize(Setting) * 2 + FarPointer;
+    Setting = (GetOperandSize(Setting) << 1) | FarPointer;
   }
 
   //-------------------------------------------------------------------------------------------------------------------------
@@ -900,18 +901,18 @@ function Decode_ModRM_SIB_Address(ModRM, BySize, Setting)
     //Get the pointer size by Size setting.
     //-------------------------------------------------------------------------------------------------------------------------
 
-    //If pointer size is 128, or 64, and it's Operand type is active.
+    //If pointer size is 6 for 64 bit pointer and Intel mm Quad word is active.
 
-    if( ( SIMD >= 1 & Setting == 8 ) | ( MMQ & Setting == 6 ) )
+    if( MMQ & Setting == 6 )
     {
-      out = PTR[Setting][1];
+      out = PTR[6][1];
     }
 
-    //Else it is a 128 bit OWORD PTR, or Regular QWORD PTR.
+    //Else Regular QWORD PTR.
 
-    else if( Setting == 8 | Setting == 6 )
+    else if( Setting == 6 )
     {
-      out = PTR[Setting][0];
+      out = PTR[6][0];
     }
 
     //else The pointers go up and down by size regularly.
@@ -1002,7 +1003,7 @@ function Decode_ModRM_SIB_Address(ModRM, BySize, Setting)
 
       //[BP], and [BX] as long as Mode is not 0, and Register is not 6 which sets DispType 0.
 
-      else if ( DispType != 0 ) { out += REG[ AddressSize ][ 17 - ( ModRM[2] * 2 ) ]; }
+      else if ( DispType != 0 ) { out += REG[ AddressSize ][ 17 - ( ModRM[2] << 1 ) ]; }
   
     } //End of 16 bit ModR/M decode logic.
 
@@ -1030,7 +1031,7 @@ function Decode_ModRM_SIB_Address(ModRM, BySize, Setting)
 
         //Calculate the Index register with it's Extended value because the index register will only cancel out if 4 in value.
 
-        var IndexReg = SIB[1] + IndexExtend;
+        var IndexReg = SIB[1] | IndexExtend;
 
         //check if the base register is 5 in value in the SIB without it's added extended value, and that the ModR/M Mode is 0 this activates Disp32
 
@@ -1056,11 +1057,11 @@ function Decode_ModRM_SIB_Address(ModRM, BySize, Setting)
         {
           //64 has both MM registers, and R64 registers so the element 0 must be used for R64.
 
-          if(AddressSize == 3) { out += REG[ AddressSize ] [0] [ SIB[2] + BaseExtend ]; }
+          if(AddressSize == 3) { out += REG[ AddressSize ] [0] [BaseExtend | SIB[2] ]; }
 
           //32 only has R32 registers.
 
-          else{ out += REG[ AddressSize ][ SIB[2] + BaseExtend ]; }
+          else{ out += REG[ AddressSize ][BaseExtend | SIB[2] ]; }
 
           //If the Index Register is not Canceled out (Note this is only reachable if base register was decoded and not canceled out)
 
@@ -1076,11 +1077,11 @@ function Decode_ModRM_SIB_Address(ModRM, BySize, Setting)
         {
           //64 has both MM registers, and R64 registers so the element 0 must be used for R64.
 
-          if(AddressSize == 3) { out += REG[ AddressSize ] [0] [ IndexReg ]; }
+          if(AddressSize == 3) { out += REG[ AddressSize ] [0] [ IndexExtend | IndexReg ]; }
 
           //32 only has R32 registers.
 
-          else{ out += REG[ AddressSize ][ IndexReg ]; }
+          else{ out += REG[ AddressSize ][ IndexExtend | IndexReg ]; }
 
           //add what the scale bits decode to the Index register by the value of the scale bits which select the name from the scale array.
 
@@ -1096,11 +1097,11 @@ function Decode_ModRM_SIB_Address(ModRM, BySize, Setting)
       {
         //64 has both MM registers, and R64 registers so the element 0 must be used for R64.
 
-        if(AddressSize == 3) { out += REG[ AddressSize ] [0] [ ModRM[2] + BaseExtend ]; }
+        if(AddressSize == 3) { out += REG[ AddressSize ] [0] [ BaseExtend | ModRM[2] ]; }
 
         //32 only has R32 registers.
 
-        else{ out += REG[ AddressSize ][ ModRM[2] + BaseExtend ]; }
+        else{ out += REG[ AddressSize ][ BaseExtend | ModRM[2] ]; }
       }
     }
     
@@ -1146,7 +1147,7 @@ function Decode_ModRM_SIB_Address(ModRM, BySize, Setting)
 
   else
   {
-    out = DecodeRegValue(ModRM[2] + BaseExtend, false, Setting);
+    out = DecodeRegValue(BaseExtend | ModRM[2], false, Setting);
   }
 
   //return what the "Register mode" is, or "Memory address"
