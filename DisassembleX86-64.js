@@ -1031,7 +1031,7 @@ function Decode_ModRM_SIB_Address(ModRM, BySize, Setting)
 
         //Calculate the Index register with it's Extended value because the index register will only cancel out if 4 in value.
 
-        var IndexReg = SIB[1] | IndexExtend;
+        var IndexReg = IndexExtend | SIB[1];
 
         //check if the base register is 5 in value in the SIB without it's added extended value, and that the ModR/M Mode is 0 this activates Disp32
 
@@ -1077,11 +1077,11 @@ function Decode_ModRM_SIB_Address(ModRM, BySize, Setting)
         {
           //64 has both MM registers, and R64 registers so the element 0 must be used for R64.
 
-          if(AddressSize == 3) { out += REG[ AddressSize ] [0] [ IndexExtend | IndexReg ]; }
+          if(AddressSize == 3) { out += REG[ AddressSize ] [0] [ IndexReg ]; }
 
           //32 only has R32 registers.
 
-          else{ out += REG[ AddressSize ][ IndexExtend | IndexReg ]; }
+          else{ out += REG[ AddressSize ][ IndexReg ]; }
 
           //add what the scale bits decode to the Index register by the value of the scale bits which select the name from the scale array.
 
