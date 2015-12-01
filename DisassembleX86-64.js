@@ -1,10 +1,4 @@
 /*-------------------------------------------------------------------------------------------------------------------------
-Binary byte code array
--------------------------------------------------------------------------------------------------------------------------*/
-
-var BinCode = new Array();
-
-/*-------------------------------------------------------------------------------------------------------------------------
 CodePos32 is the actual position in the Binary byte code array.
 However It is limited to an Uint32 number because JavaScript does not use 64 bit indexes.
 -------------------------------------------------------------------------------------------------------------------------*/
@@ -151,12 +145,11 @@ Override Prefix is used it is stored with the segment. ^used by function Decode_
 var SegOverride = "[";
 
 /*-------------------------------------------------------------------------------------------------------------------------
-MMQ is used as an separator for 64 in size registers, and 64 in size vector MM instructions.
-Note that MMQ 64 encoded instructions can not be used with VEX, or EVEX Extensions.
+MMX is used as an separator for 64 in size registers, and 64 in size vector MM instructions.
 ^used by function Decode_ModRM_SIB_Address, and DecodeRegValue^
 -------------------------------------------------------------------------------------------------------------------------*/
 
-var MMQ = false;
+var MMX = false;
 
 /*-------------------------------------------------------------------------------------------------------------------------
 The SIMD value is set according to SIMD MODE for SSE, VEX, and EVEX.
@@ -253,7 +246,7 @@ REG = [
       "RAX", "RCX", "RDX", "RBX", "RSP", "RBP", "RSI", "RDI", "R8", "R9", "R10", "R11", "R12", "R13", "R14", "R15"
     ],
 
-    //Intel MM qword technology SSE vector instructions that use these can not be used with Vector extensions.
+    //Intel MMX vector instructions can not be used with Vector extensions.
 
     [
       //Register MM names index 0 to 7
@@ -354,7 +347,8 @@ REG = [
   //REG Array Index 13 uses the K registers as an operand.
 
   [
-    //K registers index 0 to 7 "
+    //K registers index 0 to 7
+    "K0", "K1", "K2", "K3", "K4", "K5", "K6", "K7"
   ]
 
 ]; //end of REG array structure
@@ -394,8 +388,11 @@ PTR = [
   //Pointer array index 6 when GetOperandSize returns size 3 then multiply by 2 gives index 6 for the 64 bit pointer.
   //The Non shifted 64 bit pointer has two types the 64 bit vector "MM", and regular "QWORD" the same as the REG array.
   //In plus 16 bit shift index 6 is added by 1 making 6+1=7 the 80 bit TBYTE pointer name is used (mathematically 64+16=80).
-  ["QWORD PTR ", "MMWORD PTR "], "TBYTE PTR ",
-
+  [
+    "QWORD PTR ",
+    "MMWORD PTR "
+  ], 
+  "TBYTE PTR ",
 
   //Pointer array index 8 when GetOperandSize returns size 4 then multiply by 2 gives index 8 for the 128 bit pointer.
   //In plus 16 bit shift index 8 is added by 1 making 8+1=9 there is no 144 bit pointer name (mathematically 128+16=144).
@@ -855,9 +852,9 @@ function DecodeRegValue(RValue, BySize, Setting) {
 
   if(Setting == 3) 
   {
-    //if MMQ
+    //if MMX
 
-    if (MMQ) { return (REG[3][1][RegExtend | RValue]); }
+    if (MMX) { return (REG[3][1][RegExtend | RValue]); }
 
     //else R64
 
@@ -901,9 +898,9 @@ function Decode_ModRM_SIB_Address(ModRM, BySize, Setting)
     //Get the pointer size by Size setting.
     //-------------------------------------------------------------------------------------------------------------------------
 
-    //If pointer size is 6 for 64 bit pointer and Intel mm Quad word is active.
+    //If pointer size is 6 for 64 bit pointer and Intel MMX is active.
 
-    if( MMQ & Setting == 6 )
+    if( MMX & Setting == 6 )
     {
       out = PTR[6][1];
     }
@@ -1031,7 +1028,7 @@ function Decode_ModRM_SIB_Address(ModRM, BySize, Setting)
 
         //Calculate the Index register with it's Extended value because the index register will only cancel out if 4 in value.
 
-        var IndexReg = IndexExtend | SIB[1];
+        var IndexReg = SIB[1] | IndexExtend;
 
         //check if the base register is 5 in value in the SIB without it's added extended value, and that the ModR/M Mode is 0 this activates Disp32
 
@@ -1077,11 +1074,11 @@ function Decode_ModRM_SIB_Address(ModRM, BySize, Setting)
         {
           //64 has both MM registers, and R64 registers so the element 0 must be used for R64.
 
-          if(AddressSize == 3) { out += REG[ AddressSize ] [0] [ IndexReg ]; }
+          if(AddressSize == 3) { out += REG[ AddressSize ] [0] [ IndexExtend | IndexReg ]; }
 
           //32 only has R32 registers.
 
-          else{ out += REG[ AddressSize ][ IndexReg ]; }
+          else{ out += REG[ AddressSize ][ IndexExtend | IndexReg ]; }
 
           //add what the scale bits decode to the Index register by the value of the scale bits which select the name from the scale array.
 
@@ -1359,4 +1356,102 @@ function DecodePrefixAdjustments()
   //Opcode is not a prefix code
 
   return(0); //regular opcode no extension active like VEX, or EVEX.
+}
+
+/*-------------------------------------------------------------------------------------------------------------------------
+This function decodes which instruction the Mnemonic is and gives back the operand encoding it uses.
+-------------------------------------------------------------------------------------------------------------------------*/
+
+function DecodeMnemonicOperandEncoding( Opcode, Exstention )
+{
+  //*******************************instruction Decode*****************************
+  //get the Operation name by the operations byte value
+ 
+  var Name = Mnemonics[Opcode];
+ 
+  //get the Operands for this opcode it follows the same array structure as Mnemonics array
+ 
+  var Type = Operands[Opcode];
+ 
+  //if the current Mnemonic is an array two in size then Register Mode and memory more are separate from each other
+ 
+  if(Name instanceof Array && Name.length == 2)
+  {
+
+     //if Mode is Memory Address mode use the first element
+
+     if( ( BinCode[CodePos32] & 0xC0 ) < 3 )
+     {
+       Name = Name[0];
+       Type = Type[0];
+     }
+       
+     //else register mode
+      
+     else
+     {
+       Name = Name[1];
+       Type = Type[1];
+     }
+  }
+
+  //if the current Mnemonic is an array 8 in length
+
+  if(Name instanceof Array && Name.length == 8)
+  {
+
+    //digit opcode selection
+
+    Name = Name[ BinCode[CodePos32] & 0x38 ];
+    Type = Type[ BinCode[CodePos32] & 0x38 ];
+
+    //if The select digit opcode is another array 8 in size it is a static opcode selection
+
+    if(Name instanceof Array && Name.length == 8)
+    {
+      Name = Name[ BinCode[CodePos32] & 0x07 ];
+      Type = Type[ BIdCode[CodePos32] & 0x07 ];
+    }
+
+  }
+
+    //if the Mnemonic is an array 3 in size it is an instruction Mnemonic that goes by the tow Size override prefixes and the middle element is default size Mnemonic name
+
+  if(Name instanceof Array && Name.length == 3)
+  {
+    Name = Name[SizeAttrSelect]; //set it to the 64 Mnemonic
+    Type = Type[SizeAttrSelect]; //Operand array always matches the Mnemonic structure
+  }
+
+  //if the current Mnemonic is an array 4 in size it is an SSE instruction, or VEX, EVEX
+
+  if(Name instanceof Array && Name.length == 4)
+  {
+      PrefixG1 = "";
+      Name = Name[SMID];
+      Type = Type[SMID];
+
+  }
+
+  //return the opcode name and operand encoding.
+
+  return( [Name, Type] );
+}
+
+/*-------------------------------------------------------------------------------------------------------------------------
+Decode instruction.
+-------------------------------------------------------------------------------------------------------------------------*/
+
+function DecodeInstrcution()
+{
+
+  var Extension = DecodePrefixAdjustments();
+
+  //-------------------------------------------------------------------------------------------------------------------------
+  var Opcode = BinCode[CodePos32]; //Read Mnemonic.
+  NextBytePos(); //Move to the next byte.
+  //-------------------------------------------------------------------------------------------------------------------------
+
+  var Instruction = DecodeMnemonic_GetOperandEncoding( Opcode, Extension );
+
 }
