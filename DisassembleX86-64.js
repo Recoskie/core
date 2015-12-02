@@ -145,11 +145,10 @@ Override Prefix is used it is stored with the segment. ^used by function Decode_
 var SegOverride = "[";
 
 /*-------------------------------------------------------------------------------------------------------------------------
-MMX is used as an separator for 64 in size registers, and 64 in size vector MM instructions.
+SSE is set true to allow SSE instructions to be used with vector Extensions.
 ^used by function Decode_ModRM_SIB_Address, and DecodeRegValue^
 -------------------------------------------------------------------------------------------------------------------------*/
 
-var MMX = false;
 var SSE = false;
 
 /*-------------------------------------------------------------------------------------------------------------------------
