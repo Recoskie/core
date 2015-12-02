@@ -150,6 +150,7 @@ MMX is used as an separator for 64 in size registers, and 64 in size vector MM i
 -------------------------------------------------------------------------------------------------------------------------*/
 
 var MMX = false;
+var SSE = false;
 
 /*-------------------------------------------------------------------------------------------------------------------------
 The SIMD value is set according to SIMD MODE for SSE, VEX, and EVEX.
@@ -190,7 +191,7 @@ and SIMD Vector length instructions.
 REG = [
 
   /*REG array Index 0 Is used only if the value returned from the GetOperandSize is 0 in value which is the
-  8 bit size names and selection of the general use registers. However this array element has two arrays of 8 bit registers
+  8 bit size names and selection of the general use Arithmetic registers. However this array element has two arrays of 8 bit registers
   The reason is that the Register names change under 8 bit register selection if any rex prefix is used reason is explained bellow.*/
 
   [
@@ -217,7 +218,7 @@ REG = [
   ],
 
   /*REG array Index 1 Is used only if the value returned from the GetOperandSize is 1 in value
-  which bellow is the general use register names 16 in size*/
+  which bellow is the general use Arithmetic register names 16 in size*/
 
   [
     //Registers 16 bit names index 0 to 15
@@ -226,7 +227,7 @@ REG = [
   ],
 
   /*REG array Index 2 Is used only if the value from the GetOperandSize function is 2 in value
-  which bellow is the general use register names 32 in size*/
+  which bellow is the general use Arithmetic register names 32 in size*/
 
   [
     //Registers 32 bit names index 0 to 15
@@ -235,24 +236,13 @@ REG = [
   ],
 
   /*REG array Index 3 Is used only if the value returned from the GetOperandSize is 3 in value
-  which bellow is the register names 64 in size also if the operand type was Intel MM Qword technology than it uses MM.*/
+  which bellow is the general use Arithmetic register names 64 in size*/
 
   [
-    //general use registers 64
+    //general use Arithmetic registers 64
+    //Registers 64 bit names index 0 to 15
 
-    [
-      //Registers 64 bit names index 0 to 15
-
-      "RAX", "RCX", "RDX", "RBX", "RSP", "RBP", "RSI", "RDI", "R8", "R9", "R10", "R11", "R12", "R13", "R14", "R15"
-    ],
-
-    //Intel MMX vector instructions can not be used with Vector extensions.
-
-    [
-      //Register MM names index 0 to 7
-
-      "MM0", "MM1", "MM2", "MM3", "MM4", "MM5", "MM6", "MM7"
-    ]
+    "RAX", "RCX", "RDX", "RBX", "RSP", "RBP", "RSI", "RDI", "R8", "R9", "R10", "R11", "R12", "R13", "R14", "R15"
   ],
 
   //REG array Index 4 SIMD registers 128 in size.
@@ -291,20 +281,41 @@ REG = [
     "ZMM16", "ZMM17", "ZMM18", "ZMM19", "ZMM20", "ZMM21", "ZMM22", "ZMM23", "ZMM24", "ZMM25", "ZMM26", "ZMM27", "ZMM28", "ZMM29", "ZMM30", "ZMM31"
   ],
 
-  /*The Registers bellow this line do not change size they are completely separate registers used for special purposes that have one single size.
-  These registers are selected by index based on the setting number value instead of bit position size settings used by GetOperandSize
-  every function has been set up to go by both size attributes and by one strict size setting which is used as a number for the selected index.
-  When the BySize adjustment is false*/
+  //REG array Index 7 SIMD registers 1024 bit (Reserved)
 
-  //REG array Index 7
+  [
+    //Register unkowable names index 0 to 15
+
+    "?MM0", "?MM1", "?MM2", "?MM3", "?MM4", "?MM5", "?MM6", "?MM7", "?MM8", "?MM9", "?MM10", "?MM11", "?MM12", "?MM13", "?MM14", "?MM15",
+
+    //Register unkowable names index 16 to 31 (Note different bit EVEX prefixes allow higher Extension values in the Register Extend variables)
+
+    "?MM16", "?MM17", "?MM18", "?MM19", "?MM20", "?MM21", "?MM22", "?MM23", "?MM24", "?MM25", "?MM26", "?MM27", "?MM28", "?MM29", "?MM30", "?MM31"
+  ],
+
+  /*The Registers bellow this line do not change size they are completely separate registers used for special purposes that have one single size.
+  These registers are selected by index based on the setting number value instead of size attrubutes used by GetOperandSize.
+  every function has been set up to go by both size attributes and by one strict size setting which is used as a number for the selected index.
+  When the BySize adjustment is false.*/
+
+  //REG array Index 8
 
   [
     //Segment Registers names index 0 to 7
 
-    "ES", "CS", "SS", "DS", "FS", "GS", "ST(-2)", "ST(-1)"
+    "ES", "CS", "SS", "DS", "FS", "GS", "???", "???"
   ],
 
-  //REG array Index 8
+  //REG index 9 Intel MM qword technology SSE vector instructions.
+  //These can not be used with Vector extensions as they are seprate and are not in the new vector SIMD unit.
+
+  [
+    //Register MM names index 0 to 7
+
+    "MM0", "MM1", "MM2", "MM3", "MM4", "MM5", "MM6", "MM7"
+  ],
+
+  //REG array Index 10
 
   [
     //ST registers Names index 0 to 7
@@ -312,31 +323,7 @@ REG = [
     "ST(0)", "ST(1)", "ST(2)", "ST(3)", "ST(4)", "ST(5)", "ST(6)", "ST(7)"
   ],
 
-  //REG array Index 9
-
-  [
-    //control Registers index 0 to 15
-
-    "CR0", "CR1", "CR2", "CR3", "CR4", "CR5", "CR6", "CR7", "CR8", "CR9", "CR10", "CR11", "CR12", "CR13", "CR14", "CR15"
-  ],
-
-  //REG array Index 10
-
-  [
-    //debug registers index 0 to 15
-
-    "DR0", "DR1", "DR2", "DR3", "DR4", "DR5", "DR6", "DR7", "DR8", "DR9", "DR10", "DR11", "DR12", "DR13", "DR14", "DR15"
-  ],
-
-  //REG array Index 11
-
-  [
-    //TR registers index 0 to 7
-
-    "TR0", "TR1", "TR2", "TR3", "TR4", "TR5", "TR6", "TR7"
-  ],
-
-  //REG Array Index 12
+  //REG Array Index 11
 
   [
     //BND0 to BND3,and CR0 to CR3 for two byte opcodes 0x0F1A,and 0x0F1B register index 0 to 7
@@ -344,10 +331,35 @@ REG = [
     "BND0", "BND1", "BND2", "BND3", "CR0", "CR1", "CR2", "CR3"
   ],
 
-  //REG Array Index 13 uses the K registers as an operand.
+  //REG array Index 12
+
+  [
+    //control Registers index 0 to 15
+
+    "CR0", "CR1", "CR2", "CR3", "CR4", "CR5", "CR6", "CR7", "CR8", "CR9", "CR10", "CR11", "CR12", "CR13", "CR14", "CR15"
+  ],
+
+  //REG array Index 13
+
+  [
+    //debug registers index 0 to 15
+
+    "DR0", "DR1", "DR2", "DR3", "DR4", "DR5", "DR6", "DR7", "DR8", "DR9", "DR10", "DR11", "DR12", "DR13", "DR14", "DR15"
+  ],
+
+  //REG array Index 14
+
+  [
+    //TR registers index 0 to 7
+
+    "TR0", "TR1", "TR2", "TR3", "TR4", "TR5", "TR6", "TR7"
+  ],
+
+  //REG Array Index 15 uses the K registers.
 
   [
     //K registers index 0 to 7
+    
     "K0", "K1", "K2", "K3", "K4", "K5", "K6", "K7"
   ]
 
@@ -388,25 +400,31 @@ PTR = [
   //Pointer array index 6 when GetOperandSize returns size 3 then multiply by 2 gives index 6 for the 64 bit pointer.
   //The Non shifted 64 bit pointer has two types the 64 bit vector "MM", and regular "QWORD" the same as the REG array.
   //In plus 16 bit shift index 6 is added by 1 making 6+1=7 the 80 bit TBYTE pointer name is used (mathematically 64+16=80).
-  [
-    "QWORD PTR ",
-    "MMWORD PTR "
-  ], 
-  "TBYTE PTR ",
+  "QWORD PTR ", "TBYTE PTR ",
 
-  //Pointer array index 8 when GetOperandSize returns size 4 then multiply by 2 gives index 8 for the 128 bit pointer.
-  //In plus 16 bit shift index 8 is added by 1 making 8+1=9 there is no 144 bit pointer name (mathematically 128+16=144).
-  //However the 128 bit "OWORD" is used under 144 because it is used separately with 128-bit-long bound registers and cannot change size.
-  //This allows the vector pointers to go by vector size. Note 144 aliases to 128 bit size.
-  "XMMWORD PTR ", "OWORD PTR ",
+  //--------------------------------------------------------------------------------------------------
+  //Vectors do not use Far pointer shift instead it is used for MMX instructions which can not change vector size,
+  //and is also used for "OWORD" which is used under 128-bit-long bound registers and cannot change size.
+  //We do not want OWORD to colide with our vector lengths 128 XMMWORD and up that go by goups of 2 by size.
+  //--------------------------------------------------------------------------------------------------
+
+  //Pointer array index 8 when GetOperandSize returns size 4 then multiply by 2 gives index 8 for the 128 bit Vector pointer.
+  //In far pointer shift the MMX vector pointer is used note that it is index 9 thus the reg array uses index 9 for MM.
+  //MM is desinged to be used when the by size system is false using index 9 for both Reg/Mem.
+  "XMMWORD PTR ",  "MMWORD PTR ",
 
   //Pointer array index 10 when GetOperandSize returns size 5 then multiply by 2 gives index 10 for the 256 bit pointer.
   //In plus 16 bit shift index 10 is added by 1 making 10+1=11 there is no 275 bit pointer name (mathematically 256+16=275).
-  "YMMWORD PTR ", "ERROR PTR ",
+  //OWORD is used with the bounds instructions it is also desinged to be used when the by size setting is false REG Array Index 11 in bound registers.
+  "YMMWORD PTR ", "OWORD PTR ",
 
   //Pointer array index 12 when GetOperandSize returns size 6 then multiply by 2 gives index 12 for the 512 bit pointer.
   //In plus 16 bit shift index 12 is added by 1 making 12+1=13 there is no 528 bit pointer name (mathematically 5126+16=528).
-  "ZMMWORD PTR ", "ERROR PTR "
+  "ZMMWORD PTR ", "ERROR PTR ",
+
+  //Pointer array index 14 when GetOperandSize returns size 7 then multiply by 2 gives index 12 for the 1024 bit pointer.
+  //In plus 16 bit shift index 14 is added by 1 making 12+1=13 there is no 1 bit pointer name (mathematically 5126+16=528).
+  "?MMWORD PTR ", "ERROR PTR "
 ];
 
 /*--------------------------------------------------------------------------------------------------
@@ -848,19 +866,6 @@ function DecodeRegValue(RValue, BySize, Setting) {
     else { return (REG[0][0][RegExtend | RValue]); }
   }
 
-  //if Reg 64 can go R64/MM
-
-  if(Setting == 3) 
-  {
-    //if MMX
-
-    if (MMX) { return (REG[3][1][RegExtend | RValue]); }
-
-    //else R64
-
-    else { return (REG[3][0][RegExtend | RValue]); }
-  }
-
   //No other Separations.
 
   if (REG[Setting].length <= RegExtend) { RegExtend = REG[Setting].length - 8; } //Limit Extend Value to max amount of register indexes
@@ -898,30 +903,11 @@ function Decode_ModRM_SIB_Address(ModRM, BySize, Setting)
     //Get the pointer size by Size setting.
     //-------------------------------------------------------------------------------------------------------------------------
 
-    //If pointer size is 6 for 64 bit pointer and Intel MMX is active.
+    out = PTR[Setting];
 
-    if( MMX & Setting == 6 )
-    {
-      out = PTR[6][1];
-    }
+    //Add the Segment override left address bracket if any segment override was used otherwise the SegOverride string should be just a normal left bracket.
 
-    //Else Regular QWORD PTR.
-
-    else if( Setting == 6 )
-    {
-      out = PTR[6][0];
-    }
-
-    //else The pointers go up and down by size regularly.
-
-    else
-    {
-      out = PTR[Setting];
-    }
-
-  	//Add the Segment override left address bracket if any segment override was used otherwise the SegOverride string should be just a normal left bracket.
-
-  	out += SegOverride;
+    out += SegOverride;
 
     //-------------------------------------------------------------------------------------------------------------------------
     //calculate the actual address size according to the Address override and the CPU bit mode.
@@ -1052,13 +1038,8 @@ function Decode_ModRM_SIB_Address(ModRM, BySize, Setting)
 
         else
         {
-          //64 has both MM registers, and R64 registers so the element 0 must be used for R64.
-
-          if(AddressSize == 3) { out += REG[ AddressSize ] [0] [BaseExtend | SIB[2] ]; }
-
-          //32 only has R32 registers.
-
-          else{ out += REG[ AddressSize ][BaseExtend | SIB[2] ]; }
+          
+          out += REG[ AddressSize ][BaseExtend | SIB[2] ];
 
           //If the Index Register is not Canceled out (Note this is only reachable if base register was decoded and not canceled out)
 
@@ -1072,13 +1053,8 @@ function Decode_ModRM_SIB_Address(ModRM, BySize, Setting)
 
         if (IndexReg != 4) 
         {
-          //64 has both MM registers, and R64 registers so the element 0 must be used for R64.
 
-          if(AddressSize == 3) { out += REG[ AddressSize ] [0] [ IndexExtend | IndexReg ]; }
-
-          //32 only has R32 registers.
-
-          else{ out += REG[ AddressSize ][ IndexExtend | IndexReg ]; }
+          out += REG[ AddressSize ][ IndexExtend | IndexReg ];
 
           //add what the scale bits decode to the Index register by the value of the scale bits which select the name from the scale array.
 
@@ -1092,13 +1068,7 @@ function Decode_ModRM_SIB_Address(ModRM, BySize, Setting)
 
       else if(DispType != 2)
       {
-        //64 has both MM registers, and R64 registers so the element 0 must be used for R64.
-
-        if(AddressSize == 3) { out += REG[ AddressSize ] [0] [ BaseExtend | ModRM[2] ]; }
-
-        //32 only has R32 registers.
-
-        else{ out += REG[ AddressSize ][ BaseExtend | ModRM[2] ]; }
+        out += REG[ AddressSize ][ BaseExtend | ModRM[2] ];
       }
     }
     
@@ -1148,6 +1118,7 @@ function Decode_ModRM_SIB_Address(ModRM, BySize, Setting)
   }
 
   //return what the "Register mode" is, or "Memory address"
+
   return (out);
 
 
@@ -1356,102 +1327,4 @@ function DecodePrefixAdjustments()
   //Opcode is not a prefix code
 
   return(0); //regular opcode no extension active like VEX, or EVEX.
-}
-
-/*-------------------------------------------------------------------------------------------------------------------------
-This function decodes which instruction the Mnemonic is and gives back the operand encoding it uses.
--------------------------------------------------------------------------------------------------------------------------*/
-
-function DecodeMnemonicOperandEncoding( Opcode, Exstention )
-{
-  //*******************************instruction Decode*****************************
-  //get the Operation name by the operations byte value
- 
-  var Name = Mnemonics[Opcode];
- 
-  //get the Operands for this opcode it follows the same array structure as Mnemonics array
- 
-  var Type = Operands[Opcode];
- 
-  //if the current Mnemonic is an array two in size then Register Mode and memory more are separate from each other
- 
-  if(Name instanceof Array && Name.length == 2)
-  {
-
-     //if Mode is Memory Address mode use the first element
-
-     if( ( BinCode[CodePos32] & 0xC0 ) < 3 )
-     {
-       Name = Name[0];
-       Type = Type[0];
-     }
-       
-     //else register mode
-      
-     else
-     {
-       Name = Name[1];
-       Type = Type[1];
-     }
-  }
-
-  //if the current Mnemonic is an array 8 in length
-
-  if(Name instanceof Array && Name.length == 8)
-  {
-
-    //digit opcode selection
-
-    Name = Name[ BinCode[CodePos32] & 0x38 ];
-    Type = Type[ BinCode[CodePos32] & 0x38 ];
-
-    //if The select digit opcode is another array 8 in size it is a static opcode selection
-
-    if(Name instanceof Array && Name.length == 8)
-    {
-      Name = Name[ BinCode[CodePos32] & 0x07 ];
-      Type = Type[ BIdCode[CodePos32] & 0x07 ];
-    }
-
-  }
-
-    //if the Mnemonic is an array 3 in size it is an instruction Mnemonic that goes by the tow Size override prefixes and the middle element is default size Mnemonic name
-
-  if(Name instanceof Array && Name.length == 3)
-  {
-    Name = Name[SizeAttrSelect]; //set it to the 64 Mnemonic
-    Type = Type[SizeAttrSelect]; //Operand array always matches the Mnemonic structure
-  }
-
-  //if the current Mnemonic is an array 4 in size it is an SSE instruction, or VEX, EVEX
-
-  if(Name instanceof Array && Name.length == 4)
-  {
-      PrefixG1 = "";
-      Name = Name[SMID];
-      Type = Type[SMID];
-
-  }
-
-  //return the opcode name and operand encoding.
-
-  return( [Name, Type] );
-}
-
-/*-------------------------------------------------------------------------------------------------------------------------
-Decode instruction.
--------------------------------------------------------------------------------------------------------------------------*/
-
-function DecodeInstrcution()
-{
-
-  var Extension = DecodePrefixAdjustments();
-
-  //-------------------------------------------------------------------------------------------------------------------------
-  var Opcode = BinCode[CodePos32]; //Read Mnemonic.
-  NextBytePos(); //Move to the next byte.
-  //-------------------------------------------------------------------------------------------------------------------------
-
-  var Instruction = DecodeMnemonic_GetOperandEncoding( Opcode, Extension );
-
 }
