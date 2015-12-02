@@ -385,8 +385,9 @@ Used by the ^Decode_ModRM_SIB_Address function^.
 PTR = [
 
   //Pointer array index 0 when GetOperandSize returns size 0 then times 2 for 8 bit pointer.
-  //In plus 16 bit shift array index 0 is added by 1 making 0+1=1 no pointer name is used for a 28 bit pointers (mathematically 8+16=24). 
-  "BYTE PTR ", "ERROR PTR ",
+  //In plus 16 bit shift array index 0 is added by 1 making 0+1=1 no pointer name is used.
+  //The black pointer is used for instructions like LEA which loads the effective address. 
+  "BYTE PTR ", "",
 
   //Pointer array index 2 when GetOperandSize returns size 1 then times 2 for 16 bit pointer alignment.
   //In plus 16 bit shift index 2 is added by 1 making 2+1=3 The 32 bit pointer name is used (mathematically 16+16=32).
