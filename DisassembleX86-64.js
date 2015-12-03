@@ -46,13 +46,13 @@ When Bit Mode is 2 the disassembler will default to decoding 64 bit binary code 
 var BitMode = 2;
 
 /*-------------------------------------------------------------------------------------------------------------------------
-There are a max of three size setting currently in X86. In Vectors using the two L bits as a 0 to 3 value in EVEX with possible sizes 128/256/512/1024.
+There are a max of three size setting currently in X86. In Vectors using the two L bits as a 0 to 3 value in EVEX with possible sizes 128/256/512.
 Lastly general Arithmetic operations sizes "8/16/32/64" which change by operand override 16 which allows the operands to go 16 bit or smaller 8 bit in some cases,
 and the width bit which is in the REX prefix, VEX, and EVEX to go 64 bits the changes depend on the instructions adjustable size.
 The value system goes as follows "0=Smaller size Attribute (8, or 16), 1=Default or Mid (32), 2=max Size Attribute (64)" smallest to largest in order.
-Changeable from prefixes, and Vector length whith is used as a 0 to 3 value based on an instructions adjustable size attributes.
+Changeable from prefixes, and Vector length which is used as a 0 to 3 value based on an instructions adjustable size attributes.
 By default operands are mid 32 bit size in both 32 bit, and 64 modes so by default the Size attribute setting is 1 in value.
-During Vector length selection 128/256/512/1024 the Size setting uses the vector length bit as a 0 to 3 value from smallest to largest Note 1024 is Reseved.
+During Vector length selection 128/256/512 the Size setting uses the vector length bit as a 0 to 3 value from smallest to largest Note 1024 is Reseved.
 Because of this the value must stay one to use the mid size as 32 as the value system goes in order unless it is directly set by Vector length bits.
 -------------------------------------------------------------------------------------------------------------------------*/
 
@@ -132,7 +132,7 @@ var IndexExtend = 0;
 /*-------------------------------------------------------------------------------------------------------------------------
 AddressOverride is prefix code 0x67 when used with any operation that uses the ModR/M address mode the ram address goes down one in bit mode.
 Switches 64 address mode to 32 bit address mode, and in 32 bit mode the address switches to 16 bit address mode which uses a completely different ModR/M format.
-Set true when Opcode 67 effects next opcode then is set false. ^used by function Decode_ModRM_SIB_Address^
+Set true when Opcode 67 effects next opcode then is set false after instruction decodes. ^used by function Decode_ModRM_SIB_Address^
 -------------------------------------------------------------------------------------------------------------------------*/
 
 var AddressOverride = false;
@@ -146,7 +146,6 @@ var SegOverride = "[";
 
 /*-------------------------------------------------------------------------------------------------------------------------
 SSE is set true to allow SSE instructions to be used with vector Extensions.
-^used by function Decode_ModRM_SIB_Address, and DecodeRegValue^
 -------------------------------------------------------------------------------------------------------------------------*/
 
 var SSE = false;
@@ -183,7 +182,7 @@ Intel HLE flip lock to direction.
 var HLEFlipG1G2 = false;
 
 /*-------------------------------------------------------------------------------------------------------------------------
-The Register array holds arrays in order from 0 though 8 for the GetOperandSize Which goes by Prefix size settings,
+The Register array holds arrays in order from 0 though 7 for the GetOperandSize Which goes by Prefix size settings,
 and SIMD Vector length instructions.
 -------------------------------------------------------------------------------------------------------------------------*/
 
@@ -370,7 +369,7 @@ size attribute except address pointers have far address pointers which are 16 bi
 ----------------------------------------------------------------------------------------------------
 Far pointers add 16 bits to the default pointer sizes.
 16 bits become 16+16=32 DWORD, 32 bits becomes 32+16=48 FWORD, and 64+16=80 TBYTE.
-GetOperandSize goes 0=8 bit, 1=16 bit, 2=32 bit, 3=64 bit, 4=128, 5=256, 6=512.
+The function GetOperandSize goes 0=8 bit, 1=16 bit, 2=32 bit, 3=64 bit, 4=128, 5=256, 6=512.
 ----------------------------------------------------------------------------------------------------
 The pointers are stored in doubles this is so every second position is each size setting.
 So the Returned size attribute has to be in multiples of 2 each size multiplied by 2 looks like this.
@@ -401,20 +400,13 @@ PTR = [
   //In plus 16 bit shift index 6 is added by 1 making 6+1=7 the 80 bit TBYTE pointer name is used (mathematically 64+16=80).
   "QWORD PTR ", "TBYTE PTR ",
 
-  //--------------------------------------------------------------------------------------------------
-  //Vectors do not use Far pointer shift instead it is used for MMX instructions which can not change vector size,
-  //and is also used for "OWORD" which is used under 128-bit-long bound registers and cannot change size.
-  //We do not want OWORD to colide with our vector lengths 128 XMMWORD and up that go by goups of 2 by size.
-  //--------------------------------------------------------------------------------------------------
-
   //Pointer array index 8 when GetOperandSize returns size 4 then multiply by 2 gives index 8 for the 128 bit Vector pointer.
-  //In far pointer shift the MMX vector pointer is used note that it is index 9 thus the reg array uses index 9 for MM.
-  //MM is desinged to be used when the by size system is false using index 9 for both Reg/Mem.
+  //In far pointer shift the MMX vector pointer is used note that it is index 9 thus the reg array uses index 8 for MM.
+  //MM is desinged to be used when the by size system is false using index 9 for Pointer, and index 8 for Reg only XMM, YMM, ZMM SIMD goes by vector size attrubutes.
   "XMMWORD PTR ",  "MMWORD PTR ",
 
-  //Pointer array index 10 when GetOperandSize returns size 5 then multiply by 2 gives index 10 for the 256 bit pointer.
-  //In plus 16 bit shift index 10 is added by 1 making 10+1=11 there is no 275 bit pointer name (mathematically 256+16=275).
-  //OWORD is used with the bounds instructions it is also desinged to be used when the by size setting is false REG Array Index 11 in bound registers.
+  //Pointer array index 10 when GetOperandSize returns size 5 then multiply by 2 gives index 10 for the 256 bit SIMD pointer.
+  //In far pointer shift the OWORD pointer is used with the bounds instructions it is also desinged to be used when the by size is set false same as MM.
   "YMMWORD PTR ", "OWORD PTR ",
 
   //Pointer array index 12 when GetOperandSize returns size 6 then multiply by 2 gives index 12 for the 512 bit pointer.
@@ -875,8 +867,8 @@ function DecodeRegValue(RValue, BySize, Setting) {
 }
 
 /*-------------------------------------------------------------------------------------------------------------------------
-Note if by size attrubutes is false the lower four bits is the selectd Memory pointer, and the higher four bits is the selected register.
 Decode the ModR/M pointer, and Optional SIB if used.
+Note if by size attrubutes is false the lower four bits is the selectd Memory pointer, and the higher four bits is the selected register.
 -------------------------------------------------------------------------------------------------------------------------*/
 
 function Decode_ModRM_SIB_Address(ModRM, BySize, Setting)
@@ -900,8 +892,8 @@ function Decode_ModRM_SIB_Address(ModRM, BySize, Setting)
   {
 
     //-------------------------------------------------------------------------------------------------------------------------
-    //If By size attributes is false the selected Memory pointer is the first four bits of the size setting for all pointer indexes 0 to 15.
-    //Also if By size attribute is also true the selected by size index should not exceed 15 which is the max combination the first four bits.
+    //If By size attrubutes is false the selected Memory pointer is the first four bits of the size setting for all pointer indexes 0 to 15.
+    //Also if By size attrubute is also true the selected by size index sould not excead 15 anyways which is the max combination the first four bits.
     //-------------------------------------------------------------------------------------------------------------------------
     
     Setting = Setting & 0x0F;
@@ -1121,7 +1113,7 @@ function Decode_ModRM_SIB_Address(ModRM, BySize, Setting)
 
   else
   {
-    //If By size attributes is false the upper four bits is used for the selected Register 0 to 15.
+    //If By size attrubutes is false the upper four bits is used for the selected Register 0 to 15.
 
     if(!BySize)
     {
