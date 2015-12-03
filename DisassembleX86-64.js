@@ -46,14 +46,14 @@ When Bit Mode is 2 the disassembler will default to decoding 64 bit binary code 
 var BitMode = 2;
 
 /*-------------------------------------------------------------------------------------------------------------------------
-There are a max of three size setting currently in X86. In Vectors using the two L bits as a 0 to 3 value in EVEX with possible sizes 128/256/512.
-Lastly general operations sizes "16/32/64" which change by operand override 16 which allows the operands to go 16 bit or smaller 8 bit in some cases,
+There are a max of three size setting currently in X86. In Vectors using the two L bits as a 0 to 3 value in EVEX with possible sizes 128/256/512/1024.
+Lastly general Arithmetic operations sizes "8/16/32/64" which change by operand override 16 which allows the operands to go 16 bit or smaller 8 bit in some cases,
 and the width bit which is in the REX prefix, VEX, and EVEX to go 64 bits the changes depend on the instructions adjustable size.
 The value system goes as follows "0=Smaller size Attribute (8, or 16), 1=Default or Mid (32), 2=max Size Attribute (64)" smallest to largest in order.
-Changeable from prefixes, and Vector length with is used as a 0 to 3 value based on an instructions adjustable size attributes.
+Changeable from prefixes, and Vector length whith is used as a 0 to 3 value based on an instructions adjustable size attributes.
 By default operands are mid 32 bit size in both 32 bit, and 64 modes so by default the Size attribute setting is 1 in value.
-During Vector length selection 128/256/512 the Size setting uses the vector length bit as a 0 to 3 value from smallest to largest.
-Because of this the value must stay one to use the mis size as 32 it's as the value system goes in order.
+During Vector length selection 128/256/512/1024 the Size setting uses the vector length bit as a 0 to 3 value from smallest to largest Note 1024 is Reseved.
+Because of this the value must stay one to use the mid size as 32 as the value system goes in order unless it is directly set by Vector length bits.
 -------------------------------------------------------------------------------------------------------------------------*/
 
 var SizeAttrSelect = 1;
@@ -131,7 +131,7 @@ var IndexExtend = 0;
 
 /*-------------------------------------------------------------------------------------------------------------------------
 AddressOverride is prefix code 0x67 when used with any operation that uses the ModR/M address mode the ram address goes down one in bit mode.
-Switch from 64 to 32 bit address mode, and in 32 bit mode the address switches to 16 bit address mode which uses a completely different ModR/M format.
+Switches 64 address mode to 32 bit address mode, and in 32 bit mode the address switches to 16 bit address mode which uses a completely different ModR/M format.
 Set true when Opcode 67 effects next opcode then is set false. ^used by function Decode_ModRM_SIB_Address^
 -------------------------------------------------------------------------------------------------------------------------*/
 
@@ -202,7 +202,7 @@ REG = [
       "AL", "CL", "DL", "BL", "AH", "CH", "DH", "BH"
     ],
 
-    //8 bit registers with any rex prefix active uses all 15 registers in low byte selection.
+    //8 bit registers with any rex prefix active uses all 15 registers in low byte order.
 
     [
       //Registers 8 bit names with any rex prefix index 0 to 7
@@ -238,8 +238,7 @@ REG = [
   which bellow is the general use Arithmetic register names 64 in size*/
 
   [
-    //general use Arithmetic registers 64
-    //Registers 64 bit names index 0 to 15
+    //general use Arithmetic registers 64 names index 0 to 15
 
     "RAX", "RCX", "RDX", "RBX", "RSP", "RBP", "RSI", "RDI", "R8", "R9", "R10", "R11", "R12", "R13", "R14", "R15"
   ],
@@ -297,21 +296,21 @@ REG = [
   every function has been set up to go by both size attributes and by one strict size setting which is used as a number for the selected index.
   When the BySize adjustment is false.*/
 
-  //REG array Index 8
-
-  [
-    //Segment Registers names index 0 to 7
-
-    "ES", "CS", "SS", "DS", "FS", "GS", "???", "???"
-  ],
-
-  //REG index 9 Intel MM qword technology SSE vector instructions.
+  //REG index 8 Intel MM qword technology SSE vector instructions.
   //These can not be used with Vector extensions as they are seprate and are not in the new vector SIMD unit.
 
   [
     //Register MM names index 0 to 7
 
     "MM0", "MM1", "MM2", "MM3", "MM4", "MM5", "MM6", "MM7"
+  ],
+
+  //REG array Index 9
+
+  [
+    //Segment Registers names index 0 to 7
+
+    "ES", "CS", "SS", "DS", "FS", "GS", "ST(-2)", "ST(-1)"
   ],
 
   //REG array Index 10
@@ -876,6 +875,7 @@ function DecodeRegValue(RValue, BySize, Setting) {
 }
 
 /*-------------------------------------------------------------------------------------------------------------------------
+Note if by size attrubutes is false the lower four bits is the selectd Memory pointer, and the higher four bits is the selected register.
 Decode the ModR/M pointer, and Optional SIB if used.
 -------------------------------------------------------------------------------------------------------------------------*/
 
@@ -898,6 +898,13 @@ function Decode_ModRM_SIB_Address(ModRM, BySize, Setting)
 
   if(ModRM[0] != 3)
   {
+
+    //-------------------------------------------------------------------------------------------------------------------------
+    //If By size attributes is false the selected Memory pointer is the first four bits of the size setting for all pointer indexes 0 to 15.
+    //Also if By size attribute is also true the selected by size index should not exceed 15 which is the max combination the first four bits.
+    //-------------------------------------------------------------------------------------------------------------------------
+    
+    Setting = Setting & 0x0F;
 
     //-------------------------------------------------------------------------------------------------------------------------
     //Get the pointer size by Size setting.
@@ -1097,7 +1104,7 @@ function Decode_ModRM_SIB_Address(ModRM, BySize, Setting)
 
       //Else Invalid Broadcast pointer size.
 
-      else{ out = "Error"; }
+      else{ out = "]{Error}"; }
 
     } //END of broadcast Round logic.
 
@@ -1114,6 +1121,15 @@ function Decode_ModRM_SIB_Address(ModRM, BySize, Setting)
 
   else
   {
+    //If By size attributes is false the upper four bits is used for the selected Register 0 to 15.
+
+    if(!BySize)
+    {
+      Setting = Setting >> 8;
+    }
+
+    //Decode the select register though the register decode function.
+
     out = DecodeRegValue(BaseExtend | ModRM[2], false, Setting);
   }
 
