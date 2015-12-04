@@ -160,9 +160,27 @@ var SIMD = 0;
 
 /*-------------------------------------------------------------------------------------------------------------------------
 The current Opcode.
-The opcode can be expanded to 9, or 10 bit's or higher to use the indexes further down in the mnemonic array.
-The order the expansions go in the Mnemonic array is the same order the Map bits go in for EVEX.mm bits, and VEX.mmmmm.
 The lower 8 bits is the opcode the higher bits 9, and 10 are combined with an 8 bit code if an opcode expansion prefix is used.
+Normally Opcode is an 8 bit value 0 to 255 that uses the first byte opcode map. I will insert a comma to show how this numerically works.
+
+00,00000000 = 0, lower 8 bit value at max 00,11111111 = 255. (First byte opcodes)
+01,00000000 = 256, lower 8 bit value at max 01,11111111 = 511. (Two byte opcode 0F)
+10,00000000 = 512, lower 8 bit value at max 10,11111111 = 767. (Two byte opcode 0F 38)
+11,00000000 = 768, lower 8 bit value at max 11,11111111 = 1023. (Two byte opcode 0F 3A)
+
+If the 0F prefix is used the ninth binary bit is set starting at 256 with the 8 bit opcoded added on for 256 to 511.
+If the 0F 38 expansion is used bit 10 is set making opcode start at 512 plus the 8 bit opcode for 512 to 767.
+If the 0F 3A expansion is used but 10, and 9 are set making opcode start at 768 plus the 8 bit opcode for 768 to 1023.
+
+The opcode can be expanded to 9, or 10 bit's or higher to use the indexes further down in the Mnemonic array.
+
+The order the expansions go in the Mnemonic array is the same order the Map bits go in for EVEX.mm bits, and VEX.mmmmm.
+
+EVEX.mm=00 first byte opcode map, EVEX.mm = 01 two byte opcode map 0F.
+EVEX.mm=10 two byte opcode map 0F38, and EVEX.mm=11 two byte opcode map 0F 3A.
+
+EVEX.mm bits are set to bits 10, and 9 of the opcode.
+The Same is true with VEX.mmmmm which actually only uses only the two first bits for the same opcode maps.
 -------------------------------------------------------------------------------------------------------------------------*/
 
 var Opcode = 0;
