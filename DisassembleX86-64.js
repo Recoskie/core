@@ -160,7 +160,9 @@ var SIMD = 0;
 
 /*-------------------------------------------------------------------------------------------------------------------------
 The current Opcode.
-The opcode can be exstened to another opcode map by setting the bits 9, and 10 while the lower 8 bits is the selected instctions.
+The opcode can be expanded to 9, or 10 bit's or higher to use the indexes further down in the mnemonic array.
+The order the expansions go in the Mnemonic array is the same order the Map bits go in for EVEX.mm bits, and VEX.mmmmm.
+The lower 8 bits is the opcode the higher bits 9, and 10 are combined with an 8 bit code if an opcode expansion prefix is used.
 -------------------------------------------------------------------------------------------------------------------------*/
 
 var Opcode = 0;
@@ -1142,7 +1144,7 @@ Decode Prefix Mnemonic codes. Note Some disable depending on the bit mode of the
 If a prefix is disabled and not read by this function it allows it to be decoded as an instruction in the Decode Mnemonic function.
 Some instructions can only be used in 32 bit mode such as instructions LDS and LES.
 LDS and LES where changed to Vector extension attribute adjustments to SSE instructions in 64 bit.
-At the end of this function "Opcode" should not hold any prefix code then Opcode contains an operation code to be decoded.
+At the end of this function "Opcode" should not hold any prefix code then Opcode contains an operation code to be decoded using the Mnemonics array.
 -------------------------------------------------------------------------------------------------------------------------*/
 
 function DecodePrefixAdjustments()
@@ -1151,6 +1153,30 @@ function DecodePrefixAdjustments()
   Opcode |= BinCode[CodePos32]; //Read Byte value.
   NextBytePos(); //Move to the next byte.
   //-------------------------------------------------------------------------------------------------------------------------
+
+  //if 0F hex start at 256 for Opcode allowing two byte operation codes expansion.
+
+  if(Opcode == 0)
+  {
+    Opcode = 0x100; //By starting at 0x100 with binary bit 9 set one then adding the 8 bit opcode. Opcode goes 256 to 511 in the Mnemonics array.
+    return(DecodePrefixAdjustments()); //restart function decode more prefix settings that can effect the decode instruction.
+  }
+
+  //if 38 hex while using two byte opcode expansion with binary bit 9 set using prefix code 38 go three byte opcodes.
+
+  else if(Opcode == 0x138)
+  {
+    Opcode = 0x200; //By starting at 0x200 with binary bit 10 set one then adding the 8 bit opcode. Opcode goes 512 to 767 in the Mnemonics array.
+    return(DecodePrefixAdjustments()); //restart function decode more prefix settings that can effect the decode instruction.
+  }
+
+  //if 3A hex while using two byte opcode expansion with binary bit 9 using prefix code 3A set go three byte opcodes.
+
+  else if(Opcode == 0x13A)
+  {
+    Opcode = 0x300; //By starting at 0x300 hex and adding the 8 bit opcode. Opcode goes 768 to 1023 in the Mnemonics array.
+    return(DecodePrefixAdjustments()); //restart function decode more prefix settings that can effect the decode instruction.
+  }
 
   //Prefix codes that are only active well in 64 bit mode.
 
@@ -1188,7 +1214,7 @@ function DecodePrefixAdjustments()
       SizeAttrSelect = ( Opcode & 0x04 ) >> 2; //The L bit for 256 vector size.
       SIMD = Opcode & 0x03; //The SIMD mode.
 
-      //Autmatically uses the two byte opcode map
+      //Autmatically uses the two byte opcode map Opcode starts at 256 goes to 511 in Mnemonics array.
 
       Opcode = 0x100;
 
@@ -1228,7 +1254,7 @@ function DecodePrefixAdjustments()
       SizeAttrSelect = ( Opcode & 0x0400 ) >> 10; //Vector length for 256 setting.
       SIMD = ( Opcode & 0x0300 ) >> 8; //The SIMD mode.
 
-      Opcode = ( Opcode & 0x001F ) << 8; //Change Operation code Extended bit's.
+      Opcode = ( Opcode & 0x001F ) << 8; //Change Operation code expansion bit's based on the VEX.mmmmm bit's note the maps go in order.
 
       //-------------------------------------------------------------------------------------------------------------------------
       Opcode |= BinCode[CodePos32]; //read the 8 bit opcode put them in the lower 8 bits away from opcode extend bit's.
@@ -1277,7 +1303,7 @@ function DecodePrefixAdjustments()
       VectorRegister |= ( Opcode & 0x080000 ) >> 15; //The EVEX.V' vector extension adds 15 to EVEX.V3V2V1V0.
       MaskRegister = ( Opcode & 0x070000 ) >> 16; //Mask to destination.
 
-      Opcode = ( Opcode & 0x03 ) << 8; //Change Operation code Extended bit's.
+      Opcode = ( Opcode & 0x03 ) << 8; //Change Operation code exansion bit's the maps also go in the same order.
 
       //-------------------------------------------------------------------------------------------------------------------------
       Opcode |= BinCode[CodePos32]; //read the 8 bit opcode put them in the lower 8 bits away from opcode extend bit's.
@@ -1334,32 +1360,6 @@ function DecodePrefixAdjustments()
     HLEFlipG1G2 = false; //set Flip HLE false in case this is the last prefix read, and REP, or REPNE was set in string G2 first for HLE.
     return(DecodePrefixAdjustments()); //restart function decode more prefix settings that can effect the decode instruction.
   }
-
-  //if 0F hex start at 256 for Opcode allowing two byte operation codes
-
-  if(Opcode == 0)
-  {
-    Opcode = 0x100; //Extend to opcodes 256 to 511 note the lower 8 bits is added to opcode.
-    return(DecodePrefixAdjustments()); //restart function decode more prefix settings that can effect the decode instruction.
-  }
-
-  //if 38 hex while using two byte opcode extension go three byte opcodes
-
-  else if(Opcode == 0x138)
-  {
-    Opcode = 0x200; //Extend to opcodes 512 to 767.
-    return(DecodePrefixAdjustments()); //restart function decode more prefix settings that can effect the decode instruction.
-  }
-
-  //if 3A hex while using two byte opcode extension go three byte opcodes
-
-  else if(Opcode == 0x13A)
-  {
-    Opcode = 0x300; //Extend to opcodes 768 to 1023.
-    return(DecodePrefixAdjustments()); //restart function decode more prefix settings that can effect the decode instruction.
-  }
-
-  //Opcode is not a prefix code
 
   return(0); //regular opcode no extension active like VEX, or EVEX.
 }
