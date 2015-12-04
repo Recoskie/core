@@ -1158,13 +1158,13 @@ At the end of this function "Opcode" should not hold any prefix code then Opcode
 function DecodePrefixAdjustments()
 {
   //-------------------------------------------------------------------------------------------------------------------------
-  Opcode |= BinCode[CodePos32]; //Read Byte value.
+  Opcode |= BinCode[CodePos32]; //Read opcode Byte value.
   NextBytePos(); //Move to the next byte.
   //-------------------------------------------------------------------------------------------------------------------------
 
   //if 0F hex start at 256 for Opcode allowing two byte operation codes expansion.
 
-  if(Opcode == 0)
+  if(Opcode == 0x0F)
   {
     Opcode = 0x100; //By starting at 0x100 with binary bit 9 set one then adding the 8 bit opcode. Opcode goes 256 to 511 in the Mnemonics array.
     return(DecodePrefixAdjustments()); //restart function decode more prefix settings that can effect the decode instruction.
