@@ -146,6 +146,8 @@ var SegOverride = "[";
 
 /*-------------------------------------------------------------------------------------------------------------------------
 SSE is set true to allow SSE instructions to be used with vector Extensions.
+This blocks all other valid Arithmetic opcodes from being combined with vector Extensions that are not SIMD instructions.
+This also blocks the ST, and MM X87 registers allowing only the new Vector Registers in SIMD to be used with Vector Exensions.
 -------------------------------------------------------------------------------------------------------------------------*/
 
 var SSE = false;
@@ -157,10 +159,11 @@ The SIMD value is set according to SIMD MODE for SSE, VEX, and EVEX.
 var SIMD = 0;
 
 /*-------------------------------------------------------------------------------------------------------------------------
-The current Opcode Map.
+The current Opcode.
+The opcode can be exstened to another opcode map by setting the bits 9, and 10 while the lower 8 bits is the selected instctions.
 -------------------------------------------------------------------------------------------------------------------------*/
 
-var OpBase = 0;
+var Opcode = 0;
 
 /*-------------------------------------------------------------------------------------------------------------------------
 Some operands use the value of the Immediate operand as an opcode predicted, or upper 4 bits as Another register.
@@ -852,11 +855,11 @@ function DecodeRegValue(RValue, BySize, Setting) {
   {
     //if any Rex Prefix
 
-    if (RexActive) { return (REG[0][1][RegExtend | RValue]); }
+    if (RexActive) { return (REG[0][1][ RegExtend | RValue ]); }
 
     //else use high low order
 
-    else { return (REG[0][0][RegExtend | RValue]); }
+    else { return (REG[0][0][ RegExtend | RValue ]); }
   }
 
   //No other Separations.
@@ -865,7 +868,7 @@ function DecodeRegValue(RValue, BySize, Setting) {
 
   //Return the Register.
 
-  return (REG[Setting][RegExtend | RValue]);
+  return (REG[Setting][ RegExtend | RValue ]);
 }
 
 /*-------------------------------------------------------------------------------------------------------------------------
@@ -1015,7 +1018,7 @@ function Decode_ModRM_SIB_Address(ModRM, BySize, Setting)
 
         //Calculate the Index register with it's Extended value because the index register will only cancel out if 4 in value.
 
-        var IndexReg = SIB[1] | IndexExtend;
+        var IndexReg = IndexExtend | SIB[1];
 
         //check if the base register is 5 in value in the SIB without it's added extended value, and that the ModR/M Mode is 0 this activates Disp32
 
@@ -1040,7 +1043,7 @@ function Decode_ModRM_SIB_Address(ModRM, BySize, Setting)
         else
         {
           
-          out += REG[ AddressSize ][BaseExtend | SIB[2] ];
+          out += REG[ AddressSize ][ BaseExtend | SIB[2] ];
 
           //If the Index Register is not Canceled out (Note this is only reachable if base register was decoded and not canceled out)
 
@@ -1136,15 +1139,16 @@ function Decode_ModRM_SIB_Address(ModRM, BySize, Setting)
 
 /*-------------------------------------------------------------------------------------------------------------------------
 Decode Prefix Mnemonic codes. Note Some disable depending on the bit mode of the CPU.
-If a prefix is disabled and not read by this function it allows it to be read and decoded as an instruction.
+If a prefix is disabled and not read by this function it allows it to be decoded as an instruction in the Decode Mnemonic function.
 Some instructions can only be used in 32 bit mode such as instructions LDS and LES.
 LDS and LES where changed to Vector extension attribute adjustments to SSE instructions in 64 bit.
+At the end of this function "Opcode" sould not hold any prefix code then Opcode contains an operation code to be decoded.
 -------------------------------------------------------------------------------------------------------------------------*/
 
 function DecodePrefixAdjustments()
 {
   //-------------------------------------------------------------------------------------------------------------------------
-  var Prefix = BinCode[CodePos32] + OpBase; //Read Byte value.
+  Opcode |= BinCode[CodePos32]; //Read Byte value.
   NextBytePos(); //Move to the next byte.
   //-------------------------------------------------------------------------------------------------------------------------
 
@@ -1154,35 +1158,44 @@ function DecodePrefixAdjustments()
   {
     //The Rex prefix bit settings decoding
  
-    if( Prefix >= 0x40 & Prefix <= 0x4F)
+    if( Opcode >= 0x40 & Opcode <= 0x4F)
     {
-      BaseExtend = (Prefix & 0x01) << 3; //Base Register extend setting.
-      IndexExtend = ( ( Prefix & 0x02 ) ) << 2; //Index Register extend setting.
-      RegExtend = ( ( Prefix & 0x04 ) ) << 1; //Register Extend Setting.
-      SizeAttrSelect = ( ( Prefix & 0x08 ) >> 2 ); //The width Bit open all 64 bits.
+      BaseExtend = (Opcode & 0x01) << 3; //Base Register extend setting.
+      IndexExtend = ( ( Opcode & 0x02 ) ) << 2; //Index Register extend setting.
+      RegExtend = ( ( Opcode & 0x04 ) ) << 1; //Register Extend Setting.
+      SizeAttrSelect = ( ( Opcode & 0x08 ) >> 2 ); //The width Bit open all 64 bits.
       WidthBit = SizeAttrSelect >> 1; //Set The Width Bit setting if active.
       return(DecodePrefixAdjustments()); //restart function decode more prefix settings that can effect the decode instruction.
     }
 
     //The VEX2 Operation code Extension to SSE settings decoding.
 
-    if( Prefix == 0xC5 )
+    if( Opcode == 0xC5 )
     {
       //-------------------------------------------------------------------------------------------------------------------------
-      Prefix = BinCode[CodePos32]; //read VEX2 byte settings.
+      Opcode = BinCode[CodePos32]; //read VEX2 byte settings.
       NextBytePos(); //Move to the next byte.
       //-------------------------------------------------------------------------------------------------------------------------
 
       //some bits are inverted, so uninvert them arithmetically.
 
-      Prefix = ( 0xF8 - ( Prefix & 0xF8 ) ) | ( Prefix & 0x07 );
+      Opcode = ( 0xF8 - ( Opcode & 0xF8 ) ) | ( Opcode & 0x07 );
 
       //Decode bit settings.
 
-      RegExtend = ( Prefix & 0x80 ) >> 4; //Register Extend.
-      VectorRegister = ( Prefix & 0x78 ) >> 3; //The added in Vector register to SSE.
-      SizeAttrSelect = ( Prefix & 0x04 ) >> 2; //The L bit for 256 vector size.
-      SIMD = Prefix & 0x03; //The SIMD mode.
+      RegExtend = ( Opcode & 0x80 ) >> 4; //Register Extend.
+      VectorRegister = ( Opcode & 0x78 ) >> 3; //The added in Vector register to SSE.
+      SizeAttrSelect = ( Opcode & 0x04 ) >> 2; //The L bit for 256 vector size.
+      SIMD = Opcode & 0x03; //The SIMD mode.
+
+      //Autmatically uses the two byte opcode map
+
+      Opcode = 0x100;
+
+      //-------------------------------------------------------------------------------------------------------------------------
+      Opcode |= BinCode[CodePos32]; //read the opcode.
+      NextBytePos(); //Move to the next byte.
+      //-------------------------------------------------------------------------------------------------------------------------
 
       //Stop decoding prefixes send back code for VEX.
 
@@ -1191,30 +1204,35 @@ function DecodePrefixAdjustments()
 
     //The VEX3 prefix settings decoding.
 
-    if( Prefix == 0xC4 )
+    if( Opcode == 0xC4 )
     {
       //-------------------------------------------------------------------------------------------------------------------------
-      Prefix = BinCode[CodePos32]; //read VEX3 byte settings.
+      Opcode = BinCode[CodePos32]; //read VEX3 byte settings.
       NextBytePos(); //Move to the next byte.
       //-------------------------------------------------------------------------------------------------------------------------
-      Prefix = Prefix | ( BinCode[CodePos32] << 8 ); //Read next VEX3 byte settings.
+      Opcode |= ( BinCode[CodePos32] << 8 ); //Read next VEX3 byte settings.
       NextBytePos(); //Move to the next byte.
       //-------------------------------------------------------------------------------------------------------------------------
 
       //Some bits are inverted, so uninvert them arithmetically.
 
-      Prefix = ( 0x78E0 - ( Prefix & 0x78E0 ) ) | ( Prefix & 0x871F );
+      Opcode = ( 0x78E0 - ( Opcode & 0x78E0 ) ) | ( Opcode & 0x871F );
 
       //Decode bit settings.
 
-      RegExtend = ( Prefix & 0x0080 ) >> 4; //Extend Register Setting.
-      IndexExtend = ( Prefix & 0x0040 ) >> 3; //Extend Index register setting.
-      BaseExtend = ( Prefix & 0x0020 ) >> 2; //Extend base Register setting.
-      OpBase = ( Prefix & 0x001F ) << 8; //Change Opcode Map.
-      WidthBit = ( Prefix & 0x8000 ) >> 15; //The width bit works as a separator.
-      VectorRegister = ( Prefix & 0x7800 ) >> 11; //The added in Vector register to SSE.
-      SizeAttrSelect = ( Prefix & 0x0400 ) >> 10; //Vector length for 256 setting.
-      SIMD = ( Prefix & 0x0300 ) >> 8; //The SIMD mode.
+      RegExtend = ( Opcode & 0x0080 ) >> 4; //Extend Register Setting.
+      IndexExtend = ( Opcode & 0x0040 ) >> 3; //Extend Index register setting.
+      BaseExtend = ( Opcode & 0x0020 ) >> 2; //Extend base Register setting.
+      Opcode = ( Opcode & 0x001F ) << 8; //Change Opcode map exstended bit's.
+      WidthBit = ( Opcode & 0x8000 ) >> 15; //The width bit works as a separator.
+      VectorRegister = ( Opcode & 0x7800 ) >> 11; //The added in Vector register to SSE.
+      SizeAttrSelect = ( Opcode & 0x0400 ) >> 10; //Vector length for 256 setting.
+      SIMD = ( Opcode & 0x0300 ) >> 8; //The SIMD mode.
+
+      //-------------------------------------------------------------------------------------------------------------------------
+      Opcode |= BinCode[CodePos32]; //read the opcode.
+      NextBytePos(); //Move to the next byte.
+      //-------------------------------------------------------------------------------------------------------------------------
 
       //Stop decoding prefixes send back code for VEX.
 
@@ -1223,41 +1241,46 @@ function DecodePrefixAdjustments()
 
     //The EVEX prefix settings decoding.
 
-    if( Prefix == 0x62 )
+    if( Opcode == 0x62 )
     {
       //-------------------------------------------------------------------------------------------------------------------------
-      Prefix = BinCode[CodePos32]; //read EVEX byte settings.
+      Opcode = BinCode[CodePos32]; //read EVEX byte settings.
       NextBytePos(); //Move to the next byte.
       //-------------------------------------------------------------------------------------------------------------------------
-      Prefix = Prefix | ( BinCode[CodePos32] << 8 ); //read next EVEX byte settings.
+      Opcode = Opcode | ( BinCode[CodePos32] << 8 ); //read next EVEX byte settings.
       NextBytePos(); //Move to the next byte.
       //-------------------------------------------------------------------------------------------------------------------------
-      Prefix = Prefix | ( BinCode[CodePos32] << 16 ); //read next EVEX byte settings.
+      Opcode = Opcode | ( BinCode[CodePos32] << 16 ); //read next EVEX byte settings.
       NextBytePos(); //Move to the next byte.
       //-------------------------------------------------------------------------------------------------------------------------
 
       //Some bits are inverted, so uninvert them arithmetically.
 
-      Prefix = ( 0x087CF0 - ( Prefix & 0x087CF0 ) ) | ( Prefix & 0xF7870F );
+      Opcode = ( 0x087CF0 - ( Opcode & 0x087CF0 ) ) | ( Opcode & 0xF7870F );
       
       //Check if Reserved bits are 0 if they are not 0 the EVEX instruction is invalid.
       
-      if( ( Prefix & 0x00040C ) > 0 ) { InvalidOp = true; }
+      if( ( Opcode & 0x00040C ) > 0 ) { InvalidOp = true; }
       
       //Decode bit settings.
       
-      RegExtend = ( ( Prefix & 0x80 ) >> 4 ) | ( Prefix & 0x10 ); //The Double R'R bit decode for Register Extension 0 to 24.
-      BaseExtend = ( Prefix & 0x60 ) >> 2; //The X bit, and B Bit base register extend combination 0 to 24.
-      IndexExtend = ( Prefix & 0x40 ) >> 3; //The X Bit in SIB byte extends by 8.
-      OpBase = ( Prefix & 0x03 ) << 8; //Change Operation code map.
-      WidthBit = ( Prefix & 0x8000 ) >> 15; //The width bit separator for VEX, EVEX.
-      VectorRegister = ( Prefix & 0x7800 ) >> 11; //The Added in Vector Register for SSE under VEX, EVEX.
-      SIMD = ( Prefix & 0x0300 ) >> 8; //decode the SIMD mode setting.
-      ZeroMerg = ( Prefix & 0x800000 ) >> 23; //The zero Merge to destination control.
-      SizeAttrSelect = ( Prefix & 0x600000 ) >> 21; //The EVEX.L'L Size combination.
-      BRound = (Prefix & 0x100000 ) >> 20; //Broadcast Round Memory address system.
-      VectorRegister += ( Prefix & 0x080000 ) >> 15; //The EVEX.V' vector extension adds 15 to EVEX.V3V2V1V0.
-      MaskRegister = ( Prefix & 0x070000 ) >> 16; //Mask to destination.
+      RegExtend = ( ( Opcode & 0x80 ) >> 4 ) | ( Opcode & 0x10 ); //The Double R'R bit decode for Register Extension 0 to 24.
+      BaseExtend = ( Opcode & 0x60 ) >> 2; //The X bit, and B Bit base register extend combination 0 to 24.
+      IndexExtend = ( Opcode & 0x40 ) >> 3; //The X Bit in SIB byte extends by 8.
+      Opcode = ( Opcode & 0x03 ) << 8; //Change Operation code Extended bit's.
+      WidthBit = ( Opcode & 0x8000 ) >> 15; //The width bit separator for VEX, EVEX.
+      VectorRegister = ( Opcode & 0x7800 ) >> 11; //The Added in Vector Register for SSE under VEX, EVEX.
+      SIMD = ( Opcode & 0x0300 ) >> 8; //decode the SIMD mode setting.
+      ZeroMerg = ( Opcode & 0x800000 ) >> 23; //The zero Merge to destination control.
+      SizeAttrSelect = ( Opcode & 0x600000 ) >> 21; //The EVEX.L'L Size combination.
+      BRound = (Opcode & 0x100000 ) >> 20; //Broadcast Round Memory address system.
+      VectorRegister |= ( Opcode & 0x080000 ) >> 15; //The EVEX.V' vector extension adds 15 to EVEX.V3V2V1V0.
+      MaskRegister = ( Opcode & 0x070000 ) >> 16; //Mask to destination.
+
+      //-------------------------------------------------------------------------------------------------------------------------
+      Opcode |= BinCode[CodePos32]; //read the opcode.
+      NextBytePos(); //Move to the next byte.
+      //-------------------------------------------------------------------------------------------------------------------------
 
       //Stop decoding prefixes send back code for EVEX.
 
@@ -1268,15 +1291,15 @@ function DecodePrefixAdjustments()
 
   //Segment overrides
 
-  if (Prefix == 0x2E | Prefix == 0x36 | Prefix == 0x3E | Prefix == 0x64 | Prefix == 0x65)
+  if (Opcode == 0x2E | Opcode == 0x36 | Opcode == 0x3E | Opcode == 0x64 | Opcode == 0x65)
   {
-    SegOverride = Mnemonics[Prefix]; //Set the Left Bracket for the ModR/M memory address.
+    SegOverride = Mnemonics[ Opcode ]; //Set the Left Bracket for the ModR/M memory address.
     return(DecodePrefixAdjustments()); //restart function decode more prefix settings that can effect the decode instruction.
   }
 
   //Operand override Prefix
  
-  if(Prefix == 0x66)
+  if(Opcode == 0x66)
   {
     SIMD = 1; //sets SIMD mode 1 in case of SSE instruction opcode.
     SizeAttrSelect = 0; //Adjust the size attribute setting for the size adjustment to the next instruction.
@@ -1285,7 +1308,7 @@ function DecodePrefixAdjustments()
  
   //Ram address size override.
  
-  if(Prefix == 0x67)
+  if(Opcode == 0x67)
   {
     AddressOverride = true; //Set the setting active for the ModRM byte address mode.
     return(DecodePrefixAdjustments()); //restart function decode more prefix settings that can effect the decode instruction.
@@ -1293,44 +1316,44 @@ function DecodePrefixAdjustments()
 
   //if repeat Prefixes F2 hex REP,or F3 hex RENP
 
-  if (Prefix == 0xF2 | Prefix == 0xF3)
+  if (Opcode == 0xF2 | Opcode == 0xF3)
   {
-    SIMD = Prefix & 0x03 ; //F2, and F3 change the SIMD mode during SSE instructions.
-    PrefixG1 = Mnemonics[Prefix]; //set the Prefix string
+    SIMD = Opcode & 0x03 ; //F2, and F3 change the SIMD mode during SSE instructions.
+    PrefixG1 = Mnemonics[ Opcode ]; //set the Prefix string
     HLEFlipG1G2 = true; //set Filp HLE in case this is the last prefix read, and LOCK was set in string G2 first for HLE.
     return(DecodePrefixAdjustments()); //restart function decode more prefix settings that can effect the decode instruction.
   }
 
   //if the lock prefix note the lock prefix is separate
 
-  if (Prefix == 0xF0)
+  if (Opcode == 0xF0)
   {
-    PrefixG2 = Mnemonics[Prefix]; //set the Prefix string
+    PrefixG2 = Mnemonics[ Opcode ]; //set the Prefix string
     HLEFlipG1G2 = false; //set Flip HLE false in case this is the last prefix read, and REP, or REPNE was set in string G2 first for HLE.
     return(DecodePrefixAdjustments()); //restart function decode more prefix settings that can effect the decode instruction.
   }
 
   //if 0F hex start at 256 for Opcode allowing two byte operation codes
 
-  if(Prefix == 0x0F & OpBase == 0)
+  if(Opcode == 0)
   {
-    OpBase = 0x100; //adjust opcode map.
+    Opcode = 0x100; //Exstend to opcodes 256 to 511 note the lower 8 bits is added to opcode.
     return(DecodePrefixAdjustments()); //restart function decode more prefix settings that can effect the decode instruction.
   }
   
   //if 38 hex while using two byte opcodes go three byte opcodes
 
-  else if(Prefix == 0x138 & OpBase == 0x100)
+  else if(Opcode == 0x138)
   {
-    OpBase = 0x200; //adjust opcode map.
+    Opcode = 0x200; //Exstend to opcodes 512 to 767.
     return(DecodePrefixAdjustments()); //restart function decode more prefix settings that can effect the decode instruction.
   }
 
   //if 3A hex while using two byte opcodes go three byte opcodes
 
-  else if(Prefix == 0x13A & OpBase == 0x100)
+  else if(Opcode == 0x13A)
   {
-    OpBase = 0x300; //adjust opcode map.
+    Opcode = 0x300; //Exstend to opcodes 768 to 1023.
     return(DecodePrefixAdjustments()); //restart function decode more prefix settings that can effect the decode instruction.
   }
 
