@@ -295,16 +295,7 @@ REG = [
   every function has been set up to go by both size attributes and by one strict size setting which is used as a number for the selected index.
   When the BySize adjustment is false.*/
 
-  //REG index 8 Intel MM qword technology SSE vector instructions.
-  //These can not be used with Vector extensions as they are seprate and are not in the new vector SIMD unit.
-
-  [
-    //Register MM names index 0 to 7
-
-    "MM0", "MM1", "MM2", "MM3", "MM4", "MM5", "MM6", "MM7"
-  ],
-
-  //REG array Index 9
+  //REG array Index 8
 
   [
     //Segment Registers names index 0 to 7
@@ -312,12 +303,23 @@ REG = [
     "ES", "CS", "SS", "DS", "FS", "GS", "ST(-2)", "ST(-1)"
   ],
 
-  //REG array Index 10
+  //REG array Index 9
 
   [
     //ST registers Names index 0 to 7
+    //note these are used with the X87 FPU, but are alised to MM in SIMD.
 
     "ST(0)", "ST(1)", "ST(2)", "ST(3)", "ST(4)", "ST(5)", "ST(6)", "ST(7)"
+  ],
+  
+  //REG index 10 Intel MM qword technology MMX vector instructions.
+  //These can not be used with Vector extensions as they are the ST registers, but use the SIMD unit.
+  //The new XMM registers that where added during SSE can be adjusted by vector length as they are separate, but still use the same SIMD unit.
+
+  [
+    //Register MM names index 0 to 7
+
+    "MM0", "MM1", "MM2", "MM3", "MM4", "MM5", "MM6", "MM7"
   ],
 
   //REG Array Index 11
@@ -401,8 +403,8 @@ PTR = [
   "QWORD PTR ", "TBYTE PTR ",
 
   //Pointer array index 8 when GetOperandSize returns size 4 then multiply by 2 gives index 8 for the 128 bit Vector pointer.
-  //In far pointer shift the MMX vector pointer is used note that it is index 9 thus the reg array uses index 8 for MM.
-  //MM is desinged to be used when the by size system is false using index 9 for Pointer, and index 8 for Reg only XMM, YMM, ZMM SIMD goes by vector size attrubutes.
+  //In far pointer shift the MMX vector pointer is used.
+  //MM is desinged to be used when the by size system is false using index 9 for Pointer, and index 10 for Reg.
   "XMMWORD PTR ",  "MMWORD PTR ",
 
   //Pointer array index 10 when GetOperandSize returns size 5 then multiply by 2 gives index 10 for the 256 bit SIMD pointer.
