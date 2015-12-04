@@ -1142,7 +1142,7 @@ Decode Prefix Mnemonic codes. Note Some disable depending on the bit mode of the
 If a prefix is disabled and not read by this function it allows it to be decoded as an instruction in the Decode Mnemonic function.
 Some instructions can only be used in 32 bit mode such as instructions LDS and LES.
 LDS and LES where changed to Vector extension attribute adjustments to SSE instructions in 64 bit.
-At the end of this function "Opcode" sould not hold any prefix code then Opcode contains an operation code to be decoded.
+At the end of this function "Opcode" should not hold any prefix code then Opcode contains an operation code to be decoded.
 -------------------------------------------------------------------------------------------------------------------------*/
 
 function DecodePrefixAdjustments()
@@ -1223,14 +1223,15 @@ function DecodePrefixAdjustments()
       RegExtend = ( Opcode & 0x0080 ) >> 4; //Extend Register Setting.
       IndexExtend = ( Opcode & 0x0040 ) >> 3; //Extend Index register setting.
       BaseExtend = ( Opcode & 0x0020 ) >> 2; //Extend base Register setting.
-      Opcode = ( Opcode & 0x001F ) << 8; //Change Opcode map exstended bit's.
       WidthBit = ( Opcode & 0x8000 ) >> 15; //The width bit works as a separator.
       VectorRegister = ( Opcode & 0x7800 ) >> 11; //The added in Vector register to SSE.
       SizeAttrSelect = ( Opcode & 0x0400 ) >> 10; //Vector length for 256 setting.
       SIMD = ( Opcode & 0x0300 ) >> 8; //The SIMD mode.
 
+      Opcode = ( Opcode & 0x001F ) << 8; //Change Operation code Extended bit's.
+
       //-------------------------------------------------------------------------------------------------------------------------
-      Opcode |= BinCode[CodePos32]; //read the opcode.
+      Opcode |= BinCode[CodePos32]; //read the 8 bit opcode put them in the lower 8 bits away from opcode extend bit's.
       NextBytePos(); //Move to the next byte.
       //-------------------------------------------------------------------------------------------------------------------------
 
@@ -1247,10 +1248,10 @@ function DecodePrefixAdjustments()
       Opcode = BinCode[CodePos32]; //read EVEX byte settings.
       NextBytePos(); //Move to the next byte.
       //-------------------------------------------------------------------------------------------------------------------------
-      Opcode = Opcode | ( BinCode[CodePos32] << 8 ); //read next EVEX byte settings.
+      Opcode |= ( BinCode[CodePos32] << 8 ); //read next EVEX byte settings.
       NextBytePos(); //Move to the next byte.
       //-------------------------------------------------------------------------------------------------------------------------
-      Opcode = Opcode | ( BinCode[CodePos32] << 16 ); //read next EVEX byte settings.
+      Opcode |= ( BinCode[CodePos32] << 16 ); //read next EVEX byte settings.
       NextBytePos(); //Move to the next byte.
       //-------------------------------------------------------------------------------------------------------------------------
 
@@ -1267,7 +1268,6 @@ function DecodePrefixAdjustments()
       RegExtend = ( ( Opcode & 0x80 ) >> 4 ) | ( Opcode & 0x10 ); //The Double R'R bit decode for Register Extension 0 to 24.
       BaseExtend = ( Opcode & 0x60 ) >> 2; //The X bit, and B Bit base register extend combination 0 to 24.
       IndexExtend = ( Opcode & 0x40 ) >> 3; //The X Bit in SIB byte extends by 8.
-      Opcode = ( Opcode & 0x03 ) << 8; //Change Operation code Extended bit's.
       WidthBit = ( Opcode & 0x8000 ) >> 15; //The width bit separator for VEX, EVEX.
       VectorRegister = ( Opcode & 0x7800 ) >> 11; //The Added in Vector Register for SSE under VEX, EVEX.
       SIMD = ( Opcode & 0x0300 ) >> 8; //decode the SIMD mode setting.
@@ -1277,8 +1277,10 @@ function DecodePrefixAdjustments()
       VectorRegister |= ( Opcode & 0x080000 ) >> 15; //The EVEX.V' vector extension adds 15 to EVEX.V3V2V1V0.
       MaskRegister = ( Opcode & 0x070000 ) >> 16; //Mask to destination.
 
+      Opcode = ( Opcode & 0x03 ) << 8; //Change Operation code Extended bit's.
+
       //-------------------------------------------------------------------------------------------------------------------------
-      Opcode |= BinCode[CodePos32]; //read the opcode.
+      Opcode |= BinCode[CodePos32]; //read the 8 bit opcode put them in the lower 8 bits away from opcode extend bit's.
       NextBytePos(); //Move to the next byte.
       //-------------------------------------------------------------------------------------------------------------------------
 
@@ -1337,23 +1339,23 @@ function DecodePrefixAdjustments()
 
   if(Opcode == 0)
   {
-    Opcode = 0x100; //Exstend to opcodes 256 to 511 note the lower 8 bits is added to opcode.
+    Opcode = 0x100; //Extend to opcodes 256 to 511 note the lower 8 bits is added to opcode.
     return(DecodePrefixAdjustments()); //restart function decode more prefix settings that can effect the decode instruction.
   }
-  
-  //if 38 hex while using two byte opcodes go three byte opcodes
+
+  //if 38 hex while using two byte opcode extension go three byte opcodes
 
   else if(Opcode == 0x138)
   {
-    Opcode = 0x200; //Exstend to opcodes 512 to 767.
+    Opcode = 0x200; //Extend to opcodes 512 to 767.
     return(DecodePrefixAdjustments()); //restart function decode more prefix settings that can effect the decode instruction.
   }
 
-  //if 3A hex while using two byte opcodes go three byte opcodes
+  //if 3A hex while using two byte opcode extension go three byte opcodes
 
   else if(Opcode == 0x13A)
   {
-    Opcode = 0x300; //Exstend to opcodes 768 to 1023.
+    Opcode = 0x300; //Extend to opcodes 768 to 1023.
     return(DecodePrefixAdjustments()); //restart function decode more prefix settings that can effect the decode instruction.
   }
 
