@@ -165,8 +165,8 @@ The lower 8 bits is the opcode the higher bits 9, and 10 are combined with an 8 
 ---------------------------------------------------------------------------------------------------------------------------
 00,00000000 = 0, lower 8 bit value at max 00,11111111 = 255. (First byte opcodes)
 01,00000000 = 256, lower 8 bit value at max 01,11111111 = 511. (Two byte opcode 0F)
-10,00000000 = 512, lower 8 bit value at max 10,11111111 = 767. (Two byte opcode 0F 38)
-11,00000000 = 768, lower 8 bit value at max 11,11111111 = 1023. (Two byte opcode 0F 3A)
+10,00000000 = 512, lower 8 bit value at max 10,11111111 = 767. (Three byte opcode 0F 38)
+11,00000000 = 768, lower 8 bit value at max 11,11111111 = 1023. (Three byte opcode 0F 3A)
 ---------------------------------------------------------------------------------------------------------------------------
 EVEX.mm=00 first byte opcode map, EVEX.mm = 01 two byte opcode map 0F, EVEX.mm=10 two byte opcode map 0F 38,
 and EVEX.mm=11 two byte opcode map 0F 3A. EVEX.mm bits are set to bits 10, and 9 for the opcode.
