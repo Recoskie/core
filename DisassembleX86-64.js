@@ -161,18 +161,18 @@ var SIMD = 0;
 /*-------------------------------------------------------------------------------------------------------------------------
 The current Opcode, and Opcode map.
 ---------------------------------------------------------------------------------------------------------------------------
-The lower 8 bits is the opcode the higher bits 9, and 10 are combined with an 8 bit opcode for the opcode maps.
+The lower 8 bits is the opcode the higher bits 9, and 10 are combined with an 8 opcode for the opcode maps.
 ---------------------------------------------------------------------------------------------------------------------------
-00,00000000 = 0, lower 8 bit value at max 00,11111111 = 255. (First byte opcodes)
-01,00000000 = 256, lower 8 bit value at max 01,11111111 = 511. (Two byte opcode 0F)
-10,00000000 = 512, lower 8 bit value at max 10,11111111 = 767. (Three byte opcode 0F 38)
-11,00000000 = 768, lower 8 bit value at max 11,11111111 = 1023. (Three byte opcode 0F 3A)
+00,00000000 = 0, lower 8 bit value at max 00,11111111 = 255. (First byte opcodes) Opcodes values 0 to 255.
+01,00000000 = 256, lower 8 bit value at max 01,11111111 = 511. (Two byte opcode 0F) Opcodes values 256 to 511.
+10,00000000 = 512, lower 8 bit value at max 10,11111111 = 767. (Three byte opcode 0F 38) Opcodes values 512 to 767
+11,00000000 = 768, lower 8 bit value at max 11,11111111 = 1023. (Three byte opcode 0F 3A) Opcodes values 767 to 1023.
 ---------------------------------------------------------------------------------------------------------------------------
 VEX.mmmmm = 000_00b (1-byte map), 000_01b (2-byte map), 000_10b (0Fh,38h), 000_11b (0Fh,3Ah)
 EVEX.mm = 00b (1-byte map), 01b (2-byte map), 10b (0Fh,38h), 11b (0Fh,3Ah)
 The EVEX.mm bits are bits 10, and 9 for the opcode map while the lower 8 bits is the opcode.
-The Same is true with VEX.mmmmm which actually only uses only the two first bits for the same opcode maps in the same order.
-The opcode map array is 0 to 1023.
+The Same is true with VEX.mmmmm which only uses the two first bits for the same opcode maps in the same order.
+The opcode map array is 0 to 1023. Each opcode number has the instruction name, And encoding.
 ---------------------------------------------------------------------------------------------------------------------------
 Some instruction encodings also use the lower three bits of the opcode as a register.
 -------------------------------------------------------------------------------------------------------------------------*/
