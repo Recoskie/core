@@ -1380,7 +1380,7 @@ function DecodePrefixAdjustments()
 }
 
 /*-------------------------------------------------------------------------------------------------------------------------
-The Decode opcode function give back the operation name, and what it uses for input.
+The Decode opcode function gives back the operation name, and what it uses for input.
 The input types are for example which registers it uses with the ModR/M, or which Immediate type is used.
 The input types are stored into an operand encoding string. This function gives back the instruction name, And what the operands use.
 ---------------------------------------------------------------------------------------------------------------------------
