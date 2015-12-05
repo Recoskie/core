@@ -161,7 +161,7 @@ var SIMD = 0;
 /*-------------------------------------------------------------------------------------------------------------------------
 The current Opcode, and Opcode map.
 ---------------------------------------------------------------------------------------------------------------------------
-The lower 8 bits is the opcode the higher bits 9, and 10 are combined with an 8 opcode for the opcode maps.
+The lower 8 bits is the opcode the higher bits 9, and 10 are combined with an 8 bit opcode for the opcode maps.
 ---------------------------------------------------------------------------------------------------------------------------
 00,00000000 = 0, lower 8 bit value at max 00,11111111 = 255. (First byte opcodes)
 01,00000000 = 256, lower 8 bit value at max 01,11111111 = 511. (Two byte opcode 0F)
@@ -661,7 +661,7 @@ When function argument type is value 1 decode the immediate input regularly, but
 When function argument type is value 2 decode the immediate as a relative address used by jumps, and function calls.
 When function argument type is value 3 decode the immediate as a Integer Used by Displacements.
 The function argument SizeSetting is the size attributes of the IMM that is decoded using the GetOperandSize function.
-The Imm uses two size setting is in two 4 bit sections as sizes 8,16,32,64.
+The Imm uses two size setting, and is in two 4 bit sections as sizes 8,16,32,64.
 Upper 4 bits is padding for immediate to match destination operand for if the imm does not adjust bigger into the bigger destination.
 The lower 4 bits are used for the Immediate actual adjustable sizes 8,16,32,64.
 If BySize is false the SizeSetting is used numerically as a single size selection as 0=8,1=16,2=32,3=64 by size setting value.
@@ -1153,10 +1153,10 @@ function Decode_ModRM_SIB_Address(ModRM, BySize, Setting)
 
 /*-------------------------------------------------------------------------------------------------------------------------
 Decode Prefix Mnemonic codes. Note Some disable depending on the bit mode of the CPU.
-If a prefix is disabled and not read by this function it allows it to be decoded as an instruction in the Decode Mnemonic function.
+If a prefix is disabled and not read by this function it allows it to be decoded as an instruction in the Decode Opcode function.
 Some instructions can only be used in 32 bit mode such as instructions LDS and LES.
 LDS and LES where changed to Vector extension attribute adjustments to SSE instructions in 64 bit.
-At the end of this function "Opcode" should not hold any prefix code then Opcode contains an operation code to be decoded using the Mnemonics array.
+At the end of this function "Opcode" should not hold any prefix code, so then Opcode contains an operation code.
 -------------------------------------------------------------------------------------------------------------------------*/
 
 function DecodePrefixAdjustments()
@@ -1269,7 +1269,7 @@ function DecodePrefixAdjustments()
       Opcode = ( Opcode & 0x001F ) << 8; //Change Operation code map.
 
       //-------------------------------------------------------------------------------------------------------------------------
-      Opcode |= BinCode[CodePos32]; //read the 8 bit opcode put them in the lower 8 bits away from opcode extend bit's.
+      Opcode |= BinCode[CodePos32]; //read the 8 bit opcode put them in the lower 8 bits away from opcode map bit's.
       NextBytePos(); //Move to the next byte.
       //-------------------------------------------------------------------------------------------------------------------------
 
@@ -1303,13 +1303,13 @@ function DecodePrefixAdjustments()
       
       //Decode bit settings.
       
-      RegExtend = ( ( Opcode & 0x80 ) >> 4 ) | ( Opcode & 0x10 ); //The Double R'R bit decode for Register Extension 0 to 24.
-      BaseExtend = ( Opcode & 0x60 ) >> 2; //The X bit, and B Bit base register extend combination 0 to 24.
-      IndexExtend = ( Opcode & 0x40 ) >> 3; //The X Bit in SIB byte extends by 8.
+      RegExtend = ( ( Opcode & 0x80 ) >> 4 ) | ( Opcode & 0x10 ); //The Double R'R bit decode for Register Extension 0 to 32.
+      BaseExtend = ( Opcode & 0x60 ) >> 2; //The X bit, and B Bit base register extend combination 0 to 32.
+      IndexExtend = ( Opcode & 0x40 ) >> 3; //The X exstends the SIB Index by 8.
       WidthBit = ( Opcode & 0x8000 ) >> 15; //The width bit separator for VEX, EVEX.
       VectorRegister = ( Opcode & 0x7800 ) >> 11; //The Added in Vector Register for SSE under VEX, EVEX.
       SIMD = ( Opcode & 0x0300 ) >> 8; //decode the SIMD mode setting.
-      ZeroMerg = ( Opcode & 0x800000 ) >> 23; //The zero Merge to destination control.
+      ZeroMerg = ( Opcode & 0x800000 ) >> 23; //Zero Merge to destination control.
       SizeAttrSelect = ( Opcode & 0x600000 ) >> 21; //The EVEX.L'L Size combination.
       BRound = (Opcode & 0x100000 ) >> 20; //Broadcast Round Memory address system.
       VectorRegister |= ( Opcode & 0x080000 ) >> 15; //The EVEX.V' vector extension adds 15 to EVEX.V3V2V1V0.
@@ -1350,7 +1350,7 @@ function DecodePrefixAdjustments()
  
   if(Opcode == 0x67)
   {
-    AddressOverride = true; //Set the setting active for the ModRM byte address mode.
+    AddressOverride = true; //Set the setting active for the ModR/M address size.
     return(DecodePrefixAdjustments()); //restart function decode more prefix settings that can effect the decode instruction.
   }
 
@@ -1374,4 +1374,18 @@ function DecodePrefixAdjustments()
   }
 
   return(0); //regular opcode no extension active like VEX, or EVEX.
+}
+
+/*-------------------------------------------------------------------------------------------------------------------------
+The Decode opcode function give back the operation name, and what it uses for input.
+The input types are for example which registers it uses with the ModR/M, or which Immediate type is used.
+The input types are stored into an operand encoding string. This function gives back the instruction name, And what the operands use.
+---------------------------------------------------------------------------------------------------------------------------
+This function is designed to be used after the Decode prefix adjustments function because the Opcode should contain an real instruction code.
+This is because the Decode prefix adjustments function will only end if the Opcode value is not a prefix adjustment code to the ModR/M etc.
+-------------------------------------------------------------------------------------------------------------------------*/
+
+function DecodeOpcode( Extension )
+{
+
 }
