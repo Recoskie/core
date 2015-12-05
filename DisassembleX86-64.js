@@ -162,6 +162,9 @@ var SIMD = 0;
 The current Opcode, and Opcode map.
 ---------------------------------------------------------------------------------------------------------------------------
 The lower 8 bits is the opcode the higher bits 9, and 10 are combined with an 8 opcode for the opcode maps.
+In binary we can count from 00000000 = 0 to 11111111 = 255 with an 8 bit number.
+the opcode maps work like this 11111111 = 255 plus one is 100000000 = 256.
+The lower 8 bits still count 0 to 255 plus the 256 (01,00000000) value.
 ---------------------------------------------------------------------------------------------------------------------------
 00,00000000 = 0, lower 8 bit value at max 00,11111111 = 255. (First byte opcodes) Opcodes values 0 to 255.
 01,00000000 = 256, lower 8 bit value at max 01,11111111 = 511. (Two byte opcode 0F) Opcodes values 256 to 511.
@@ -172,7 +175,7 @@ VEX.mmmmm = 000_00b (1-byte map), 000_01b (2-byte map), 000_10b (0Fh,38h), 000_1
 EVEX.mm = 00b (1-byte map), 01b (2-byte map), 10b (0Fh,38h), 11b (0Fh,3Ah)
 The EVEX.mm bits are bits 10, and 9 for the opcode map while the lower 8 bits is the opcode.
 The Same is true with VEX.mmmmm which only uses the two first bits for the same opcode maps in the same order.
-The opcode map array is 0 to 1023. Each opcode number has the instruction name, And encoding.
+The opcode map array is 0 to 1023. Each opcode number has an instruction name, And encoding.
 ---------------------------------------------------------------------------------------------------------------------------
 Some instruction encodings also use the lower three bits of the opcode as a register.
 -------------------------------------------------------------------------------------------------------------------------*/
