@@ -172,6 +172,7 @@ VEX.mmmmm = 000_00b (1-byte map), 000_01b (2-byte map), 000_10b (0Fh,38h), 000_1
 EVEX.mm = 00b (1-byte map), 01b (2-byte map), 10b (0Fh,38h), 11b (0Fh,3Ah)
 The EVEX.mm bits are bits 10, and 9 for the opcode map while the lower 8 bits is the opcode.
 The Same is true with VEX.mmmmm which actually only uses only the two first bits for the same opcode maps in the same order.
+The opcode map array is 0 to 1023.
 ---------------------------------------------------------------------------------------------------------------------------
 Some instruction encodings also use the lower three bits of the opcode as a register.
 -------------------------------------------------------------------------------------------------------------------------*/
@@ -1161,31 +1162,31 @@ At the end of this function "Opcode" should not hold any prefix code then Opcode
 function DecodePrefixAdjustments()
 {
   //-------------------------------------------------------------------------------------------------------------------------
-  Opcode |= BinCode[CodePos32]; //Read opcode Byte value.
+  Opcode |= BinCode[CodePos32]; //Add 8 bit opcode while bits 9, and 10 are used for opcode map.
   NextBytePos(); //Move to the next byte.
   //-------------------------------------------------------------------------------------------------------------------------
 
-  //if 0F hex start at 256 for Opcode allowing two byte operation codes expansion.
+  //if 0F hex start at 256 for Opcode.
 
   if(Opcode == 0x0F)
   {
-    Opcode = 0x100; //By starting at 0x100 with binary bit 9 set one then adding the 8 bit opcode. Opcode goes 256 to 511 in the Mnemonics array.
+    Opcode = 0x100; //By starting at 0x100 with binary bit 9 set one then adding the 8 bit opcode then Opcode goes 256 to 511.
     return(DecodePrefixAdjustments()); //restart function decode more prefix settings that can effect the decode instruction.
   }
 
-  //if 38 hex while using two byte opcode expansion with binary bit 9 set using prefix code 38 go three byte opcodes.
+  //if 38 hex while using two byte opcode.
 
   else if(Opcode == 0x138)
   {
-    Opcode = 0x200; //By starting at 0x200 with binary bit 10 set one then adding the 8 bit opcode. Opcode goes 512 to 767 in the Mnemonics array.
+    Opcode = 0x200; //By starting at 0x200 with binary bit 10 set one then adding the 8 bit opcode thn Opcode goes 512 to 767.
     return(DecodePrefixAdjustments()); //restart function decode more prefix settings that can effect the decode instruction.
   }
 
-  //if 3A hex while using two byte opcode expansion with binary bit 9 set using prefix code 3A go three byte opcodes.
+  //if 3A hex while using two byte opcode go three byte opcodes.
 
   else if(Opcode == 0x13A)
   {
-    Opcode = 0x300; //By starting at 0x300 hex and adding the 8 bit opcode. Opcode goes 768 to 1023 in the Mnemonics array.
+    Opcode = 0x300; //By starting at 0x300 hex and adding the 8 bit opcode then Opcode goes 768 to 1023.
     return(DecodePrefixAdjustments()); //restart function decode more prefix settings that can effect the decode instruction.
   }
 
@@ -1225,7 +1226,7 @@ function DecodePrefixAdjustments()
       SizeAttrSelect = ( Opcode & 0x04 ) >> 2; //The L bit for 256 vector size.
       SIMD = Opcode & 0x03; //The SIMD mode.
 
-      //Autmatically uses the two byte opcode map Opcode starts at 256 goes to 511 in Mnemonics array.
+      //Autmatically uses the two byte opcode map starts at 256 goes to 511.
 
       Opcode = 0x100;
 
@@ -1265,7 +1266,7 @@ function DecodePrefixAdjustments()
       SizeAttrSelect = ( Opcode & 0x0400 ) >> 10; //Vector length for 256 setting.
       SIMD = ( Opcode & 0x0300 ) >> 8; //The SIMD mode.
 
-      Opcode = ( Opcode & 0x001F ) << 8; //Change Operation code expansion bit's based on the VEX.mmmmm bit's note the maps go in order.
+      Opcode = ( Opcode & 0x001F ) << 8; //Change Operation code map.
 
       //-------------------------------------------------------------------------------------------------------------------------
       Opcode |= BinCode[CodePos32]; //read the 8 bit opcode put them in the lower 8 bits away from opcode extend bit's.
@@ -1314,7 +1315,7 @@ function DecodePrefixAdjustments()
       VectorRegister |= ( Opcode & 0x080000 ) >> 15; //The EVEX.V' vector extension adds 15 to EVEX.V3V2V1V0.
       MaskRegister = ( Opcode & 0x070000 ) >> 16; //Mask to destination.
 
-      Opcode = ( Opcode & 0x03 ) << 8; //Change Operation code exansion bit's the maps also go in the same order.
+      Opcode = ( Opcode & 0x03 ) << 8; //Change Operation code map.
 
       //-------------------------------------------------------------------------------------------------------------------------
       Opcode |= BinCode[CodePos32]; //read the 8 bit opcode put them in the lower 8 bits away from opcode extend bit's.
