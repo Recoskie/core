@@ -578,9 +578,11 @@ Mnemonics = [
 ];
 
 //------------------------------------------------------------------------------------------------------------------------
-//The Operand type array each operation code can use different operands that must be decoded in the X86-64 instruction format order.
-//The opcode register encoding comes first regardless of which order the operands go in. Then the ModR/M comes next.
-//Then Immediate is always last. An instruction does not have to combine all encoding, but used one, or two.
+//The Operand type array each operation code can use different operands that must be decoded in the X86 instruction format order.
+//The opcode register encoding comes first regardless of which order the operands are displayed. Then the ModR/M comes next.
+//Then Immediate is always last. An instruction does not have to combine all encodings, but used one, or two.
+//The order the opernads are displayed in is the order they are in the encodding string.
+//However they must be decoded in the X86 instruction format order in which Reg opcode decodes first if used, then ModR/M if used etc.
 //------------------------------------------------------------------------------------------------------------------------
 //The structure of these arrays are fine for decoding the instruction codes names, but the operand formats have change.
 //------------------------------------------------------------------------------------------------------------------------
