@@ -1,6 +1,6 @@
 /*-------------------------------------------------------------------------------------------------------------------------
 The main goal of this disassembler is to make the most comprehensible disassembler possible for X86.
-Everything is in order and is explained in depth throughout the code. To even how each variables are used throughout the code.
+Everything is in order and is explained in depth throughout the code. To even how the variables are used throughout the code.
 At the same time this is a fast powerful X86 disassembler engine.
 -------------------------------------------------------------------------------------------------------------------------*/
 
