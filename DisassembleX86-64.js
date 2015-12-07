@@ -1985,6 +1985,10 @@ function DecodeRegValue(RValue, BySize, Setting) {
     Setting = GetOperandSize(Setting); //get decoded size value.
   }
 
+  //check if Register is a XMM register which allows SIMD vector exstention.
+
+  if(Setting >= 4 & Setting <= 7){ SSE = true; }
+
   //if 8 bit Registers
 
   if (Setting == 0) 
@@ -2015,15 +2019,6 @@ Note if by size attributes is false the lower four bits is the selected Memory p
 function Decode_ModRM_SIB_Address(ModRM, BySize, Setting)
 {
   var out = ""; //the variable out is what stores the decoded address pointer, or Register if Register mode.
-  
-  //-------------------------------------------------------------------------------------------------------------------------
-  //The Selected Size is setting unless BySize attribute is true.
-  //-------------------------------------------------------------------------------------------------------------------------
-
-  if (BySize)
-  {
-    Setting = (GetOperandSize(Setting) << 1) | FarPointer;
-  }
 
   //-------------------------------------------------------------------------------------------------------------------------
   //If the ModR/M is not in register mode decode it as an Effective address.
@@ -2033,11 +2028,24 @@ function Decode_ModRM_SIB_Address(ModRM, BySize, Setting)
   {
 
     //-------------------------------------------------------------------------------------------------------------------------
+    //The Selected Size is setting unless BySize attribute is true.
+    //-------------------------------------------------------------------------------------------------------------------------
+
+    if (BySize)
+    {
+      Setting = (GetOperandSize(Setting) << 1) | FarPointer;
+    }
+
+    //-------------------------------------------------------------------------------------------------------------------------
     //If By size attributes is false the selected Memory pointer is the first four bits of the size setting for all pointer indexes 0 to 15.
     //Also if By size attribute is also true the selected by size index can not exceed 15 anyways which is the max combination the first four bits.
     //-------------------------------------------------------------------------------------------------------------------------
     
     Setting = Setting & 0x0F;
+
+    //check if Register is a XMM register which allows SIMD vector exstention.
+
+    if( ( Setting >= 8 & Setting <= 14 ) & ( Setting % 2 <= 0 ) ){ SSE = true; }
 
     //-------------------------------------------------------------------------------------------------------------------------
     //Get the pointer size by Size setting.
@@ -2263,7 +2271,7 @@ function Decode_ModRM_SIB_Address(ModRM, BySize, Setting)
 
     //Decode the select register though the register decode function.
 
-    out = DecodeRegValue(BaseExtend | ModRM[2], false, Setting);
+    out = DecodeRegValue(BaseExtend | ModRM[2], BySize, Setting);
   }
 
   //return what the "Register mode" is, or "Memory address"
@@ -2509,5 +2517,103 @@ This is because the Decode prefix adjustments function will only end if the Opco
 
 function DecodeOpcode( Extension )
 {
+  //get the Operation name by the operations opcode.
+ 
+  var Name = Mnemonics[Opcode];
+ 
+  //get the Operands for this opcode it follows the same array structure as Mnemonics array
+ 
+  var Type = Operands[Opcode];
 
+  //Some Opcodes use the next byte automatically for extended opcode selection. Or current SIMD mode.
+
+  var ModRMByte = BinCode[CodePos32]; //Read the byte but do not move to the next byte.
+
+  //If the current Mnemonic is an array two in size then Register Mode, and memory mode are separate from each other.
+ 
+  if(Name instanceof Array && Name.length == 2)
+  {
+
+     //if Register mode
+
+     if( ( ModRMByte & 0xC0 ) == 0xC0 )
+     {
+       Name = Name[1];
+       Type = Type[1];
+     }
+       
+     //else Address mode
+      
+     else
+     {
+       Name = Name[0];
+       Type = Type[0];
+     }
+  }
+
+  //if the current Mnemonic is an array 8 in length
+
+  if(Name instanceof Array && Name.length == 8)
+  {
+
+    //Group opcode.
+
+    Name = Name[ ( ModRMByte & 0x38 ) >> 3 ];
+    Type = Type[ ( ModRMByte & 0x38 ) >> 3 ];
+
+    //if The select Group opcode is another array 8 in size it is a static opcode selection
+
+    if(Name instanceof Array && Name.length == 8)
+    {
+      Name = Name[ ( ModRMByte & 0x07 ) ];
+      Type = Type[ ( ModRMByte & 0x07 ) ];
+    }
+
+  }
+
+  //if the Mnemonic is an array 3 in size the instruction name goes by size.
+
+  if(Name instanceof Array && Name.length == 3)
+  {
+    if (Name[SizeAttrSelect] != "")
+    {
+      Name = Name[SizeAttrSelect]; //set it to the Mnemonic
+      Type = Type[SizeAttrSelect]; //Operand array always matches the Mnemonic structure
+    }
+
+    //else no size prefix use default size Mnemonic name
+
+    else
+    {
+      Name = Name[1]; //set it to the Mid default Mnemonic
+      Type = Type[1]; //Operand array always matches the Mnemonic structure
+    }
+  }
+
+  //if the current Mnemonic is an array 4 in size it is an SSE, or MMX instruction
+
+  if(Name instanceof Array && Name.length == 4)
+  {
+
+    //Reset the prefix string G1 because prefix codes F2, and F3 are used with SSE which forum the repeat prefix.
+    //Some SSE instructions can use the REP, RENP prefix thus the SSE mode uses Packed Single format.
+
+    if(Name[SIMD] != "")
+    {
+      PrefixG1 = "";
+      Name = Name[SIMD];
+      Type = Type[SIMD];
+    }
+    else{Name = Name[0];Type = Type[0];}
+
+  }
+
+  //If Extension is not 0 then add the vector extend "V" to the instruction.
+  //During the decoding of the operands the instruction can be returned as invalid if it is an Arithmetic, or MM, ST instruction.
+
+  if(Extension > 0){ Name = "V" + Name; }
+
+  //return the instruction and encoding type.
+
+  return( [ Name, Type ] );
 }
