@@ -1,10 +1,4 @@
 /*-------------------------------------------------------------------------------------------------------------------------
-The main goal of this disassembler is to make the most comprehensible disassembler possible for X86.
-Everything is in order and is explained in depth throughout the code. To even how the variables are used throughout the code.
-At the same time this is a fast powerful X86 disassembler engine.
--------------------------------------------------------------------------------------------------------------------------*/
-
-/*-------------------------------------------------------------------------------------------------------------------------
 Binary byte code array.
 -------------------------------------------------------------------------------------------------------------------------*/
 
@@ -1241,7 +1235,7 @@ The index register is used in ModR/M memory address mode if the base register is
 The Index register can be extended to 8 using the "X bit" setting when the Index register is used.
 The X bit setting is used in the REX prefix settings, and also the VEX Extension, and EVEX Extension.
 ---------------------------------------------------------------------------------------------------------------------------
-The hugest the Index register can be extended is to a 4 bit number.
+The highest the Index register can be extended is to a 4 bit number.
 -------------------------------------------------------------------------------------------------------------------------*/
 
 var IndexExtend = 0;
