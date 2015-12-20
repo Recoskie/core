@@ -2800,10 +2800,10 @@ function DecodeOpcode( Extension ){
 };
 
 /*-------------------------------------------------------------------------------------------------------------------------
-Read each operand in the Operand String then set the corect operand in the decoder array.
+Read each operand in the Operand String then set the correct operand in the decoder array.
 And also OpNum is the order the operands are read in the operand string this number is set the the operand in the decoder array.
-Each set operand will be decoded by the frunction DecodeOperands(). The OpNum is the order the decoded operands will be
-positioned. The order the operands display is different than the order they decode in seqence.
+Each set operand will be decoded by the function DecodeOperands(). The OpNum is the order the decoded operands will be
+positioned. The order the operands display is different than the order they decode in sequence.
 -------------------------------------------------------------------------------------------------------------------------*/
 
 function DecodeOperandString( OperandString, Extension ){
@@ -2821,10 +2821,10 @@ function DecodeOperandString( OperandString, Extension ){
 
   for(var i = 0, OpNum = 0; i < OperandString.length; i+=4, OpNum++ ) //Iterate though operand string.
   {
-    OperandValue = parseInt( OperandString.substring(i, (i + 4) ) ); //Convert the four hex dgits to a 16 bit number value.
+    OperandValue = parseInt( OperandString.substring(i, (i + 4) ) ); //Convert the four hex digits to a 16 bit number value.
 
     Code = ( OperandValue & 0xFE00 ) >> 9; //Get the operand Code.
-    BySize = ( OperandValue & 0x0100 ) >> 8; //Get it's by size attrubutes setting for if Setting is used as size attrubutes.
+    BySize = ( OperandValue & 0x0100 ) >> 8; //Get it's by size attributes setting for if Setting is used as size attributes.
     Setting = ( OperandValue & 0x00FF ); //Get the 8 bit Size setting.
 
     //if it is a opcode Reg Encoding then first element along the decoder is set.
@@ -2855,21 +2855,21 @@ function DecodeOperandString( OperandString, Extension ){
       X86Decoder[3].set( ( Code - 6 ), BySize, Setting, OpNUm );
     }
 
-    //Immidate Input two.
+    //Immediate Input two.
 
     else if( Code >= 9 & Code <= 11 )
     {
       X86Decoder[4].set( ( Code - 9 ), BySize, Setting, OpNUm );
     }
 
-    //Vector register, only set the vector register if Vector exstention is active.
+    //Vector register, only set the vector register if Vector extension is active.
 
     else if( Code == 12 & Extension > 0 )
     {
       X86Decoder[5].set(0, BySize, Setting, OpNUm );
     }
 
-    //The upper four bits of the Immidate is used as an register.
+    //The upper four bits of the Immediate is used as an register.
 
     else if( Code == 13 )
     {
@@ -2890,7 +2890,7 @@ function DecodeOperandString( OperandString, Extension ){
 }
 
 /*-------------------------------------------------------------------------------------------------------------------------
-Decode each of the operands along the X86Decoder and decativate them.
+Decode each of the operands along the X86Decoder and detectives them.
 -------------------------------------------------------------------------------------------------------------------------*/
 
 function DecodeOperands( FOperands ){
