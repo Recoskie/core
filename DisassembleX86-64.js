@@ -2893,6 +2893,6 @@ function DecodeOperandString( OperandString, Extension ){
 Decode each of the operands along the X86Decoder and detectives them.
 -------------------------------------------------------------------------------------------------------------------------*/
 
-function DecodeOperands( FOperands ){
+function DecodeOperands(){
 
 }
