@@ -2245,10 +2245,6 @@ function DecodeRegValue( RValue, BySize, Setting ) {
 
   //check if Register is a XMM register which allows SIMD vector extension.
 
-  if( Setting >= 4 & Setting <= 7 ){ SSE = true; }
-
-  //check if Register is a XMM register which allows SIMD vector extension.
-
   if(Setting >= 4 & Setting <= 7){ SSE = true; }
 
   //if 8 bit Registers
