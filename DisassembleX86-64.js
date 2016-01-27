@@ -19,9 +19,9 @@ var CodePos32 = 0x00000000;
 
 /*-------------------------------------------------------------------------------------------------------------------------
 The simulated 64 bit address binary location uses two 32 bit integers.
-This allows you to set an 64 bit address base location using the function SetBasePosition(Address64).
+This allows you to set an 64 bit address base location using the function ^SetBasePosition()^.
 In which all binary instructions in the Binary byte code array disassemble as if they are located in that address.
-While the CodePos32 moves though the array of hex values normally for your X86 instructions.
+While the CodePos32 moves though the array of byte values normally for your X86 instructions.
 -------------------------------------------------------------------------------------------------------------------------*/
 
 var Pos64 = 0x00000000, Pos32 = 0x00000000;
@@ -59,7 +59,7 @@ Bellow XX is the opcode combined with the adjustment codes and how opcode works 
 11,00000000 = 768, lower 8 bit opcode at max 11,11111111 = 1023. (Three byte opcode 0F 3A XX) Opcodes values 768 to 1023.
 ---------------------------------------------------------------------------------------------------------------------------
 The lower 8 bits is the selectable opcode 0 to 255 plus one from 255 is 1,00000000 = 256 thus 256 acts as the place holder.
-The vector adjustment codes contain an map bit selection the map bits go in order to the order the maps are in.
+The vector adjustment codes contain an map bit selection the map bits go in order to the place holder map bits are in.
 ---------------------------------------------------------------------------------------------------------------------------
 VEX.mmmmm = 000_00b (1-byte map), 000_01b (2-byte map), 000_10b (0Fh,38h), 000_11b (0Fh,3Ah)
 EVEX.mm = 00b (1-byte map), 01b (2-byte map), 10b (0Fh,38h), 11b (0Fh,3Ah)
@@ -69,15 +69,15 @@ Used by function ^DecodeOpcode()^
 
 var Opcode = 0;
 
-/*------------------------------------------------------------------------------------------------------------------------
+/*-------------------------------------------------------------------------------------------------------------------------
 The Mnemonic array each opcode value has an Instruction Name except for codes that are used as adjustment settings called Prefixes.
 Some Opcodes like segment overrides are read and stored into the SegOveride string for the left bracket of the ModR/M address.
 Instruction codes may appear multiple times, but use different size attribute adjustments, or change the direction registers, and
 memory are used. Some opcode indexes also use Arrays as separators for different selections, and prefixes.
 The length of the arrays are to do with encoding selections.
---------------------------------------------------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------------------------------
 Used by function ^DecodeOpcode()^
--------------------------------------------------------------------------------------------------------------------------*/
+--------------------------------------------------------------------------------------------------------------------------*/
 
 var Mnemonics = [
   //------------------------------------------------------------------------------------------------------------------------
@@ -90,13 +90,13 @@ var Mnemonics = [
   "SBB","SBB","SBB","SBB","SBB","SBB","???","???",
   "AND","AND","AND","AND","AND","AND","???","???",
   "SUB","SUB","SUB","SUB","SUB","SUB",
-  "CS:[", //Code segment override
+  "CS:[", //Code segment override.
   "???",
   "XOR","XOR","XOR","XOR","XOR","XOR",
   "SS:[", //Stack segment override
   "???",
   "CMP","CMP","CMP","CMP","CMP","CMP",
-  "DS:[", //Data Segment override
+  "DS:[", //Data Segment override.
   "???",
   "","","","","","","","","","","","","","","","",//*The Rex Prefix note the REX prefix can now disable in different bit modes allowing these to be used.
   "PUSH","PUSH","PUSH","PUSH","PUSH","PUSH","PUSH","PUSH",
@@ -628,12 +628,12 @@ var Mnemonics = [
   "???","???","???","???","???","???","???","???","???","???","???","???","???","???","???","???",
   "???","???","???","???","???","???","???","???","???","???","???","???","???","???","???","???"];
 
-/*------------------------------------------------------------------------------------------------------------------------
+/*-------------------------------------------------------------------------------------------------------------------------
 The Operand type array each operation code can use different operands that must be decoded in the X86 instruction format order.
 The order the operands are "displayed" is the order they are in the Operands string for the operation code.
---------------------------------------------------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------------------------------
 Used by function ^DecodeOpcode()^
-------------------------------------------------------------------------------------------------------------------------*/
+-------------------------------------------------------------------------------------------------------------------------*/
 
 var Operands = [
   //------------------------------------------------------------------------------------------------------------------------
@@ -1246,30 +1246,29 @@ var X86Decoder = [
   /*-------------------------------------------------------------------------------------------------------------------------
   The Second operand that is decoded in series is the ModR/M address if used.
   Reads a byte using function ^Decode_ModRM_SIB_Value()^ gives it to the function ^Decode_ModRM_SIB_Address()^ which only
-  reads the Mode, and Base register for the address, and then decodes the SIB byte if base register is 100 in value.
+  reads the Mode, and Base register for the address, and then decodes the SIB byte if base register is "100" binary in value.
   does not use the Register value in the ModR/M because the register can also be used as a group opcode used by the
   function ^DecodeOpcode()^, or uses a different register with a different address pointer.
   -------------------------------------------------------------------------------------------------------------------------*/
   new Operand(), //ModR/M address if used.
   /*-------------------------------------------------------------------------------------------------------------------------
-  The third operand that that is decoded if used is for the ModR/M reg bits.
+  The third operand that is decoded if used is for the ModR/M reg bits.
   Uses the already decoded byte from ^Decode_ModRM_SIB_Value()^ gives the three bit reg value to the function ^DecodeRegValue()^.
   ModR/M address, and reg are usually used together, but can also change direction in the encoding string.
   -------------------------------------------------------------------------------------------------------------------------*/
   new Operand(), //ModR/M reg bits if used.
   /*-------------------------------------------------------------------------------------------------------------------------
   The fourth operand that is decoded in sequence is the first Immediate input if used.
-  The function ^DecodeImmediate()^ start reading bytes as a number for input to instruction.
+  The function ^DecodeImmediate()^ starts reading bytes as a number for input to instruction.
   -------------------------------------------------------------------------------------------------------------------------*/
   new Operand(), //First Immediate if used.
   /*-------------------------------------------------------------------------------------------------------------------------
   The fifth operand that is decoded in sequence is the second Immediate input if used.
-  The function ^DecodeImmediate()^ start reading bytes as a number for input to instruction.
+  The function ^DecodeImmediate()^ starts reading bytes as a number for input to instruction.
   -------------------------------------------------------------------------------------------------------------------------*/
-  new Operand(), //Second Immediate if used.
+  new Operand(), //Second Immediate if used (Note that the instruction "Enter" uses two immediate inputs).
   /*-------------------------------------------------------------------------------------------------------------------------
-  Vector register if used.
-  The Vector extension instruction codes allow the selection of the vector register value that is stored into variable
+  Vector extension instruction codes allow the selection of the vector register value that is stored into variable
   VectorRegister that applies to the selected SSE instruction that is read after that uses it.
   The adjusted vector value is given to the function ^DecodeRegValue()^.
   -------------------------------------------------------------------------------------------------------------------------*/
@@ -1291,14 +1290,15 @@ var X86Decoder = [
 ];
 
 /*-------------------------------------------------------------------------------------------------------------------------
-SizeAttrSelect controls the General arithmetic sizes "8/16/32/64", and SIMD Vector register sizes "128/256/512/1024".
+SizeAttrSelect controls the General arithmetic extended sizes "8/16/32/64", and SIMD Vector register extended sizes
+"128/256/512/1024". Each encoding type is extended to 32, then to 64 this allows some instructions to extend while some do not.
 ---------------------------------------------------------------------------------------------------------------------------
 General arithmetic sizes "8/16/32/64" change by operand override which makes all operands go 16 bit.
 The width bit which is in the REX prefix makes operands go all 64 bits the changes depend on the instructions adjustable size.
 The value system goes as follows: 0=8, or 16, then 1=Default32, then 2=Max64. Smallest to largest in order.
 Changeable from prefixes. Code 66 hex is operand override, 48 hex is the REX.W setting. By default operands are 32 bit
 in size in both 32 bit mode, and 64 bit modes so by default the Size attribute setting is 1 in value so it lines up with 32.
-In the case of fewer size settings the size system aligns in order to the correct prefix.
+In the case of fewer size settings the size system aligns in order to the correct prefix settings.
 ---------------------------------------------------------------------------------------------------------------------------
 If in 16 bit mode the 16 bit operand size trades places with 32, so when operand override is used goes from 16 to 32.
 Also in 32 bit mode any size that is 64 changes to 32, but except for operands that do not use the BySize system.
@@ -1308,7 +1308,7 @@ smallest to largest Note 1024 is Reserved the same system used for General arith
 With one difference if any size attribute lower in size like 64, or 32 is active these are used as the Broadcast round size
 for memory vector in the EVEX prefix.
 ---------------------------------------------------------------------------------------------------------------------------
-Used by the function ^GetOperandSize()^ which uses a fast logarithm system,
+Used by the function ^GetOperandSize()^ which uses a fast base 2 logarithm system,
 and the function ^DecodeOpcode()^ which uses the current size setting for operation names that change by size.
 -------------------------------------------------------------------------------------------------------------------------*/
 
@@ -1320,17 +1320,31 @@ This blocks all other valid Arithmetic opcodes from being combined with vector E
 This also blocks the ST, and MM X87 FPU registers allowing only the new XMM Vector Registers in SIMD to be used with
 Vector Extensions.
 ---------------------------------------------------------------------------------------------------------------------------
-SSE is Set true during the Decoding of operands if Any SSE vector operands are used SIMD Sizes "128/256/512".
-If Instruction uses SIMD vectors, and Vector extension is active from the function DecodePrefixAdjustments()
+SSE is Set true during the Decoding of operands if Any SSE vector operands are used for extended SIMD Sizes "128/256/512".
+And if the Instruction uses SIMD vectors, and Vector extension is active from the function ^DecodePrefixAdjustments()^
 then the instruction is an valid Vector extension.
 -------------------------------------------------------------------------------------------------------------------------*/
 
 var SSE = false;
 
 /*-------------------------------------------------------------------------------------------------------------------------
+The Extension is set 2 during opcode 62 hex in which the ^DecodePrefixAdjustments()^ decodes the settings.
+The Extension is set 1 during opcodes C4, and C5 hex in which the ^DecodePrefixAdjustments()^ decodes the settings.
+By default Extension is 0 for decoding of instructions normally.
+---------------------------------------------------------------------------------------------------------------------------
+Used by function ^DecodeOpcode()^ adds the letter "V" to the instruction name to show it uses Vector adjustments.
+Used By function ^DecodeOperandString()^ which allows the Vector operand to be used if existent in the operand string.
+when the Function ^DecodeOperands()^ completes if the instruction uses no Vector unit operands the instruction is invalid.
+SSE is set true if vector operands are used from the vector unit.
+-------------------------------------------------------------------------------------------------------------------------*/
+
+var Extension = 0;
+
+/*-------------------------------------------------------------------------------------------------------------------------
 Pointer size plus 16 bit's used by FAR JUMP and other instructions.
 For example FAR JUMP is size attributes 16/32/64 normally 32 is the default size, but it is 32+16=48 FWORD PTR.
 In 16 bit CPU mode the FAR jump defaults to 16 bits, but because it is a far jump it is 16+16=32 which is DWORD PTR.
+Set by the function ^DecodeOperandString()^ for if the ModR/M operand uses a far pointer address.
 ---------------------------------------------------------------------------------------------------------------------------
 Used by the function ^Decode_ModRM_SIB_Address()^.
 -------------------------------------------------------------------------------------------------------------------------*/
@@ -1361,6 +1375,7 @@ When RegExtend is 10,000 the added lower three bits is 10,000 = 16 to 10,111 = 2
 When RegExtend is 11,000 the added lower three bits is 11,000 = 24 to 10,111 = 31.
 ---------------------------------------------------------------------------------------------------------------------------
 The Register Extend bits make the binary number from a 3 bit number to a 5 bit number by combining the EVEX.R'R bits.
+The REX opcode, and EVEX opcode 62 hex are decoded with function ^DecodePrefixAdjustments()^ which contain R bit settings.
 ---------------------------------------------------------------------------------------------------------------------------
 Used by function ^DecodeRegValue()^.
 -------------------------------------------------------------------------------------------------------------------------*/
@@ -1397,7 +1412,7 @@ vector register. This operand will not be read in the "operand string" if VEX, o
 function ^DecodePrefixAdjustments()^. During a VEX, or EVEX version of the SSE instruction the vector bits are a 4 bit
 binary value of 0 to 15, and are extended in EVEX to 32 by adding the EVEX.V bit to the vector register value.
 ---------------------------------------------------------------------------------------------------------------------------
-Used with the function ^DecodeRegValue()^.
+Used with the function ^DecodeRegValue()^ to decode Register value.
 -------------------------------------------------------------------------------------------------------------------------*/
 
 var VectorRegister = 0;
@@ -1405,12 +1420,16 @@ var VectorRegister = 0;
 /*-------------------------------------------------------------------------------------------------------------------------
 The EVEX Extension has an mask Register value selection for {K0-K7} mask to destination operand.
 The K mask register is always displayed to the destination operand in any Vector instruction used with EVEX settings.
+---------------------------------------------------------------------------------------------------------------------------
+The {K} is added onto the first operand in OpNum before returning the decoded operands from the function ^DecodeOperands()^.
 -------------------------------------------------------------------------------------------------------------------------*/
 
 var MaskRegister = 0;
 
 /*-------------------------------------------------------------------------------------------------------------------------
 The EVEX Extension has an zero mask bit setting for {z} zeroing off the registers.
+---------------------------------------------------------------------------------------------------------------------------
+The {z} is added onto the first operand in OpNum before returning the decoded operands from the function ^DecodeOperands()^.
 -------------------------------------------------------------------------------------------------------------------------*/
 
 var ZeroMerg = false;
@@ -1458,7 +1477,7 @@ var RexActive = false;
 The SIMD value is set according to SIMD MODE for SSE prefixes (none, 66, F2, F3), then by value of VEX.pp, and EVEX.pp.
 Changes the selected opcode in ^DecodeOpcode()^ function.
 ---------------------------------------------------------------------------------------------------------------------------
-Used by the function ^DecodeOpcode()^
+Used by the function ^DecodeOpcode()^.
 -------------------------------------------------------------------------------------------------------------------------*/
 
 var SIMD = 0;
@@ -1467,27 +1486,60 @@ var SIMD = 0;
 Some operands use the value of the Immediate operand as an opcode, or upper 4 bits as Another register, or condition codes.
 The Immediate is decoded normally, but this variable stores the integer value of the first IMM byte for the other byte
 encodings if used.
+---------------------------------------------------------------------------------------------------------------------------
+Used By the function ^DecodeOpcode()^ for condition codes, and by ^DecodeOperands()^ using the upper four bits as a register.
 -------------------------------------------------------------------------------------------------------------------------*/
 
 var IMMValue = 0;
 
 /*-------------------------------------------------------------------------------------------------------------------------
-Prefix G1, and G2 are used used with Intel HLE.
+Prefix G1, and G2 are used with Intel HLE, and other prefix codes such as repeat the instruction which can be applied to
+any instruction unless it is an SIMD instruction.
 -------------------------------------------------------------------------------------------------------------------------*/
 
 var PrefixG1 = "", PrefixG2 = "";
 
 /*-------------------------------------------------------------------------------------------------------------------------
-Intel HLE flip "G1 = REP (XACQUIRE), or RENP (XRELEASE)", and "G2 = LOCK" if the lock prefix was not read first. G1, and G2 flip.
-Also XACQUIRE, and XRELEASE replace REP, and REPNE if the LOCK prefix is used with REP, or REPNE.
-Also the instruction has to support Intel HLE.
+Intel HLE is used with basic arithmetic instructions like Add, and subtract, and shift operations.
+Intel HLE instructions replace the Repeat, and lock prefixes with XACQUIRE, and XRELEASE.
+---------------------------------------------------------------------------------------------------------------------------
+This is used by function ^DecodeInstruction()^.
+-------------------------------------------------------------------------------------------------------------------------*/
+
+var XRelease = false, XAcquire = false;
+
+/*-------------------------------------------------------------------------------------------------------------------------
+Intel HLE flip "G1 is used as = REP (XACQUIRE), or RENP (XRELEASE)", and "G2 is used as = LOCK" if the lock prefix was
+not read first then G1, and G2 flip. Also XACQUIRE, and XRELEASE replace REP, and REPNE if the LOCK prefix is used with
+REP, or REPNE if the instruction supports Intel HLE.
+---------------------------------------------------------------------------------------------------------------------------
+This is used by function ^DecodeInstruction()^.
 -------------------------------------------------------------------------------------------------------------------------*/
 
 var HLEFlipG1G2 = false;
 
 /*-------------------------------------------------------------------------------------------------------------------------
+Replaces segment overrides CS, and DS with HT, and HNT prefix for Branch taken and not taken used by jump instructions.
+---------------------------------------------------------------------------------------------------------------------------
+This is used by functions ^Decode_ModRM_SIB_Address()^, and ^DecodeInstruction()^.
+-------------------------------------------------------------------------------------------------------------------------*/
+
+var HT = false;
+
+/*-------------------------------------------------------------------------------------------------------------------------
+Instruction that support MPX replace the REPNE prefix with BND if operation is a MPX instruction.
+---------------------------------------------------------------------------------------------------------------------------
+This is used by function ^DecodeInstruction()^.
+-------------------------------------------------------------------------------------------------------------------------*/
+
+var BND = false;
+
+/*-------------------------------------------------------------------------------------------------------------------------
 The Invalid Instruction variable is very important as some bit settings in vector extension create invalid operation codes.
 Also some opcodes are invalid in different cpu bit modes.
+---------------------------------------------------------------------------------------------------------------------------
+Functions ^DecodePrefixAdjustments()^ ,^DecodeRegValue()^, and ^Decode_ModRM_SIB_Address()^ Set the Invalid Opcode for
+if any invalid instruction encodings are used. The function ^DecodeInstruction()^ returns an invalid instruction if Invalid Operation is set.
 -------------------------------------------------------------------------------------------------------------------------*/
 
 var InvalidOp = false;
@@ -1495,6 +1547,8 @@ var InvalidOp = false;
 /*-------------------------------------------------------------------------------------------------------------------------
 The Register array holds arrays in order from 0 though 7 for the GetOperandSize function Which goes by Prefix size settings,
 and SIMD Vector length instructions.
+---------------------------------------------------------------------------------------------------------------------------
+Used by functions ^DecodeRegValue()^, ^Decode_ModRM_SIB_Address()^.
 -------------------------------------------------------------------------------------------------------------------------*/
 
 REG = [
@@ -1507,7 +1561,7 @@ REG = [
     //8 bit registers without any rex prefix active is the normal low byte to high byte order of the first 4 general use registers using 8 bits.
 
     [
-      //Registers 8 bit names without any rex prefix index 0 to 7
+      //Registers 8 bit names without any rex prefix index 0 to 7.
 
       "AL", "CL", "DL", "BL", "AH", "CH", "DH", "BH"
     ],
@@ -1676,23 +1730,23 @@ REG = [
 
 ]; //end of REG array structure
 
-/*--------------------------------------------------------------------------------------------------
+/*-------------------------------------------------------------------------------------------------------------------------
 RAM Pointer sizes are controlled by the GetOperandSize function which uses the Size Setting attributes for
 the select pointer in the PTR array alignment. The REG array above uses the same alignment to the returned
 size attribute except address pointers have far address pointers which are 16 bits plus there (8, or 16)/32/64 size attribute.
-----------------------------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------------------------------
 Far pointers add 16 bits to the default pointer sizes.
 16 bits become 16+16=32 DWORD, 32 bits becomes 32+16=48 FWORD, and 64+16=80 TBYTE.
 The function GetOperandSize goes 0=8 bit, 1=16 bit, 2=32 bit, 3=64 bit, 4=128, 5=256, 6=512, 7=1024.
-----------------------------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------------------------------
 The pointers are stored in doubles this is so every second position is each size setting.
 So the Returned size attribute has to be in multiples of 2 each size multiplied by 2 looks like this.
 (0*2=0)=8 bit, (1*2=2)=16 bit, (2*2=4)=32 bit, (3*2=6)=64 bit, (4*2=8)=128, (5*2=10)=256, (6*2=12)=512.
 This is the same as moving by 2 this is why each pointer is in groups of two before the next line.
 When the 16 bit shift is used for far pointers only plus one is added for the 16 bit shifted name of the pointer.
-----------------------------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------------------------------
 Used by the function ^Decode_ModRM_SIB_Address()^.
---------------------------------------------------------------------------------------------------*/
+-------------------------------------------------------------------------------------------------------------------------*/
 
 PTR = [
 
@@ -1782,124 +1836,150 @@ function NextByte(){
     CodePos = 0; //for now lets just set it 0 without adding in the binary disk read library
   }
 
-  //Add the next byte as a hex to InstructionHex which will be displayed beside the decoded instruction.
-  //Add hex codes to InstructionHex only if ShowInstructionHex decoding is active.
-  //After an instruction decodes InstructionHex is reset for the next byte sequence for the next instruction.
+  //Add the next byte as hex to InstructionHex which will be displayed beside the decoded instruction.
+  //After an instruction decodes InstructionHex is only added beside the instruction if ShowInstructionHex is active.
 
-  if (ShowInstructionHex)
-  {
-    var t = BinCode[CodePos32].toString(16); //convert the byte to hex.
-    if (t.length == 1) { t = "0" + t; } //pad it to tow hex digits as a byte.
-    InstructionHex += t; //add it to the current bytes used for the decode instruction.
-    t = null; //set the temporary string used for padding it to a hex byte null.
-  }
+  var t = BinCode[CodePos32].toString(16); //convert the byte to hex.
+  if (t.length == 1) { t = "0" + t; } //pad it to tow hex digits as a byte.
+  InstructionHex += t; //add it to the current bytes used for the decode instruction.
+  t = null; //set the temporary string used for padding it to a hex byte null.
 
-};
+}
 
 /*-------------------------------------------------------------------------------------------------------------------------
 Takes a 64 bit hex string and sets it as the 64 address position.
 -------------------------------------------------------------------------------------------------------------------------*/
 
-function SetBasePosition(Address64){
-    Pos32 = parseInt(Address64.slice(-8), 16);
-    Pos64 = parseInt(Address64.substring(0, Address64.length - 8), 16);};
+function SetBasePosition( Address64 ){
+  Pos32 = parseInt(Address64.slice(-8), 16);
+  Pos64 = parseInt(Address64.substring(0, Address64.length - 8), 16);
+  if ( Pos32 < 0 ) { Pos32 += Math.pow( 2, 32 ); }
+  if ( Pos64 < 0 ) { Pos64 += Math.pow( 2, 32 ); }
+}
 
 /*-------------------------------------------------------------------------------------------------------------------------
-gives back the current 64 bit address position.
+Gives back the current 64 bit address position.
 -------------------------------------------------------------------------------------------------------------------------*/
 
 function GetPosition(){
-    for (var S32 = Pos32.toString(16) ; S32.length < 8; S32 = "0" + S32);
-    for (var S64 = Pos64.toString(16) ; S64.length < 8; S64 = "0" + S64);
-    return ((S64 + S32).toUpperCase());};
+  for (var S32 = Pos32.toString(16) ; S32.length < 8; S32 = "0" + S32);
+  for (var S64 = Pos64.toString(16) ; S64.length < 8; S64 = "0" + S64);
+  return ((S64 + S32).toUpperCase());}
 
 /*-------------------------------------------------------------------------------------------------------------------------
-finds bit positions to the Size attribute indexes in REG array, and Pointer Array. For the Size Attribute variations.
+Moves the dissembler 64 bit simulated address, and CodePos32 to correct address.
 -------------------------------------------------------------------------------------------------------------------------*/
 
-function GetOperandSize(SizeAttribute){
+function GotoPosition( Address64 ){
+  //Split the selected Address into two 32 bit numbers.
+  var LocPos32 = parseInt(Address64.slice(-8), 16);
+  var LocPos64 = parseInt(Address64.substring(0, Address64.length - 8), 16);
+  //Find the difference between the current simulated 64 address and the selected address location.
+  var Dif32 = Pos32 - LocPos32, Dif64 = Pos64 - LocPos64;
+  //Add the difference to CodePos32 it sucks that most of this has to be done with float math because of JavaScript's 32 bit int limitation.
+  CodePos32 -= ( Dif64 * Math.pow( 2, 32 ) ) + Dif32;
+  //Limit CodePos32 to the first 32 bits. It is possible to load a new 32 bit section based on Pos64 position.
+  CodePos32 &= 0xFFFFFFFF;
+  //Because JavaScript will convert the number to a 32 bit signified integer the negative value has to be subtracted into a full 32 bit value.
+  if ( CodePos32 < 0 ) { CodePos32 += (Math.pow( 2, 32 ) ); }
+  //Set the Simulated Pos32, and Pos64 to the Selected address 64.First step if negative subtracted into a full 32 bit value.
+  if ( LocPos32 < 0 ) { LocPos32 += Math.pow( 2, 32 ); }
+  if ( LocPos64 < 0 ) { LocPos64 += Math.pow( 2, 32 ); }
+  //Set Pos32, and Pos64.
+  Pos32 = LocPos32; Pos64 = LocPos64;
+  //If Dif 64 is not 0 the address is out of rage of the 32 bit section.
+  if ( Dif64 != 0 ) { return (false); }
+  //Otherwise return true for that the address Position is moved in range correctly.
+  return (true);
+}
 
-    //Log 2
+/*-------------------------------------------------------------------------------------------------------------------------
+Finds bit positions to the Size attribute indexes in REG array, and Pointer Array. For the Size Attribute variations.
+-------------------------------------------------------------------------------------------------------------------------*/
 
-    var p2 = Math.log(2);
+function GetOperandSize( SizeAttribute ){
 
-    //Most Significant bit is the log of 2 Floored, thus gives bit position.
-    //The highest size setting attribute biggest to smallest order S1 to S3.
+  //Log 2
 
-    var S1 = (Math.floor((Math.log(SizeAttribute) / p2)));
+  var p2 = Math.log(2);
 
-    //convert the Bit Position of the log into it's value and remove it by subtracting it.
+  //Most Significant bit is the log of 2 Floored, thus gives bit position.
+  //The highest size setting attribute biggest to smallest order S1 to S3.
 
-    SizeAttribute -= Math.pow(2, S1);
+  var S1 = (Math.floor((Math.log(SizeAttribute) / p2)));
 
-    //----------------------------------------------------------------------------------------------------------------------------------------
-    //If Max size is 128 or bigger Vectors use the smaller 64, and 32 Attribute to Broadcast round.
-    //----------------------------------------------------------------------------------------------------------------------------------------
+  //convert the Bit Position of the log into it's value and remove it by subtracting it.
 
-    if(S1 >= 4)
+  SizeAttribute -= Math.pow(2, S1);
+
+  //----------------------------------------------------------------------------------------------------------------------------------------
+  //If Max size is 128 or bigger Vectors use the smaller 64, and 32 Attribute to Broadcast round.
+  //----------------------------------------------------------------------------------------------------------------------------------------
+
+  if(S1 >= 4)
+  {
+    var BRoundAttr = SizeAttribute & 0x0F; //bit attributes 64 and lower.
+
+    //If Broadcast round is active return the Attribute bit position only if BRoundAttr has an bit setting and is not 0.
+
+    if(BRound)
     {
-      var BRoundAttr = SizeAttribute & 0x0F; //bit attributes 64 and lower.
-
-      //If Broadcast round is active return the Attribute bit position only if BRoundAttr has an bit setting and is not 0.
-
-      if(BRound)
+      if(BRoundAttr != 0)
       {
-        if(BRoundAttr != 0)
-        {
-          return(Math.floor((Math.log(BRoundAttr) / p2))); //return Bit position.
-        }
-
-        //else Broadcast round is invalid for the pointer address return -1.
-
-        else { return(-1); }
-
+        return(Math.floor((Math.log(BRoundAttr) / p2))); //return Bit position.
       }
 
-      SizeAttribute -= BRoundAttr; //If Broadcast round is not active remove it from the Size Attributes.
+      //else Broadcast round is invalid for the pointer address return -1.
+
+      else { return(-1); }
+
     }
 
-    //find the Second Most Significant bit Size setting.
+    SizeAttribute -= BRoundAttr; //If Broadcast round is not active remove it from the Size Attributes.
+  }
 
-    var S2 = (Math.floor((Math.log(SizeAttribute) / p2)));
+  //find the Second Most Significant bit Size setting.
 
-    //Remove the found bit position size.
+  var S2 = (Math.floor((Math.log(SizeAttribute) / p2)));
 
-    SizeAttribute -= Math.pow(2, S2);
+  //Remove the found bit position size.
 
-    //find the third Most Significant bit Size setting.
+  SizeAttribute -= Math.pow(2, S2);
 
-    var S3 = (Math.floor((Math.log(SizeAttribute) / p2)));
+  //find the third Most Significant bit Size setting.
 
-    //----------------------------------------------------------------------------------------------------------------------------------------
-    //If there is no size attributes then set S1 to -1 then the rest are set to S1 as they should have no size setting.
-    //----------------------------------------------------------------------------------------------------------------------------------------
+  var S3 = (Math.floor((Math.log(SizeAttribute) / p2)));
 
-    if (S1 == Number.NEGATIVE_INFINITY) { S1 = -1; }
+  //----------------------------------------------------------------------------------------------------------------------------------------
+  //If there is no size attributes then set S1 to -1 then the rest are set to S1 as they should have no size setting.
+  //----------------------------------------------------------------------------------------------------------------------------------------
 
-    //----------------------------------------------------------------------------------------------------------------------------------------
-    //The Operand Override Size attribute is aliased to S1 if no Size setting attribute for S2.
-    //----------------------------------------------------------------------------------------------------------------------------------------
+  if (S1 == Number.NEGATIVE_INFINITY) { S1 = -1; }
 
-    if (S2 == Number.NEGATIVE_INFINITY) { S2 = S1; }
+  //----------------------------------------------------------------------------------------------------------------------------------------
+  //The Operand Override Size attribute is aliased to S1 if no Size setting attribute for S2.
+  //----------------------------------------------------------------------------------------------------------------------------------------
 
-    //----------------------------------------------------------------------------------------------------------------------------------------
-    //If there is no Third size attribute then Size attributes shift down. This is so the smaller size is the lower size attribute.
-    //----------------------------------------------------------------------------------------------------------------------------------------
+  if (S2 == Number.NEGATIVE_INFINITY) { S2 = S1; }
 
-    if (S3 == Number.NEGATIVE_INFINITY) { S3 = S2; S2 = S1; }
+  //----------------------------------------------------------------------------------------------------------------------------------------
+  //If there is no Third size attribute then Size attributes shift down. This is so the smaller size is the lower size attribute.
+  //----------------------------------------------------------------------------------------------------------------------------------------
 
-    //In 32/16 bit mode the operand size must never exceed 32.
+  if (S3 == Number.NEGATIVE_INFINITY) { S3 = S2; S2 = S1; }
 
-    if (BitMode <= 1 & S2 == 3){ S2 = 2; }
+  //In 32/16 bit mode the operand size must never exceed 32.
 
-    //In 16 bit mode The operand override is always active until used. This makes all operands 16 bit size.
-    //When Operand override is used it is the default 32 size. Flip S3 with S2.
+  if (BitMode <= 1 & S2 == 3){ S2 = 2; }
 
-    if(BitMode == 0) { var t = S3; S3 = S2; S2 = t; t = null; }
+  //In 16 bit mode The operand override is always active until used. This makes all operands 16 bit size.
+  //When Operand override is used it is the default 32 size. Flip S3 with S2.
 
-    //note the fourth size that is -1 in the returned size attribute is Vector length 11=3 which is invalid unless Intel decides to add 1024 bit vectors.
+  if(BitMode == 0) { var t = S3; S3 = S2; S2 = t; t = null; }
 
-    return( ( [S3, S2, S1, -1] )[SizeAttrSelect] );
+  //note the fourth size that is -1 in the returned size attribute is Vector length 11=3 which is invalid unless Intel decides to add 1024 bit vectors.
+
+  return( ( [S3, S2, S1, -1] )[SizeAttrSelect] );
 
 };
 
@@ -1913,41 +1993,41 @@ The third element is the last three bits for the ModR/M byte the R/M bits, or th
 
 function Decode_ModRM_SIB_Value(){
 
-    //Get the current position byte value
+  //Get the current position byte value
 
-    var v = BinCode[CodePos32];
+  var v = BinCode[CodePos32];
 
-    //The first tow binary digits of the read byte is the Mode bits of the ModR/M byte or
-    //The first tow binary digits of the byte is the Scale bits of the SIB byte
+  //The first tow binary digits of the read byte is the Mode bits of the ModR/M byte or
+  //The first tow binary digits of the byte is the Scale bits of the SIB byte
 
-    var ModeScale = (v >> 6) & 0x03; //value 0 to 3
+  var ModeScale = (v >> 6) & 0x03; //value 0 to 3
 
-    //The three binary digits of the read byte after the first two digits is the OpcodeReg Value of the ModR/M byte or
-    //The three binary digits of the read byte after the first two digits is the Index Register value for the SIB byte
+  //The three binary digits of the read byte after the first two digits is the OpcodeReg Value of the ModR/M byte or
+  //The three binary digits of the read byte after the first two digits is the Index Register value for the SIB byte
 
-    var OpcodeRegIndex = (v >> 3) & 0x07; //value 0 to 7
+  var OpcodeRegIndex = (v >> 3) & 0x07; //value 0 to 7
 
-    //The three binary digits at the end of the read byte is the R/M (Register,or Memory) Value of the ModR/M byte or
-    //The three binary digits at the end of the read byte is the Base Register Value of the SIB byte
+  //The three binary digits at the end of the read byte is the R/M (Register,or Memory) Value of the ModR/M byte or
+  //The three binary digits at the end of the read byte is the Base Register Value of the SIB byte
 
-    var RMBase = v & 0x07; //value 0 to 7
+  var RMBase = v & 0x07; //value 0 to 7
 
-    //Put the array together containing the three indexes with the value
-    //Note both the ModR/M byte and SIB byte use the same bit value pattern
+  //Put the array together containing the three indexes with the value
+  //Note both the ModR/M byte and SIB byte use the same bit value pattern
 
-    var ByteValueArray = [
-      ModeScale,//Index 0 is the first tow bits for the Mode, or Scale Depending on what the byte value is used for.
-      OpcodeRegIndex,//Index 1 is the three bits for the OpcodeReg, or Index Depending on what the byte value is used for.
-      RMBase //Index 2 is the three bits for the RM, or BASE bits Depending on what the byte value is used for.
-    ];
+  var ByteValueArray = [
+    ModeScale,//Index 0 is the first tow bits for the Mode, or Scale Depending on what the byte value is used for.
+    OpcodeRegIndex,//Index 1 is the three bits for the OpcodeReg, or Index Depending on what the byte value is used for.
+    RMBase //Index 2 is the three bits for the RM, or BASE bits Depending on what the byte value is used for.
+  ];
 
-    //Move the Decoders Position by one.
+  //Move the Decoders Position by one.
 
-    NextByte();
+  NextByte();
 
-    //return the array containing the decoded values of the byte.
+  //return the array containing the decoded values of the byte.
 
-    return (ByteValueArray);
+  return (ByteValueArray);
 
 };
 
@@ -1966,187 +2046,187 @@ If BySize is false the SizeSetting is used numerically as a single size selectio
 0=8,1=16,2=32,3=64 by size setting value.
 -------------------------------------------------------------------------------------------------------------------------*/
 
-function DecodeImmediate(type, BySize, SizeSetting){
+function DecodeImmediate( type, BySize, SizeSetting ){
 
-    var imm = ""; //this will store each byte in reverse order for little endian format as a hex string
+  var imm = ""; //this will store each byte in reverse order for little endian format as a hex string
 
-    var S = SizeSetting & 0x0F; //Size is SizeSetting unless BySize is true.
-    var PAD = SizeSetting >> 4; //PAD is SizeSetting unless BySize is true.
+  var S = SizeSetting & 0x0F; //Size is SizeSetting unless BySize is true.
+  var PAD = SizeSetting >> 4; //PAD is SizeSetting unless BySize is true.
 
-    if(BySize)
-    {
+  if(BySize)
+  {
 
-        S = GetOperandSize(S); //holds the decoded size setting value.
+      S = GetOperandSize(S); //holds the decoded size setting value.
 
-        PAD = S; //PAD is current size unless the Size Setting has Size settings for pad sizes.
+      PAD = S; //PAD is current size unless the Size Setting has Size settings for pad sizes.
 
-        if (SizeSetting > 0x0F) //if higher 4 bits is used then go by size attribute for Immediate Sizes that have to be padded to.
-        {
-            PAD = GetOperandSize(PAD); //PAD is size unless the Size Setting has Size settings it can pad till.
-        }
+      if (SizeSetting > 0x0F) //if higher 4 bits is used then go by size attribute for Immediate Sizes that have to be padded to.
+      {
+          PAD = GetOperandSize(PAD); //PAD is size unless the Size Setting has Size settings it can pad till.
+      }
 
-    }
+  }
 
-    //the possible values of S are S=0 IMM8, S=1 IMM16, S=2 IMM32, S=3 IMM64.
-    //calculate how many bytes that are going to have to be read based on the value of S
-    //S=0 is 1 byte, S=1 is 2 bytes, S=2 is 4 bytes, S=3 is 8 bytes
+  //the possible values of S are S=0 IMM8, S=1 IMM16, S=2 IMM32, S=3 IMM64.
+  //calculate how many bytes that are going to have to be read based on the value of S
+  //S=0 is 1 byte, S=1 is 2 bytes, S=2 is 4 bytes, S=3 is 8 bytes
 
-    var n = Math.pow( 2, S ); //The Number of bytes to read is 2 to the power of S.
+  var n = Math.pow( 2, S ); //The Number of bytes to read is 2 to the power of S.
 
-    //store the byte of the immediate because IMM8 can use different encodings.
+  //store the byte of the immediate because IMM8 can use different encodings.
 
-    IMMValue = BinCode[CodePos32];
+  IMMValue = BinCode[CodePos32];
 
-    //Loop and Move the Decoder to the next byte Code position to the number of bytes to reads.
+  //Loop and Move the Decoder to the next byte Code position to the number of bytes to reads.
 
-    for (var i = 0, v = ""; i < n; i++, NextByte())
-    {
-        v = BinCode[CodePos32].toString(16); //convert the current Bin Code array Position byte to a ASCII hex string
+  for (var i = 0, v = ""; i < n; i++, NextByte())
+  {
+      v = BinCode[CodePos32].toString(16); //convert the current Bin Code array Position byte to a ASCII hex string
 
-        if (v.length < 2) //if the Hex byte is one digit which is half a byte then
-        {
-            v = "0" + v; //pad the read byte value to a byte if it's less than two hex digits
-        }
+      if (v.length < 2) //if the Hex byte is one digit which is half a byte then
+      {
+          v = "0" + v; //pad the read byte value to a byte if it's less than two hex digits
+      }
 
-        imm = v + imm; //put each byte into the back of the string basically building the string backwards in memory
-    }
+      imm = v + imm; //put each byte into the back of the string basically building the string backwards in memory
+  }
 
-    //The above loop will correctly read the value based on the immediate operands size and store it into the variable "imm".
+  //The above loop will correctly read the value based on the immediate operands size and store it into the variable "imm".
 
-    //If the IMM type is used with an register operand on the upper four bit's then the IMM byte does not use the upper 4 bit's.
+  //If the IMM type is used with an register operand on the upper four bit's then the IMM byte does not use the upper 4 bit's.
 
-    if(type == 1) { imm = "0" + imm.substring(1, imm.length); }
+  if(type == 1) { imm = "0" + imm.substring(1, imm.length); }
 
-    //If the IMM type is for relative address, or Singed Integer set up the two 32 bit integers for 64 simulation.
+  //If the IMM type is for relative address, or Singed Integer set up the two 32 bit integers for 64 simulation.
 
-    if (type == 2 | type == 3)
-    {
-        //convert the immediate into two hex strings that are 32 in size because JavaScript only works with 32 bit integers
+  if (type == 2 | type == 3)
+  {
+      //convert the immediate into two hex strings that are 32 in size because JavaScript only works with 32 bit integers
 
-        var HexStr32 = imm.slice(-8);
-        var HexStr64 = imm.substring(0, imm.length - 8);
+      var HexStr32 = imm.slice(-8);
+      var HexStr64 = imm.substring(0, imm.length - 8);
 
-        //convert both sections into A 32 bit integer
+      //convert both sections into A 32 bit integer
 
-        var Imm32Int32 = parseInt(HexStr32, 16);
-        var Imm64Int32 = parseInt(HexStr64, 16);
+      var Imm32Int32 = parseInt(HexStr32, 16);
+      var Imm64Int32 = parseInt(HexStr64, 16);
 
-        //find the number of bytes to use from 32 bit number section.
-        //the minim value is 4 bytes because JavaScript maxes out at int 32, But if the Relative Immediate is smaller it will use the smaller value as number of bytes.
+      //find the number of bytes to use from 32 bit number section.
+      //the minim value is 4 bytes because JavaScript maxes out at int 32, But if the Relative Immediate is smaller it will use the smaller value as number of bytes.
 
-        var B32 = Math.min(4, n); //32 bit is usable by sizes 8, 16, 32
+      var B32 = Math.min(4, n); //32 bit is usable by sizes 8, 16, 32
 
-        //note B64 is not necessary because IMM goes 32 then 64 in size so aether the 64 sections is used, or not used.
+      //note B64 is not necessary because IMM goes 32 then 64 in size so aether the 64 sections is used, or not used.
 
-        if (type == 2) //if it is a Relative address type
-        {
+      if (type == 2) //if it is a Relative address type
+      {
 
-            //the math equation bellow multiples the IMM size by 8 to find how many binary bits are needed to be calculated for the number of bytes
-            //then 2 to the power of size times 8 calculates the max value for each binary digit to byte size subtracting by one starts at max value
+          //the math equation bellow multiples the IMM size by 8 to find how many binary bits are needed to be calculated for the number of bytes
+          //then 2 to the power of size times 8 calculates the max value for each binary digit to byte size subtracting by one starts at max value
 
-            var bits32 = Math.pow(2, B32 * 8) - 1; //The first 32 bits
+          var bits32 = Math.pow(2, B32 * 8) - 1; //The first 32 bits
 
-            //Add the first 32 bits normally if the tow numbers have to carry to the 64 section of the 32 bit integer
+          //Add the first 32 bits normally if the tow numbers have to carry to the 64 section of the 32 bit integer
 
-            var Carrie64 = 0x00000000;
+          var Carrie64 = 0x00000000;
 
-            if ((Imm32Int32 + Pos32) > 0xFFFFFFFF)
-            {
-                Carrie64 = 0x00000003;
-            }
+          if ((Imm32Int32 + Pos32) > 0xFFFFFFFF)
+          {
+              Carrie64 = 0x00000003;
+          }
 
-            //Find the bits higher up if any as the none effected bits after the relative add
+          //Find the bits higher up if any as the none effected bits after the relative add
 
-            var RIMM32 = (Pos32 - (Pos32 & bits32)) & 0xFFFFFFFF; //Because IMM goes 8, 16, 32 RIMM has to be calculated for unused sections higher in size.
+          var RIMM32 = (Pos32 - (Pos32 & bits32)) & 0xFFFFFFFF; //Because IMM goes 8, 16, 32 RIMM has to be calculated for unused sections higher in size.
 
-            //start adding up the 32, and 64 section to number of bits allowed from 32 till 64
+          //start adding up the 32, and 64 section to number of bits allowed from 32 till 64
 
-            var IMM32 = (Pos32 + Imm32Int32) & bits32;
-            var IMM64 = (Pos64 + Imm64Int32 + Carrie64) & 0xFFFFFFFF;
+          var IMM32 = (Pos32 + Imm32Int32) & bits32;
+          var IMM64 = (Pos64 + Imm64Int32 + Carrie64) & 0xFFFFFFFF;
 
-            //add back the rest of the remaining value that has not been effected by bits size because of Relative IMM size
+          //add back the rest of the remaining value that has not been effected by bits size because of Relative IMM size
 
-            IMM32 += RIMM32;
-            if ( S != 3 ) { IMM64 += Pos64; } //IMM goes from 32 to 64 so the 64 section is used, or aether not used.
+          IMM32 += RIMM32;
+          if ( S != 3 ) { IMM64 += Pos64; } //IMM goes from 32 to 64 so the 64 section is used, or aether not used.
 
-            //the above would be perfect for relative Position sizes 8,16,32,64 if JavaScript did not max out at a 32 bit singed integer
-            //fix negative sing error by inverting the value with 32 bit add to max 32 plus one for correction
-            //reason JavaScript uses 32 bit integers by default this is one of the ways to correct values that go to the
-            //32 bit known as sing bit
+          //the above would be perfect for relative Position sizes 8,16,32,64 if JavaScript did not max out at a 32 bit singed integer
+          //fix negative sing error by inverting the value with 32 bit add to max 32 plus one for correction
+          //reason JavaScript uses 32 bit integers by default this is one of the ways to correct values that go to the
+          //32 bit known as sing bit
 
-            if (IMM32 < 0) { IMM32 = (0xFFFFFFFF + IMM32) + 1; }
-            if (IMM64 < 0) { IMM64 = (0xFFFFFFFF + IMM64) + 1; }
+          if (IMM32 < 0) { IMM32 = (0xFFFFFFFF + IMM32) + 1; }
+          if (IMM64 < 0) { IMM64 = (0xFFFFFFFF + IMM64) + 1; }
 
-            //If the OvOperands prefix is used 66 hex which sets SizeAttrSelect 0 then IMM64 is zeroed out and IMM32 is fixed to & 0x0000FFFF basically first 16 calculated bits
+          //If the OvOperands prefix is used 66 hex which sets SizeAttrSelect 0 then IMM64 is zeroed out and IMM32 is fixed to & 0x0000FFFF basically first 16 calculated bits
 
-            if (SizeAttrSelect == 0) { IMM64 = 0x00000000; IMM32 = IMM32 & 0x0000FFFF; }
+          if (SizeAttrSelect == 0) { IMM64 = 0x00000000; IMM32 = IMM32 & 0x0000FFFF; }
 
-            //convert to hex, and pad it to 0 for correct size for both 32 bit parts of the 64 address.
+          //convert to hex, and pad it to 0 for correct size for both 32 bit parts of the 64 address.
 
-            for (IMM32 = IMM32.toString(16) ; IMM32.length < 8; IMM32 = "0" + IMM32);
-            for (IMM64 = IMM64.toString(16) ; IMM64.length < 8; IMM64 = "0" + IMM64);
+          for (IMM32 = IMM32.toString(16) ; IMM32.length < 8; IMM32 = "0" + IMM32);
+          for (IMM64 = IMM64.toString(16) ; IMM64.length < 8; IMM64 = "0" + IMM64);
 
-            //Put the 64 bit address together.
+          //Put the 64 bit address together.
 
-            imm = IMM64 + IMM32;
-        }
+          imm = IMM64 + IMM32;
+      }
 
-        else if (type == 3) //if it is singed int Displacement Calculate and simulate Integer Center Points for Immediate Sizes 8,16,32.
-        {
-            var Sing = false; //the sing value for if the Displacement is added or subtracted from center.
+      else if (type == 3) //if it is singed int Displacement Calculate and simulate Integer Center Points for Immediate Sizes 8,16,32.
+      {
+          var Sing = false; //the sing value for if the Displacement is added or subtracted from center.
 
-            //Simulate negative positive integers using values bigger than 32.
+          //Simulate negative positive integers using values bigger than 32.
 
-            var Half32 = Math.pow(2, (B32 * 8) - 1); //calculate the 32 bit value center for integers smaller than 32 or are 32.
+          var Half32 = Math.pow(2, (B32 * 8) - 1); //calculate the 32 bit value center for integers smaller than 32 or are 32.
 
-            if (Imm32Int32 >= Half32) //when the value is higher than the center it is negative.
-            {
-                Sing = true; //set sing true for negative.
-                HexStr32 = (Half32 - (-(Half32 - Imm32Int32))).toString(16); //simulate the integer center point give the value as a positive number sizes 32 and bellow
-            }
+          if (Imm32Int32 >= Half32) //when the value is higher than the center it is negative.
+          {
+              Sing = true; //set sing true for negative.
+              HexStr32 = (Half32 - (-(Half32 - Imm32Int32))).toString(16); //simulate the integer center point give the value as a positive number sizes 32 and bellow
+          }
 
-            for (var HTB = B32 * 2; HexStr32.length < HTB; HexStr32 = "0" + HexStr32); //pad to the number of bytes for the integer that is 32 or bellow
+          for (var HTB = B32 * 2; HexStr32.length < HTB; HexStr32 = "0" + HexStr32); //pad to the number of bytes for the integer that is 32 or bellow
 
-            imm = HexStr32; //set IMM the new center for this hex string
+          imm = HexStr32; //set IMM the new center for this hex string
 
-            if (Sing) { imm = "-" + imm; } else { imm = "+" + imm; } //set IMM to add or subtract for the integer sing
+          if (Sing) { imm = "-" + imm; } else { imm = "+" + imm; } //set IMM to add or subtract for the integer sing
 
-        }
+      }
 
-    }
+  }
 
-    //PAD the Immediate to it's actual size some Immediate's do not match the size the Destination operand is even by there size attributes.
-    //if PAD is different than pad the IMM to correct size using the last bit as the sing.
+  //PAD the Immediate to it's actual size some Immediate's do not match the size the Destination operand is even by there size attributes.
+  //if PAD is different than pad the IMM to correct size using the last bit as the sing.
 
-    if(PAD != S)
-    {
+  if(PAD != S)
+  {
 
-        //Use the same calculation that S used to find number of bytes except multiply by 2 because 2 hex digits is one byte
+      //Use the same calculation that S used to find number of bytes except multiply by 2 because 2 hex digits is one byte
 
-        PAD = Math.pow( 2, PAD ) * 2;
+      PAD = Math.pow( 2, PAD ) * 2;
 
-        //convert last binary bit to a boolean
+      //convert last binary bit to a boolean
 
-        var sing = (parseInt(imm.substring(0, 1), 16) & 8) >> 3;
+      var sing = (parseInt(imm.substring(0, 1), 16) & 8) >> 3;
 
-        //pad the Immediate to the extend size using FF hex which FF is 11111111 in binary if the sing bit is logic one otherwise 00 which is 00000000 binary
+      //pad the Immediate to the extend size using FF hex which FF is 11111111 in binary if the sing bit is logic one otherwise 00 which is 00000000 binary
 
-        var pd = "00"; //by default pads using 00000000 binary
+      var pd = "00"; //by default pads using 00000000 binary
 
-        if (sing) //if the last bit is active then
-        {
-            pd = "FF"; //pad using 11111111 binary
-        }
+      if (sing) //if the last bit is active then
+      {
+          pd = "FF"; //pad using 11111111 binary
+      }
 
-        //start padding.
+      //start padding.
 
-        for (; imm.length < PAD; imm = pd + imm);
+      for (; imm.length < PAD; imm = pd + imm);
 
-    }
+  }
 
-    //return the immediate result
+  //return the immediate result
 
-    return (imm.toUpperCase());
+  return (imm.toUpperCase());
 
 };
 
@@ -2154,7 +2234,7 @@ function DecodeImmediate(type, BySize, SizeSetting){
 Decode registers by Size attributes, or a select register index.
 -------------------------------------------------------------------------------------------------------------------------*/
 
-function DecodeRegValue(RValue, BySize, Setting) {
+function DecodeRegValue( RValue, BySize, Setting ) {
 
   //If By size is true Use the Setting with the GetOperandSize
 
@@ -2162,6 +2242,10 @@ function DecodeRegValue(RValue, BySize, Setting) {
   {
     Setting = GetOperandSize(Setting); //get decoded size value.
   }
+
+  //check if Register is a XMM register which allows SIMD vector extension.
+
+  if( Setting >= 4 & Setting <= 7 ){ SSE = true; }
 
   //check if Register is a XMM register which allows SIMD vector extension.
 
@@ -2173,20 +2257,20 @@ function DecodeRegValue(RValue, BySize, Setting) {
   {
     //if any Rex Prefix
 
-    if (RexActive) { return (REG[0][1][ RegExtend | RValue ]); }
+    if (RexActive) { return (REG[0][1][ RValue ]); }
 
     //else use high low order
 
-    else { return (REG[0][0][ RegExtend | RValue ]); }
+    else { return (REG[0][0][ RValue ]); }
   }
 
   //No other Separations.
 
-  if (REG[Setting].length <= RegExtend) { RegExtend = REG[Setting].length - 8; } //Limit Extend Value to max amount of register indexes
+  RValue %= REG[Setting].length; //Limit RValue to max amount of extended register indexes.
 
   //Return the Register.
 
-  return (REG[Setting][ RegExtend | RValue ]);
+  return (REG[Setting][ RValue ]);
 
 };
 
@@ -2196,7 +2280,7 @@ Note if by size attributes is false the lower four bits is the selected Memory p
 and the higher four bits is the selected register.
 -------------------------------------------------------------------------------------------------------------------------*/
 
-function Decode_ModRM_SIB_Address(ModRM, BySize, Setting){
+function Decode_ModRM_SIB_Address( ModRM, BySize, Setting ){
 
   var out = ""; //the variable out is what stores the decoded address pointer, or Register if Register mode.
 
@@ -2223,7 +2307,7 @@ function Decode_ModRM_SIB_Address(ModRM, BySize, Setting){
 
     Setting = Setting & 0x0F;
 
-    //check if Register is a XMM register which allows SIMD vector extension.
+    //check if Address size is a XMM  which allows SIMD vector extension.
 
     if( ( Setting >= 8 & Setting <= 14 ) & ( Setting % 2 <= 0 ) ){ SSE = true; }
 
@@ -2487,7 +2571,7 @@ function DecodePrefixAdjustments(){
 
   else if(Opcode == 0x138)
   {
-    Opcode = 0x200; //By starting at 0x200 with binary bit 10 set one then adding the 8 bit opcode thn Opcode goes 512 to 767.
+    Opcode = 0x200; //By starting at 0x200 with binary bit 10 set one then adding the 8 bit opcode then Opcode goes 512 to 767.
     return(DecodePrefixAdjustments()); //restart function decode more prefix settings that can effect the decode instruction.
   }
 
@@ -2693,9 +2777,11 @@ The input types are stored into an operand string. This function gives back the 
 ---------------------------------------------------------------------------------------------------------------------------
 This function is designed to be used after the Decode prefix adjustments function because the Opcode should contain an real instruction code.
 This is because the Decode prefix adjustments function will only end if the Opcode value is not a prefix adjustment code to the ModR/M etc.
+However DecodePrefixAdjustments can also prevent this function from being called next if the prefix settings are bad or an invalid instruction is
+used for the bit mode the CPU is in as it will set InvalidOp true.
 -------------------------------------------------------------------------------------------------------------------------*/
 
-function DecodeOpcode( Extension ){
+function DecodeOpcode(){
 
   //get the Operation name by the operations opcode.
 
@@ -2800,13 +2886,17 @@ function DecodeOpcode( Extension ){
 };
 
 /*-------------------------------------------------------------------------------------------------------------------------
-Read each operand in the Operand String then set the correct operand in the decoder array.
-And also OpNum is the order the operands are read in the operand string this number is set the the operand in the decoder array.
-Each set operand will be decoded by the function DecodeOperands(). The OpNum is the order the decoded operands will be
-positioned. The order the operands display is different than the order they decode in sequence.
+Read each operand in the Operand String then set the correct operand in the X86 decoder array.
+And also OpNum is the order the operands are read in the operand string this number (OpNum) is set to the
+operand in the decoder array as each operand is read. Each set operand will be decoded by the function
+^DecodeOperands()^. The OpNum is the order the decoded operands will be positioned after they are decoded
+in order along the X86 decoder. The order the operands display is different than the order they decode in sequence.
+---------------------------------------------------------------------------------------------------------------------------
+This function is used after the function ^DecodeOpcode()^ because the function ^DecodeOpcode()^ gives back the
+operand string for what the instruction takes as input plus they are in order.
 -------------------------------------------------------------------------------------------------------------------------*/
 
-function DecodeOperandString( OperandString, Extension ){
+function DecodeOperandString( OperandString ){
 
   //Variables that are used for decoding one operands across the operand string.
 
@@ -2819,7 +2909,7 @@ function DecodeOperandString( OperandString, Extension ){
 
   //Each operand is 4 hex digits, and OpNum is added by one for each operand that is read per Iteration.
 
-  for(var i = 0, OpNum = 0; i < OperandString.length; i+=4, OpNum++ ) //Iterate though operand string.
+  for( var i = 0, OpNum = 0; i < OperandString.length; i+=4, OpNum++ ) //Iterate though operand string.
   {
     OperandValue = parseInt( OperandString.substring(i, (i + 4) ) ); //Convert the four hex digits to a 16 bit number value.
 
@@ -2827,59 +2917,69 @@ function DecodeOperandString( OperandString, Extension ){
     BySize = ( OperandValue & 0x0100 ) >> 8; //Get it's by size attributes setting for if Setting is used as size attributes.
     Setting = ( OperandValue & 0x00FF ); //Get the 8 bit Size setting.
 
-    //if it is a opcode Reg Encoding then first element along the decoder is set.
+    //if it is a opcode Reg Encoding then first element along the decoder is set as this has to be decode first, before moving to the
+    //byte for modR/M.
 
     if( Code == 1 )
     {
-      X86Decoder[0].set(0, BySize, Setting, OpNUm );
+      X86Decoder[0].set( 0, BySize, Setting, OpNUm );
     }
 
-    //if it is a ModR/M, or Far pointer ModR/M, or Moffs address.
+    //if it is a ModR/M, or Far pointer ModR/M, or Moffs address then second decoder element is set.
 
     else if( Code >= 2 & Code <= 4 )
     {
+
+      if( Code == 3 ){ FarPointer = 1; } //if code is 3 it is a far pointer.
+
       X86Decoder[1].set( ( Code - 2 ), BySize, Setting, OpNUm );
     }
 
-    //The ModR/M Reg bit's
+    //The ModR/M Reg bit's are separated from the address system above. The ModR/M register can be used as a different register with a
+    //different address pointer. The Reg bits of the ModR/M decode next as it would be inefficient to read the register value if the
+    //decoder moves to the immediate.
 
     else if( Code == 5 )
     {
-      X86Decoder[2].set(0, BySize, Setting, OpNUm );
+      X86Decoder[2].set( 0, BySize, Setting, OpNUm );
     }
 
-    //Immediate input one.
+    //Immediate input one. The immediate input is just a number input it is decoded last unless the instruction does not use a
+    //ModR/M encoding, or Reg Opcode.
 
     else if( Code >= 6 & Code <= 8 )
     {
       X86Decoder[3].set( ( Code - 6 ), BySize, Setting, OpNUm );
     }
 
-    //Immediate Input two.
+    //Immediate Input two. Very few instructions take a second immediate input the X86 instruction "ENTER" takes two immediate inputs.
 
     else if( Code >= 9 & Code <= 11 )
     {
       X86Decoder[4].set( ( Code - 9 ), BySize, Setting, OpNUm );
     }
 
-    //Vector register, only set the vector register if Vector extension is active.
+    //Vector register. If the instruction uses this register it will not be decoded or displayed unless one of the vector extension codes are
+    //decoded by the function ^DecodePrefixAdjustments()^. The Vector extension codes also have a Vector register value that is stored into
+    //the variable VectorRegister. The variable VectorRegister is given to the function ^DecodeRegValue()^.
 
     else if( Code == 12 & Extension > 0 )
     {
-      X86Decoder[5].set(0, BySize, Setting, OpNUm );
+      X86Decoder[5].set( 0, BySize, Setting, OpNUm );
     }
 
-    //The upper four bits of the Immediate is used as an register.
+    //The upper four bits of the Immediate is used as an register. The variable IMM stores the last immediate byte that is read by ^DecodeImmediate()^.
+    //The upper four bits of the IMM is given to the function ^DecodeRegValue()^.
 
     else if( Code == 13 )
     {
-      X86Decoder[6].set(0, BySize, Setting, OpNUm );
+      X86Decoder[6].set( 0, BySize, Setting, OpNUm );
     }
 
     //Else any other encoding type higher than 13 is an explicit operand selection.
     //And also there can only be an max of four explicit operands.
 
-    else if( Code >= 14 & ExplicitOp < 10)
+    else if( Code >= 14 & ExplicitOp <= 10)
     {
       X86Decoder[ExplicitOp].set( ( Code - 14 ), BySize, Setting, OpNUm );
       ExplicitOp++; //move to the next Explicit operand.
@@ -2890,9 +2990,462 @@ function DecodeOperandString( OperandString, Extension ){
 }
 
 /*-------------------------------------------------------------------------------------------------------------------------
-Decode each of the operands along the X86Decoder and detectives them.
+Decode each of the operands along the X86Decoder and detective them.
+This function is used after ^DecodeOperandString()^ which sets up the X86 Decoder for the instructions operands.
 -------------------------------------------------------------------------------------------------------------------------*/
 
 function DecodeOperands(){
 
+  //The Operands array is a string array in which the operand number is the element the decoded operand is positioned.
+
+  var out = new Array();
+
+  //This holds the decoded ModR/M byte from the "Decode_ModRM_SIB_Value()" function because the Register, and Address can decode differently.
+
+  var ModRMByte = [ -1, //Mode is set negative one used to check if the ModR/M has been decoded.
+    0, //The register value is decoded separately if used.
+    0 //the base register for the address location.
+  ];
+
+  //If no Immediate operand is used then the Immediate register encoding forces an IMM8 for the register even if the immediate is not used.
+
+  var IMM_Used = false; //This is set true for if any Immediate is read because the last Immediate byte is used as the register on the upper four bits.
+
+  //If reg opcode is active.
+
+  if( X86Decoder[0].Active )
+  {
+
+    out[ X86Decoder[0].OpNum ] = DecodeRegValue(
+      ( RegExtend | ( Opcode & 0x07 ) ), //Register value.
+      X86Decoder[0].BySizeAttrubute, //By size attribute or not.
+      X86Decoder[0].Size //Size settings.
+    );
+
+    X86Decoder[0].Deactivate(); //Deactivate the operand along the Decoder.
+
+  }
+
+  //If ModR/M Address is active.
+
+  if( X86Decoder[1].Active )
+  {
+
+    ModRMByte = Decode_ModRM_SIB_Value(); //Decode the ModR/M byte.
+
+    //Decode the ModR/M byte Address which can end up read another byte for SIB address, and including displacements.
+
+    out[ X86Decoder[1].OpNum ] = Decode_ModRM_SIB_Address(
+      ModRMByte, //The ModR/M byte.
+      X86Decoder[1].BySizeAttrubute, //By size attribute or not.
+      X86Decoder[1].Size //Size settings.
+    );
+
+    X86Decoder[1].Deactivate(); //Deactivate the operand along the Decoder.
+
+  }
+
+  //Decode the Register value of the ModR/M byte.
+
+  if( X86Decoder[2].Active )
+  {
+
+    //If the ModR/M address is not used, and ModR/M byte was not previously decoded then decode it.
+
+    if( ModRMByte[0] == -1 ){ ModRMByte = Decode_ModRM_SIB_Value(); }
+
+    //Decode only the Register Section of the ModR/M byte values.
+
+    out[ X86Decoder[2].OpNum ] = DecodeRegValue(
+      ( RegExtend | ( ModRMByte[1] & 0x07 ) ), //Register value.
+      X86Decoder[2].BySizeAttrubute, //By size attribute or not.
+      X86Decoder[2].Size //Size settings.
+    );
+
+    X86Decoder[2].Deactivate(); //Deactivate the operand along the Decoder.
+
+  }
+
+  //First Immediate if used.
+
+  if( X86Decoder[3].Active )
+  {
+
+    out[ X86Decoder[3].OpNum ] = DecodeImmediate(
+      X86Decoder[3].Type, //Immediate input type.
+      X86Decoder[3].BySizeAttrubute, //By size attribute or not.
+      X86Decoder[3].Size //Size settings.
+    );
+
+    IMM_Used = true; //Immediate byte is read.
+
+    X86Decoder[3].Deactivate(); //Deactivate the operand along the Decoder.
+
+  }
+
+  //Second Immediate if used.
+
+  if( X86Decoder[4].Active )
+  {
+
+    out[ X86Decoder[4].OpNum ] = DecodeImmediate(
+      X86Decoder[4].Type, //Immediate input type.
+      X86Decoder[4].BySizeAttrubute, //By size attribute or not.
+      X86Decoder[4].Size //Size settings.
+    );
+
+    X86Decoder[4].Deactivate(); //Deactivate the operand along the Decoder.
+
+  }
+
+  //Vector register if used from an SIMD vector extended instruction.
+
+  if( X86Decoder[5].Active )
+  {
+
+    out[ X86Decoder[5].OpNum ] = DecodeRegValue(
+      VectorRegister, //Register value.
+      X86Decoder[5].BySizeAttrubute, //By size attribute or not.
+      X86Decoder[5].Size //Size settings.
+    );
+
+    X86Decoder[5].Deactivate(); //Deactivate the operand along the Decoder.
+
+  }
+
+  //Immediate register encoding.
+
+  if( X86Decoder[6].Active )
+  {
+
+    if( !IMM_Used ) { DecodeImmediate(0, false, 0); } //forces IMM8 if no Immediate has been used.
+
+    out[ X86Decoder[6].OpNum ] = DecodeRegValue(
+      ( IMMValue & 0x0F ), //Register value.
+      X86Decoder[6].BySizeAttrubute, //By size attribute or not.
+      X86Decoder[6].Size //Size settings.
+    );
+
+    X86Decoder[6].Deactivate(); //Deactivate the operand along the Decoder.
+
+  }
+
+  //-------------------------------------------------------------------------------------------------------------------------
+  //Iterate though the 4 possible Explicit operands The first operands that is not active ends the Iteration.
+  //-------------------------------------------------------------------------------------------------------------------------
+
+  for( var i = 7; i < 10; i++ )
+  {
+    //-------------------------------------------------------------------------------------------------------------------------
+    //if Active Type is used as which Explicit operand.
+    //-------------------------------------------------------------------------------------------------------------------------
+
+    if( X86Decoder[i].Active )
+    {
+      //General use registers value 0 though 4 there size can change by size setting but can not be extended or changed.
+
+      if( X86Decoder[i].Type <= 3 )
+      {
+        out[ X86Decoder[i].OpNum ] = DecodeRegValue(
+          X86Decoder[i].Type, //register by value for Explicit Registers A, C, D, B.
+          X86Decoder[i].BySizeAttrubute, //By size attribute or not.
+          X86Decoder[i].Size, //Size attribute.
+        );
+      }
+
+      //RBX address Explicit Operands prefixes can extend the registers and change pointer size RegMode 0.
+
+      else if( X86Format[i].Type == 4 )
+      {
+        out[ X86Decoder[i].OpNum ] = Decode_ModRM_SIB_Address(
+          [ 0, 0, 3 ], //the RBX register only for the pointer.
+          X86Decoder[i].BySizeAttrubute, //By size attribute or not.
+          X86Format[i].Size //size attributes.
+        );
+      }
+
+      //source and destination address Explicit Operands prefixes can extend the registers and change pointer size.
+
+      else if( X86Decoder[i].Type == 5 | X86Format[i].Type == 6 )
+      {
+        out[ X86Decoder[i].OpNum ] = Decode_ModRM_SIB_Address(
+            [ 0, 0, ( X86Decoder[i].Type + 1 ) ], //source and destination pointer register by type value.
+            X86Decoder[i].BySizeAttrubute, //By size attribute or not.
+            X86Format[i].Size //size attributes.
+          );
+      }
+
+      //The ST only Operand, and FS, GS.
+
+      else if( X86Decoder[i].Type >= 7 )
+      {
+        out[ X86Decoder[i].OpNum ] = ["ST", "FS", "GS"][ ( X86Decoder[i].Type - 7 ) ];
+      }
+
+      X86Decoder[i].Deactivate(); //Deactivate the operand along the Decoder.
+    }
+
+    //-------------------------------------------------------------------------------------------------------------------------
+    //else inactive end iteration.
+    //-------------------------------------------------------------------------------------------------------------------------
+
+    else { break; }
+  }
+
+  /*-------------------------------------------------------------------------------------------------------------------------
+  Check if the EVEX vector extension is active if so the Mask, and Zero merge control are inserted into operand 0.
+  The destination operand.
+  -------------------------------------------------------------------------------------------------------------------------*/
+
+  if( Extension == 2 )
+  {
+
+    //Mask Register is first if it is not 0 in value.
+
+    if( MaskRegister != 0 ){ out[0] += "{K" + MaskRegister + "}"; }
+
+    //If Zero Merge control is active it is added next.
+
+    if( ZeroMerg ) { out[0] += "{Z}"; }
+
+  }
+
+  //convert the operand array to a string and return it.
+
+  return ( out.toString() );
+
+}
+
+/*-------------------------------------------------------------------------------------------------------------------------
+The main Instruction decode function plugs everything in together for the steps required to decode a full X86 instruction.
+-------------------------------------------------------------------------------------------------------------------------*/
+
+function DecodeInstruction()
+{
+  //Setup and internalize the variables.
+
+  var Instruction = ["", //Stores instruction name.
+  "" //Stores the Operands.
+  ];
+
+  var Operands = ""; //Stores the Decoded operands.
+
+  var out = ""; //The instruction code that will be returned back from this function.
+
+  //First read any opcodes (prefix) that act as adjustments to the main three operand decode functions ^DecodeRegValue()^,
+  //^Decode_ModRM_SIB_Address()^, and ^DecodeImmediate()^. And vector extensions can also change the opcode map in the Opcode.
+
+  DecodePrefixAdjustments();
+
+  //Decode the opcode byte and get what the instruction uses as input.
+  //Only continue if an invalid prefix opcode is not used.
+
+  if( !InvalidOp )
+  {
+
+    //Decode the instruction.
+
+    Instruction = DecodeOpcode();
+
+    //Setup the 86 Decoder for which operands the instruction uses.
+
+    DecodeOperandString( Instruction[1] );
+
+    //Decode each operand along the Decoder array in order, and deactivate them.
+
+    Operands = DecodeOperands();
+
+    //Now only some instructions can vector extend, and that is only if the instruction is an SSE instruction.
+    //The SSE vector unit is detected as the operands are decoded if SSE is not active, and a vector extension is used the instruction is invalid.
+
+    if( !SSE & Extension > 0 ) { InvalidOp = true; }
+
+  }
+
+  //If the instruction is invalid then set the instruction to "???"
+
+  if( InvalidOp )
+  {
+    out = "???" //set the returned instruction to invalid
+  }
+
+  //Else finish decoding the valid instruction.
+
+  else
+  {
+
+    //**Depending on the operation different prefixes replace others for  HLE,or MPX, and branch prediction.
+    //if REP prefix, and LOCK prefix are used together, and the current decoded operation allows HLE XRELEASE.
+
+    if(PrefixG1 == Mnemonics[0xF3] & PrefixG2 == Mnemonics[0xF0] & XRelease)
+    {
+      PrefixG1 = "XRELEASE "; //Then change REP to XRELEASE.
+    }
+
+    //if REPNE prefix, and LOCK prefix are used together, and the current decoded operation allows HLE XACQUIRE.
+
+    if(PrefixG1 == Mnemonics[0xF2] & PrefixG2 == Mnemonics[0xF0] & XAcquire)
+    {
+      PrefixG1 = "XACQUIRE "; //Then change REP to XACQUIRE
+    }
+
+    //Depending on the order that the Repeat prefix, and Lock prefix is used flip Prefix G1, and G2 if HLEFlipG1G2 it is true.
+
+    if((PrefixG1 == "XRELEASE " | PrefixG1 == "XACQUIRE ") & HLEFlipG1G2)
+    {
+      var t = PrefixG1; PrefixG1 = PrefixG2; PrefixG2 = t; t = null;
+    }
+
+    //if HT is active then it is a jump instruction check and adjust for the HT,and HNT prefix.
+
+    if(HT)
+    {
+      if (SegOverride == Mnemonics[0x2E])
+      {
+        PrefixG1 = "HNT ";
+      }
+
+      else if (SegOverride == Mnemonics[0x3E])
+      {
+        PrefixG1 = "HT ";
+      }
+    }
+
+    //else if Prefix is REPNE switch it to BND if operation is a MPX instruction.
+
+    else if(PrefixG1 == Mnemonics[0xF2] & BND)
+    {
+      PrefixG1 = "BND ";
+    }
+
+    //Before the Instruction is put together check the length of the instruction if it is longer than 15 bytes the instruction is undefined.
+    
+    if ( InstructionHex.length > 30 )
+    {
+      //Calculate how many bytes over.
+     var Dif = ( ( InstructionHex.length - 30 ) / 2 );
+      //Limit the instruction hex output to 15 bytes.
+      InstructionHex = InstructionHex.substring( 0, 30 );
+      //Calculate the Difference between the Disassembler current position.
+      Dif -= ( ( Pos64 * Math.pow( 2, 32 ) ) + Pos32 );
+      //Convert Dif to unsignified numbers.
+      var Addrs32 = Dif & 0xFFFFFFFF , Addrs64 = Math.floor ( Dif / Math.pow( 2, 32 ) );
+      if( Addrs32 < 0 ) { Addrs32 += Math.pow( 2, 32 ); }
+      //Convert to strings.
+      for (var S32 = Addrs32.toString(16) ; S32.length < 8; S32 = "0" + S32);
+      for (var S64 = Addrs64.toString(16) ; S64.length < 8; S64 = "0" + S64);
+      Addrs32 = null; Addrs64 = null; Dif = null;
+      //Go to the Calculated address right after the Instruction UD.
+      GotoPosition(  S64 + S32 );
+      //Set prefixes, and operands to empty strings, and set Instruction to UD.
+      PrefixG1 = "";PrefixG2 = ""; Instruction[0] = "UD"; Operands = "";
+    }
+
+    //Put the Instruction sequence together.
+
+    out = PrefixG1 + PrefixG2 + Instruction[0] + Operands;
+  }
+
+  //The instruction has now been decoded, or is invalid, or is UD, however all of the Prefix settings and adjustments must be reset to defaults in order
+  //for the next instruction to decode properly.
+
+  Opcode = 0;
+  SizeAttrSelect = 1;
+  SSE = false;
+  Extension = 0;
+  FarPointer = 0;
+  AddressOverride = false;
+  RegExtend = 0;
+  BaseExtend = 0;
+  IndexExtend = 0;
+  VectorRegister = 0;
+  MaskRegister = 0;
+  ZeroMerg = false;
+  SegOverride = "[";
+  BRound = false;
+  WidthBit = 0;
+  RexActive = false;
+  SIMD = 0;
+  IMMValue = 0;
+  PrefixG1 = "", PrefixG2 = "";
+  XRelease = false; XAcquire = false;
+  HLEFlipG1G2 = false;
+  HT = false;
+  BND = false;
+  InvalidOp = false;
+
+  //Return the instruction.
+
+  return( out );
+}
+
+/*-------------------------------------------------------------------------------------------------------------------------
+//do an linear disassemble.
+-------------------------------------------------------------------------------------------------------------------------*/
+
+function Disassemble( Code )
+{
+  Out=""; //The Disassemble output
+
+  BinCode = Code; //set the binary code array.
+
+  //Disassemble binary code using an linear pass.
+
+  while( CodePos32 < BinCode.length )
+  {
+    try
+    {
+      if(ShowInstructionHex)
+      {
+        InstructionHex = InstructionHex.toUpperCase();
+        for(; InstructionHex.length < 17;InstructionHex = InstructionHex + " ");
+      }
+      else
+      {
+        InstructionHex = "";
+      }
+
+      //Add the 64 bit address of the instruction if ShowInstructionPos decoding is active
+      
+      if(!ShowInstructionPos)
+      {
+        InstructionPos = "";
+      }
+      
+      Out +=  InstructionPos+"\x09" + InstructionHex+"\x09" + DecodeInstruction() + "\r\n";
+      
+      InstructionPos = "";
+      InstructionHex = "";
+    }
+    catch(e) //Binary code Array index out of bounds
+    {
+      if(ShowInstructionHex)
+      {
+        InstructionHex = InstructionHex.toUpperCase();
+        for(; InstructionHex.length < 17;InstructionHex = InstructionHex + " ");
+      }
+      else
+      {
+        InstructionHex = "";
+      }
+
+      //Add the 64 bit address of the instruction if ShowInstructionPos decoding is active
+      
+      if(!ShowInstructionPos)
+      {
+        InstructionPos = "";
+      }
+      
+      Out +=  InstructionPos+"\x09" + InstructionHex+"\x09" + "Incomplete Instruction Code\r\n";
+      
+      InstructionPos = "";
+      InstructionHex = "";
+    }
+  }
+
+  CodePos32 = 0; //reset the Code position
+
+  //return the decoded binary code
+
+  return(Out);
 }
