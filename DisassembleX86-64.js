@@ -2923,10 +2923,10 @@ function DecodeOperandString( OperandString ){
 
     if( Code == 0 )
     {
-      XRelease = BySize & 0x01;
-      XAcquire = ( BySize & 0x02 ) >> 1;
-      HT = ( BySize & 0x04 ) >> 2;
-      BND = ( BySize & 0x08 ) >> 3;
+      XRelease = Setting & 0x01;
+      XAcquire = ( Setting & 0x02 ) >> 1;
+      HT = ( Setting & 0x04 ) >> 2;
+      BND = ( Setting & 0x08 ) >> 3;
       OpNum--;
     }
 
