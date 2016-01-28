@@ -1882,7 +1882,7 @@ function GotoPosition( Address64 ){
   var LocPos64 = parseInt(Address64.substring(0, Address64.length - 8), 16);
   //Find the difference between the current simulated 64 address and the selected address location.
   var Dif32 = Pos32 - LocPos32, Dif64 = Pos64 - LocPos64;
-  //Add the difference to CodePos32 it sucks that most of this has to be done with float math because of JavaScript's 32 bit int limitation.
+  //Subtract the difference to the CodePos32 Section.
   CodePos32 -= Dif32;
   //Because JavaScript will convert the number to a 32 bit signified integer the negative value has to be subtracted into a full 32 bit value.
   if ( CodePos32 < 0 ) { CodePos32 += (Math.pow( 2, 32 ) ); }
