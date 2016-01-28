@@ -3351,8 +3351,6 @@ function DecodeInstruction()
       PrefixG1 = "";PrefixG2 = ""; Instruction[0] = "UD"; Operands = "";
     }
 
-    alert("C32 = "+CodePos32 + ", CodeArray="+BinCode.length+"");
-
     //Put the Instruction sequence together.
 
     out = PrefixG1 + " " + PrefixG2 + " " + Instruction[0]+ " " + Operands;
@@ -3392,7 +3390,7 @@ function DecodeInstruction()
 }
 
 /*-------------------------------------------------------------------------------------------------------------------------
-//do an linear disassemble.
+do an linear disassemble.
 -------------------------------------------------------------------------------------------------------------------------*/
 
 function Disassemble( Code )
