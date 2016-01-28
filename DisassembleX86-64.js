@@ -3410,53 +3410,34 @@ function Disassemble( Code )
     try
     {
       Instruction = DecodeInstruction();
-
-      if(ShowInstructionHex)
-      {
-        InstructionHex = InstructionHex.toUpperCase();
-        for(; InstructionHex.length < 17;InstructionHex = InstructionHex + " ");
-      }
-      else
-      {
-        InstructionHex = "";
-      }
-
-      //Add the 64 bit address of the instruction if ShowInstructionPos decoding is active
-      
-      if(!ShowInstructionPos)
-      {
-        InstructionPos = "";
-      }
-      
-      Out +=  InstructionPos+"\x09" + InstructionHex+"\x09" + Instruction + "\r\n";
-      
-      InstructionPos = "";
-      InstructionHex = "";
     }
     catch(e) //Binary code Array index out of bounds
     {
-      if(ShowInstructionHex)
-      {
-        InstructionHex = InstructionHex.toUpperCase();
-        for(; InstructionHex.length < 17;InstructionHex = InstructionHex + " ");
-      }
-      else
-      {
-        InstructionHex = "";
-      }
-
-      //Add the 64 bit address of the instruction if ShowInstructionPos decoding is active
-      
-      if(!ShowInstructionPos)
-      {
-        InstructionPos = "";
-      }
-      
-      Out +=  InstructionPos+"\x09" + InstructionHex+"\x09" + "END Of Data.";
-      
-      InstructionPos = "";
-      InstructionHex = "";
+      Instruction = "End Of Data."; //End of Data.
     }
+    //Add the 64 bit address of the output if ShowInstructionPos decoding is active.
+      
+    if(ShowInstructionPos)
+    {
+      Out += InstructionPos + "\x09";
+    }
+      
+    //Show Each byte that was read to decode the instruction if ShowInstructionHex decoding is active.
+      
+    if(ShowInstructionHex)
+    {
+      InstructionHex = InstructionHex.toUpperCase();
+      for(; InstructionHex.length < 17;InstructionHex = InstructionHex + " ");
+      Out += InstructionHex + "\x09";
+    }
+      
+    //Put the decoded instruction into the output and make a new line.
+
+    Out += Instruction + "\r\n";
+
+    //Reset instruction Pos and Hex.
+      
+    InstructionPos = ""; InstructionHex = "";
   }
 
   CodePos32 = 0; //reset the Code position
