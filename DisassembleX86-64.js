@@ -1811,6 +1811,16 @@ function NextByte(){
   
   if( InstructionPos == "" ){ InstructionPos = GetPosition(); }
 
+  //Add the current byte as hex to InstructionHex which will be displayed beside the decoded instruction.
+  //After an instruction decodes InstructionHex is only added beside the instruction if ShowInstructionHex is active.
+
+  var t = BinCode[CodePos32].toString(16); //convert the byte to hex.
+  if (t.length == 1) { t = "0" + t; } //pad it to tow hex digits as a byte.
+  InstructionHex += t; //add it to the current bytes used for the decode instruction.
+  t = null; //set the temporary string used for padding it to a hex byte null.]
+
+  //Move the Simulated 64 bit address by one byte for the next byte.
+
   Pos32 += 1;
 
   //if the first 32 bits of the simulated 64 bit address position is grater than a max 32 bit value carry to Pos64.
@@ -1839,14 +1849,6 @@ function NextByte(){
   {
     CodePos = 0; //for now lets just set it 0 without adding in the binary disk read library
   }
-
-  //Add the next byte as hex to InstructionHex which will be displayed beside the decoded instruction.
-  //After an instruction decodes InstructionHex is only added beside the instruction if ShowInstructionHex is active.
-
-  var t = BinCode[CodePos32].toString(16); //convert the byte to hex.
-  if (t.length == 1) { t = "0" + t; } //pad it to tow hex digits as a byte.
-  InstructionHex += t; //add it to the current bytes used for the decode instruction.
-  t = null; //set the temporary string used for padding it to a hex byte null.
 
 }
 
@@ -2555,7 +2557,7 @@ At the end of this function "Opcode" should not hold any prefix code, so then Op
 function DecodePrefixAdjustments(){
 
   //-------------------------------------------------------------------------------------------------------------------------
-  Opcode |= BinCode[CodePos32]; //Add 8 bit opcode while bits 9, and 10 are used for opcode map.
+  Opcode = ( Opcode & 0x300 ) | BinCode[CodePos32]; //Add 8 bit opcode while bits 9, and 10 are used for opcode map.
   NextByte(); //Move to the next byte.
   //-------------------------------------------------------------------------------------------------------------------------
 
@@ -2619,7 +2621,7 @@ function DecodePrefixAdjustments(){
       SizeAttrSelect = ( Opcode & 0x04 ) >> 2; //The L bit for 256 vector size.
       SIMD = Opcode & 0x03; //The SIMD mode.
 
-      //Autmatically uses the two byte opcode map starts at 256 goes to 511.
+      //Automatically uses the two byte opcode map starts at 256 goes to 511.
 
       Opcode = 0x100;
 
