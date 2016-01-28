@@ -1883,9 +1883,7 @@ function GotoPosition( Address64 ){
   //Find the difference between the current simulated 64 address and the selected address location.
   var Dif32 = Pos32 - LocPos32, Dif64 = Pos64 - LocPos64;
   //Add the difference to CodePos32 it sucks that most of this has to be done with float math because of JavaScript's 32 bit int limitation.
-  CodePos32 -= ( Dif64 * Math.pow( 2, 32 ) ) + Dif32;
-  //Limit CodePos32 to the first 32 bits. It is possible to load a new 32 bit section based on Pos64 position.
-  CodePos32 &= 0xFFFFFFFF;
+  CodePos32 -= Dif32;
   //Because JavaScript will convert the number to a 32 bit signified integer the negative value has to be subtracted into a full 32 bit value.
   if ( CodePos32 < 0 ) { CodePos32 += (Math.pow( 2, 32 ) ); }
   //Set the Simulated Pos32, and Pos64 to the Selected address 64.First step if negative subtracted into a full 32 bit value.
@@ -3336,23 +3334,24 @@ function DecodeInstruction()
     if ( InstructionHex.length > 30 )
     {
       //Calculate how many bytes over.
-     var Dif = ( ( InstructionHex.length - 30 ) / 2 );
+      var Dif32 = ( ( InstructionHex.length - 30 ) / 2 );
       //Limit the instruction hex output to 15 bytes.
       InstructionHex = InstructionHex.substring( 0, 30 );
       //Calculate the Difference between the Disassembler current position.
-      Dif -= ( ( Pos64 * Math.pow( 2, 32 ) ) + Pos32 );
+      Dif32 = Pos32 - Dif32;
       //Convert Dif to unsignified numbers.
-      var Addrs32 = Dif & 0xFFFFFFFF , Addrs64 = Math.floor ( Dif / Math.pow( 2, 32 ) );
-      if( Addrs32 < 0 ) { Addrs32 += Math.pow( 2, 32 ); }
+      if( Dif32 < 0 ) { Dif32 += Math.pow( 2, 32 ); }
       //Convert to strings.
-      for (var S32 = Addrs32.toString(16) ; S32.length < 8; S32 = "0" + S32);
-      for (var S64 = Addrs64.toString(16) ; S64.length < 8; S64 = "0" + S64);
-      Addrs32 = null; Addrs64 = null; Dif = null;
+      for (var S32 = Dif32.toString(16) ; S32.length < 8; S32 = "0" + S32);
+      for (var S64 = Pos64.toString(16) ; S64.length < 8; S64 = "0" + S64);
+      Dif32 = null;
       //Go to the Calculated address right after the Instruction UD.
       GotoPosition(  S64 + S32 );
       //Set prefixes, and operands to empty strings, and set Instruction to UD.
       PrefixG1 = "";PrefixG2 = ""; Instruction[0] = "UD"; Operands = "";
     }
+
+    alert("C32 = "+CodePos32 + ", CodeArray="+BinCode.length+"");
 
     //Put the Instruction sequence together.
 
