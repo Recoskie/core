@@ -3292,19 +3292,19 @@ function DecodeInstruction()
 
     if(PrefixG1 == Mnemonics[0xF3] & PrefixG2 == Mnemonics[0xF0] & XRelease)
     {
-      PrefixG1 = "XRELEASE "; //Then change REP to XRELEASE.
+      PrefixG1 = "XRELEASE"; //Then change REP to XRELEASE.
     }
 
     //if REPNE prefix, and LOCK prefix are used together, and the current decoded operation allows HLE XACQUIRE.
 
     if(PrefixG1 == Mnemonics[0xF2] & PrefixG2 == Mnemonics[0xF0] & XAcquire)
     {
-      PrefixG1 = "XACQUIRE "; //Then change REP to XACQUIRE
+      PrefixG1 = "XACQUIRE"; //Then change REP to XACQUIRE
     }
 
     //Depending on the order that the Repeat prefix, and Lock prefix is used flip Prefix G1, and G2 if HLEFlipG1G2 it is true.
 
-    if((PrefixG1 == "XRELEASE " | PrefixG1 == "XACQUIRE ") & HLEFlipG1G2)
+    if((PrefixG1 == "XRELEASE" | PrefixG1 == "XACQUIRE") & HLEFlipG1G2)
     {
       var t = PrefixG1; PrefixG1 = PrefixG2; PrefixG2 = t; t = null;
     }
@@ -3315,12 +3315,12 @@ function DecodeInstruction()
     {
       if (SegOverride == Mnemonics[0x2E])
       {
-        PrefixG1 = "HNT ";
+        PrefixG1 = "HNT";
       }
 
       else if (SegOverride == Mnemonics[0x3E])
       {
-        PrefixG1 = "HT ";
+        PrefixG1 = "HT";
       }
     }
 
@@ -3328,7 +3328,7 @@ function DecodeInstruction()
 
     else if(PrefixG1 == Mnemonics[0xF2] & BND)
     {
-      PrefixG1 = "BND ";
+      PrefixG1 = "BND";
     }
 
     //Before the Instruction is put together check the length of the instruction if it is longer than 15 bytes the instruction is undefined.
@@ -3356,7 +3356,7 @@ function DecodeInstruction()
 
     //Put the Instruction sequence together.
 
-    out = PrefixG1 + PrefixG2 + Instruction[0] + Operands;
+    out = PrefixG1 + " " + PrefixG2 + " " + Instruction[0]+ " " + Operands;
   }
 
   //The instruction has now been decoded, or is invalid, or is UD, however all of the Prefix settings and adjustments must be reset to defaults in order
