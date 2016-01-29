@@ -2986,7 +2986,7 @@ function DecodeOperandString( OperandString ){
 
     else if( Code >= 11 & ExplicitOp <= 10)
     {
-      X86Decoder[ExplicitOp].set( ( Code - 14 ), BySize, Setting, OpNum++ );
+      X86Decoder[ExplicitOp].set( ( Code - 11 ), BySize, Setting, OpNum++ );
       ExplicitOp++; //move to the next Explicit operand.
     }
 
@@ -3150,6 +3150,7 @@ function DecodeOperands(){
 
   for( var i = 7; i < 10; i++ )
   {
+
     //-------------------------------------------------------------------------------------------------------------------------
     //if Active Type is used as which Explicit operand.
     //-------------------------------------------------------------------------------------------------------------------------
@@ -3169,23 +3170,23 @@ function DecodeOperands(){
 
       //RBX address Explicit Operands prefixes can extend the registers and change pointer size RegMode 0.
 
-      else if( X86Format[i].Type == 4 )
+      else if( X86Decoder[i].Type == 4 )
       {
         out[ X86Decoder[i].OpNum ] = Decode_ModRM_SIB_Address(
           [ 0, 0, 3 ], //the RBX register only for the pointer.
           X86Decoder[i].BySizeAttrubute, //By size attribute or not.
-          X86Format[i].Size //size attributes.
+          X86Decoder[i].Size //size attributes.
         );
       }
 
       //source and destination address Explicit Operands prefixes can extend the registers and change pointer size.
 
-      else if( X86Decoder[i].Type == 5 | X86Format[i].Type == 6 )
+      else if( X86Decoder[i].Type == 5 | X86Decoder[i].Type == 6 )
       {
         out[ X86Decoder[i].OpNum ] = Decode_ModRM_SIB_Address(
             [ 0, 0, ( X86Decoder[i].Type + 1 ) ], //source and destination pointer register by type value.
             X86Decoder[i].BySizeAttrubute, //By size attribute or not.
-            X86Format[i].Size //size attributes.
+            X86Decoder[i].Size //size attributes.
           );
       }
 
