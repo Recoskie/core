@@ -2624,7 +2624,7 @@ function DecodePrefixAdjustments(){
       Opcode = 0x100;
 
       //-------------------------------------------------------------------------------------------------------------------------
-      Opcode |= BinCode[CodePos32]; //read the opcode.
+      Opcode = ( Opcode & 0x300 ) | BinCode[CodePos32]; //read the opcode.
       NextByte(); //Move to the next byte.
       //-------------------------------------------------------------------------------------------------------------------------
 
@@ -2662,7 +2662,7 @@ function DecodePrefixAdjustments(){
       Opcode = ( Opcode & 0x001F ) << 8; //Change Operation code map.
 
       //-------------------------------------------------------------------------------------------------------------------------
-      Opcode |= BinCode[CodePos32]; //read the 8 bit opcode put them in the lower 8 bits away from opcode map bit's.
+      Opcode = ( Opcode & 0x300 ) | BinCode[CodePos32]; //read the 8 bit opcode put them in the lower 8 bits away from opcode map bit's.
       NextByte(); //Move to the next byte.
       //-------------------------------------------------------------------------------------------------------------------------
 
@@ -2711,7 +2711,7 @@ function DecodePrefixAdjustments(){
       Opcode = ( Opcode & 0x03 ) << 8; //Change Operation code map.
 
       //-------------------------------------------------------------------------------------------------------------------------
-      Opcode |= BinCode[CodePos32]; //read the 8 bit opcode put them in the lower 8 bits away from opcode extend bit's.
+      Opcode = ( Opcode & 0x300 ) | BinCode[CodePos32]; //read the 8 bit opcode put them in the lower 8 bits away from opcode extend bit's.
       NextByte(); //Move to the next byte.
       //-------------------------------------------------------------------------------------------------------------------------
 
@@ -3118,15 +3118,13 @@ function DecodeOperands(){
 
   if( X86Decoder[5].Active )
   {
-
-    out[ X86Decoder[5].OpNum ] = DecodeRegValue(
+      out[ X86Decoder[5].OpNum ] = DecodeRegValue(
       VectorRegister, //Register value.
       X86Decoder[5].BySizeAttrubute, //By size attribute or not.
       X86Decoder[5].Size //Size settings.
     );
 
     X86Decoder[5].Deactivate(); //Deactivate the operand along the Decoder.
-
   }
 
   //Immediate register encoding.
@@ -3137,7 +3135,7 @@ function DecodeOperands(){
     if( !IMM_Used ) { DecodeImmediate(0, false, 0); } //forces IMM8 if no Immediate has been used.
 
     out[ X86Decoder[6].OpNum ] = DecodeRegValue(
-      ( IMMValue & 0x0F ), //Register value.
+      ( IMMValue & 0xF0 ) >> 4 , //Register value.
       X86Decoder[6].BySizeAttrubute, //By size attribute or not.
       X86Decoder[6].Size //Size settings.
     );
@@ -3251,7 +3249,7 @@ function DecodeInstruction()
   //First read any opcodes (prefix) that act as adjustments to the main three operand decode functions ^DecodeRegValue()^,
   //^Decode_ModRM_SIB_Address()^, and ^DecodeImmediate()^. And vector extensions can also change the opcode map in the Opcode.
 
-  DecodePrefixAdjustments();
+  Extension = DecodePrefixAdjustments();
 
   //Decode the opcode byte and get what the instruction uses as input.
   //Only continue if an invalid prefix opcode is not used.
