@@ -3036,15 +3036,26 @@ function DecodeOperands(){
   if( X86Decoder[1].Active )
   {
 
-    ModRMByte = Decode_ModRM_SIB_Value(); //Decode the ModR/M byte.
-
     //Decode the ModR/M byte Address which can end up read another byte for SIB address, and including displacements.
+    
+    if(X86Decoder[1].Type != 0)
+    {
+      ModRMByte = Decode_ModRM_SIB_Value(); //Decode the ModR/M byte.
 
-    out[ X86Decoder[1].OpNum ] = Decode_ModRM_SIB_Address(
-      ModRMByte, //The ModR/M byte.
-      X86Decoder[1].BySizeAttrubute, //By size attribute or not.
-      X86Decoder[1].Size //Size settings.
-    );
+      out[ X86Decoder[1].OpNum ] = Decode_ModRM_SIB_Address(
+        ModRMByte, //The ModR/M byte.
+        X86Decoder[1].BySizeAttrubute, //By size attribute or not.
+        X86Decoder[1].Size //Size settings.
+        );
+    }
+
+    //Else If ModR/M type is 0 then it is a moffs address.
+
+    else
+    {
+      out[ X86Decoder[1].OpNum ] = PTR[ GetOperandSize( X86Decoder[1].Size ) << 1 ];
+      out[ X86Decoder[1].OpNum ] += SegOverride + DecodeImmediate( 0, X86Decoder[1].BySizeAttrubute, ( Math.pow( 2, BitMode ) << 1 ) ) + "]";
+    }
 
     X86Decoder[1].Deactivate(); //Deactivate the operand along the Decoder.
 
