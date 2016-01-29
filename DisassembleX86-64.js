@@ -1,54 +1,125 @@
-//-------------------------------------------------------------------------------------------------------------------------
-//Binary byte code array
-//-------------------------------------------------------------------------------------------------------------------------
+/*-------------------------------------------------------------------------------------------------------------------------
+Binary byte code array.
+-------------------------------------------------------------------------------------------------------------------------*/
 
-var BinCode = new Array();
+var BinCode = [];
 
-//------------------------------------------------------------------------------------------------------------------------
-//The Mnemonic array each operation code value has a Mnemonic Name
-//------------------------------------------------------------------------------------------------------------------------
- 
-Mnemonics = [
+/*-------------------------------------------------------------------------------------------------------------------------
+When Bit Mode is 2 the disassembler will default to decoding 64 bit binary code possible settings are 0=16 bit, 1=32 bit, 2=64 bit.
+-------------------------------------------------------------------------------------------------------------------------*/
+
+var BitMode = 2;
+
+/*-------------------------------------------------------------------------------------------------------------------------
+CodePos32 is the actual position in the Binary byte code array.
+However It is limited to an Uint32 number because JavaScript does not use 64 bit indexes.
+-------------------------------------------------------------------------------------------------------------------------*/
+
+var CodePos32 = 0x00000000;
+
+/*-------------------------------------------------------------------------------------------------------------------------
+The simulated 64 bit address binary location uses two 32 bit integers.
+This allows you to set an 64 bit address base location using the function ^SetBasePosition()^.
+In which all binary instructions in the Binary byte code array disassemble as if they are located in that address.
+While the CodePos32 moves though the array of byte values normally for your X86 instructions.
+-------------------------------------------------------------------------------------------------------------------------*/
+
+var Pos64 = 0x00000000, Pos32 = 0x00000000;
+
+/*-------------------------------------------------------------------------------------------------------------------------
+The InstructionHex String stores the Bytes of decoded instructions. It is shown to the left side of the disassembled instruction.
+-------------------------------------------------------------------------------------------------------------------------*/
+
+var InstructionHex = "";
+
+/*-------------------------------------------------------------------------------------------------------------------------
+The InstructionPos String stores the start position of a decoded binary instruction in memory.
+-------------------------------------------------------------------------------------------------------------------------*/
+
+var InstructionPos = "";
+
+/*-------------------------------------------------------------------------------------------------------------------------
+Decoding display options.
+-------------------------------------------------------------------------------------------------------------------------*/
+
+var ShowInstructionHex = true; //setting to show the hex code of the instruction beside the decoded instruction output.
+var ShowInstructionPos = true; //setting to show the instruction address position.
+
+/*-------------------------------------------------------------------------------------------------------------------------
+The Opcode, and Opcode map.
+---------------------------------------------------------------------------------------------------------------------------
+The first byte that is read is the selected instruction code however some codes are used as Adjustment codes.
+Used by the function ^DecodePrefixAdjustments()^. The first byte opcodes are 0 to 255, but some codes are used as Adjustments.
+---------------------------------------------------------------------------------------------------------------------------
+Bellow XX is the opcode combined with the adjustment codes and how opcode works in binary.
+---------------------------------------------------------------------------------------------------------------------------
+00,00000000 = 0, lower 8 bit opcode at max 00,11111111 = 255. (First byte opcodes XX) Opcodes values 0 to 255.
+01,00000000 = 256, lower 8 bit opcode at max 01,11111111 = 511. (Two byte opcode 0F XX) Opcodes values 256 to 511.
+10,00000000 = 512, lower 8 bit opcode at max 10,11111111 = 767. (Three byte opcode 0F 38 XX) Opcodes values 512 to 767
+11,00000000 = 768, lower 8 bit opcode at max 11,11111111 = 1023. (Three byte opcode 0F 3A XX) Opcodes values 768 to 1023.
+---------------------------------------------------------------------------------------------------------------------------
+The lower 8 bits is the selectable opcode 0 to 255 plus one from 255 is 1,00000000 = 256 thus 256 acts as the place holder.
+The vector adjustment codes contain an map bit selection the map bits go in order to the place holder map bits are in.
+---------------------------------------------------------------------------------------------------------------------------
+VEX.mmmmm = 000_00b (1-byte map), 000_01b (2-byte map), 000_10b (0Fh,38h), 000_11b (0Fh,3Ah)
+EVEX.mm = 00b (1-byte map), 01b (2-byte map), 10b (0Fh,38h), 11b (0Fh,3Ah)
+--------------------------------------------------------------------------------------------------------------------------
+Used by function ^DecodeOpcode()^
+-------------------------------------------------------------------------------------------------------------------------*/
+
+var Opcode = 0;
+
+/*-------------------------------------------------------------------------------------------------------------------------
+The Mnemonic array each opcode value has an Instruction Name except for codes that are used as adjustment settings called Prefixes.
+Some Opcodes like segment overrides are read and stored into the SegOveride string for the left bracket of the ModR/M address.
+Instruction codes may appear multiple times, but use different size attribute adjustments, or change the direction registers, and
+memory are used. Some opcode indexes also use Arrays as separators for different selections, and prefixes.
+The length of the arrays are to do with encoding selections.
+---------------------------------------------------------------------------------------------------------------------------
+Used by function ^DecodeOpcode()^
+--------------------------------------------------------------------------------------------------------------------------*/
+
+var Mnemonics = [
   //------------------------------------------------------------------------------------------------------------------------
   //First Byte operations
   //------------------------------------------------------------------------------------------------------------------------
-  "ADD ","ADD ","ADD ","ADD ","ADD ","ADD ","???","???",
-  "OR ","OR ","OR ","OR ","OR ","OR ","???",
+  "ADD","ADD","ADD","ADD","ADD","ADD","???","???",
+  "OR","OR","OR","OR","OR","OR","???",
   "", //*Two byte instructions prefix
-  "ADC ","ADC ","ADC ","ADC ","ADC ","ADC ","???","???",
-  "SBB ","SBB ","SBB ","SBB ","SBB ","SBB ","???","???",
-  "AND ","AND ","AND ","AND ","AND ","AND ","???","???",
-  "SUB ","SUB ","SUB ","SUB ","SUB ","SUB ",
-  "CS:[", //Code segment override
+  "ADC","ADC","ADC","ADC","ADC","ADC","???","???",
+  "SBB","SBB","SBB","SBB","SBB","SBB","???","???",
+  "AND","AND","AND","AND","AND","AND","???","???",
+  "SUB","SUB","SUB","SUB","SUB","SUB",
+  "CS:[", //Code segment override.
   "???",
-  "XOR ","XOR ","XOR ","XOR ","XOR ","XOR ",
+  "XOR","XOR","XOR","XOR","XOR","XOR",
   "SS:[", //Stack segment override
   "???",
-  "CMP ","CMP ","CMP ","CMP ","CMP ","CMP ",
-  "DS:[", //Data Segment override
+  "CMP","CMP","CMP","CMP","CMP","CMP",
+  "DS:[", //Data Segment override.
   "???",
-  "","","","","","","","","","","","","","","","",//*The Rex Prefix
-  "PUSH ","PUSH ","PUSH ","PUSH ","PUSH ","PUSH ","PUSH ","PUSH ",
-  "POP ","POP ","POP ","POP ","POP ","POP ","POP ","POP ",
+  "","","","","","","","","","","","","","","","",//*The Rex Prefix note the REX prefix can now disable in different bit modes allowing these to be used.
+  "PUSH","PUSH","PUSH","PUSH","PUSH","PUSH","PUSH","PUSH",
+  "POP","POP","POP","POP","POP","POP","POP","POP",
   "???","???","???",
-  "MOVSXD ",
+  "MOVSXD",
   "FS:[","GS:[",
   "???","???",
-  "PUSH ","IMUL ","PUSH ","IMUL ",
-  "INS ","INS ","OUTS ","OUTS ",
-  "JO ","JNO ","JB ","JAE ","JE ","JNE ","JBE ","JA ",
-  "JS ","JNS ","JP ","JNP ","JL ","JGE ","JLE ","JG ",
-  ["ADD ","OR ","ADC ","SBB ","AND ","SUB ","XOR ","CMP "],
-  ["ADD ","OR ","ADC ","SBB ","AND ","SUB ","XOR ","CMP "],
+  "PUSH","IMUL","PUSH","IMUL",
+  "INS","INS","OUTS","OUTS",
+  "JO","JNO","JB","JAE","JE","JNE","JBE","JA",
+  "JS","JNS","JP","JNP","JL","JGE","JLE","JG",
+  ["ADD","OR","ADC","SBB","AND","SUB","XOR","CMP"],
+  ["ADD","OR","ADC","SBB","AND","SUB","XOR","CMP"],
   "???",
-  ["ADD ","OR ","ADC ","SBB ","AND ","SUB ","XOR ","CMP "],
-  "TEST ","TEST ","XCHG ","XCHG ",
-  "MOV ","MOV ","MOV ","MOV ",
-  ["MOV ","MOV "],
-  ["LEA ","???"],
-  "MOV ",
-  ["POP ","???","???","???","???","???","???","???"],
-  ["NOP","PAUSE ","NOP","NOP"],"XCHG ","XCHG ","XCHG ","XCHG ","XCHG ","XCHG ","XCHG ",
+  ["ADD","OR","ADC","SBB","AND","SUB","XOR","CMP"],
+  "TEST","TEST","XCHG","XCHG",
+  "MOV","MOV","MOV","MOV",
+  ["MOV","MOV"],
+  ["LEA","???"],
+  "MOV",
+  ["POP","???","???","???","???","???","???","???"],
+  ["NOP","NOP","PAUSE","NOP"],"XCHG","XCHG","XCHG","XCHG","XCHG","XCHG","XCHG",
   ["CBW","CWDE","CDQE"],
   ["CWD","CDQ","CQO"],
   "???",
@@ -56,43 +127,43 @@ Mnemonics = [
   ["PUSHF","PUSHFQ","PUSHFQ"],
   ["POPF","POPFQ","POPFQ"],
   "SAHF","LAHF",
-  "MOV ","MOV ","MOV ","MOV ",
-  "MOVS ","MOVS ",
-  "CMPS ","CMPS ",
-  "TEST ","TEST ",
-  "STOS ","STOS ",
-  "LODS ","LODS ",
-  "SCAS ","SCAS ",
-  "MOV ","MOV ","MOV ","MOV ","MOV ","MOV ","MOV ","MOV ",
-  "MOV ","MOV ","MOV ","MOV ","MOV ","MOV ","MOV ","MOV ",
-  ["ROL ","ROR ","RCL ","RCR ","SHL ","SHR ","SAL ","SAR "],
-  ["ROL ","ROR ","RCL ","RCR ","SHL ","SHR ","SAL ","SAR "],
-  "RET ","RET ",
+  "MOV","MOV","MOV","MOV",
+  "MOVS","MOVS",
+  "CMPS","CMPS",
+  "TEST","TEST",
+  "STOS","STOS",
+  "LODS","LODS",
+  "SCAS","SCAS",
+  "MOV","MOV","MOV","MOV","MOV","MOV","MOV","MOV",
+  "MOV","MOV","MOV","MOV","MOV","MOV","MOV","MOV",
+  ["ROL","ROR","RCL","RCR","SHL","SHR","SAL","SAR"],
+  ["ROL","ROR","RCL","RCR","SHL","SHR","SAL","SAR"],
+  "RET","RET",
   "VEX not supported yet!",
   "VEX not supported yet!",
-  ["MOV ","???","???","???","???","???","???","XABORT "],
-  ["MOV ","???","???","???","???","???","???","XBEGIN "],
-  "ENTER ","LEAVE","RETF ","RETF","INT ","INT ","INTO",
+  ["MOV","???","???","???","???","???","???","XABORT"],
+  ["MOV","???","???","???","???","???","???","XBEGIN"],
+  "ENTER","LEAVE","RETF","RETF","INT","INT","INTO",
   ["IRET","IRETD","IRETQ"],
-  ["ROL ","ROR ","RCL ","RCR ","SHL ","SHR ","SAL ","SAR "],
-  ["ROL ","ROR ","RCL ","RCR ","SHL ","SHR ","SAL ","SAR "],
-  ["ROL ","ROR ","RCL ","RCR ","SHL ","SHR ","SAL ","SAR "],
-  ["ROL ","ROR ","RCL ","RCR ","SHL ","SHR ","SAL ","SAR "],
+  ["ROL","ROR","RCL","RCR","SHL","SHR","SAL","SAR"],
+  ["ROL","ROR","RCL","RCR","SHL","SHR","SAL","SAR"],
+  ["ROL","ROR","RCL","RCR","SHL","SHR","SAL","SAR"],
+  ["ROL","ROR","RCL","RCR","SHL","SHR","SAL","SAR"],
   "???","???","???",
-  "XLAT ",
+  "XLAT",
   //------------------------------------------------------------------------------------------------------------------------
   //X87 FPU
   //------------------------------------------------------------------------------------------------------------------------
   [
-    ["FADD ","FMUL ","FCOM ","FCOMP ","FSUB ","FSUBR ","FDIV ","FDIVR "],
-    ["FADD ","FMUL ","FCOM ","FCOMP ","FSUB ","FSUBR ","FDIV ","FDIVR "]
+    ["FADD","FMUL","FCOM","FCOMP","FSUB","FSUBR","FDIV","FDIVR"],
+    ["FADD","FMUL","FCOM","FCOMP","FSUB","FSUBR","FDIV","FDIVR"]
   ],
   [
-    ["FLD ","???","FST ","FSTP ","FLDENV ","FLDCW ","FNSTENV ","FNSTCW "],
+    ["FLD","???","FST","FSTP","FLDENV","FLDCW","FNSTENV","FNSTCW"],
     [
-      "FLD ","FXCH ",
+      "FLD","FXCH",
       ["FNOP","???","???","???","???","???","???","???"],
-      "FSTP1 ",
+      "FSTP1",
       ["FCHS","FABS","???","???","FTST","FXAM","???","???"],
       ["FLD1","FLDL2T","FLDL2E","FLDPI","FLDLG2","FLDLN2","FLDZ","???"],
       ["F2XM1","FYL2X","FPTAN","FPATAN","FXTRACT","FPREM1","FDECSTP","FINCSTP"],
@@ -100,118 +171,119 @@ Mnemonics = [
     ]
   ],
   [
-    ["FIADD ","FIMUL ","FICOM ","FICOMP ","FISUB ","FISUBR ","FIDIV ","FIDIVR "],
+    ["FIADD","FIMUL","FICOM","FICOMP","FISUB","FISUBR","FIDIV","FIDIVR"],
     [
-      "FCMOVB ","FCMOVE ","FCMOVBE ","FCMOVU ","???",
+      "FCMOVB","FCMOVE","FCMOVBE","FCMOVU","???",
       ["???","FUCOMPP","???","???","???","???","???","???"],
       "???","???"
     ]
   ],
   [
-    ["FILD ","FISTTP ","FIST ","FISTP ","???","FLD ","???","FSTP "],
+    ["FILD","FISTTP","FIST","FISTP","???","FLD","???","FSTP"],
     [
-      "CMOVNB ","FCMOVNE ","FCMOVNBE ","FCMOVNU ",
-      ["FENI ","FDISI ","FNCLEX ","FNINIT ","FSETPM ","???","???","???"],
-      "FUCOMI ","FCOMI ","???"
+      "CMOVNB","FCMOVNE","FCMOVNBE","FCMOVNU",
+      ["FENI","FDISI","FNCLEX","FNINIT","FSETPM","???","???","???"],
+      "FUCOMI","FCOMI","???"
     ]
   ],
   [
-    ["FADD ","FMUL ","FCOM ","DCOMP ","FSUB ","FSUBR ","FDIV ","FDIVR "],
-    ["FADD ","FMUL ","FCOM2 ","FCOMP3 ","FSUBR ","FSUB ","FDIVR ","FDIV "]
+    ["FADD","FMUL","FCOM","DCOMP","FSUB","FSUBR","FDIV","FDIVR"],
+    ["FADD","FMUL","FCOM2","FCOMP3","FSUBR","FSUB","FDIVR","FDIV"]
   ],
   [
-    ["FLD ","FISTTP ","FST ","FSTP ","FRSTOR ","???","FNSAVE ","FNSTSW "],
-    ["FFREE ","FXCH4 ","FST ","FSTP ","FUCOM ","FUCOMP ","???","???"]
+    ["FLD","FISTTP","FST","FSTP","FRSTOR","???","FNSAVE","FNSTSW"],
+    ["FFREE","FXCH4","FST","FSTP","FUCOM","FUCOMP","???","???"]
   ],
 
   [
-    ["FIADD ","FIMUL ","FICOM ","FICOMP ","FISUB ","FISUBR ","FIDIV ","FIDIVR "],
+    ["FIADD","FIMUL","FICOM","FICOMP","FISUB","FISUBR","FIDIV","FIDIVR"],
     [
-      "FADDP ","FMULP ","FCOMP5 ",
-      ["???","FCOMPP ","???","???","???","???","???","???"],
-      "FSUBRP ","FSUBP ","FDIVRP ","FDIVP "
+      "FADDP","FMULP","FCOMP5",
+      ["???","FCOMPP","???","???","???","???","???","???"],
+      "FSUBRP","FSUBP","FDIVRP","FDIVP"
     ]
   ],
   [
-    ["FILD ","FISTTP ","FIST ","FISTP ","FBLD ","FILD ","FBSTP ","FISTP "],
+    ["FILD","FISTTP","FIST","FISTP","FBLD","FILD","FBSTP","FISTP"],
     [
-      "FFREEP ","FXCH7 ","FSTP8 ","FSTP9 ",
-      ["FNSTSW ","???","???","???","???","???","???","???"],
-      "FUCOMIP ","FCOMIP ","???"
+      "FFREEP","FXCH7","FSTP8","FSTP9",
+      ["FNSTSW","???","???","???","???","???","???","???"],
+      "FUCOMIP","FCOMIP","???"
     ]
   ],
   //------------------------------------------------------------------------------------------------------------------------
   //End of X87 FPU
   //------------------------------------------------------------------------------------------------------------------------
-  "LOOPNE ","LOOPE ","LOOP ","JRCXZ ",
-  "IN ","IN ","OUT ","OUT ",
-  "CALL ","JMP ",
+  "LOOPNE","LOOPE","LOOP","JRCXZ",
+  "IN","IN","OUT","OUT",
+  "CALL","JMP",
   "???",
-  "JMP ",
-  "IN ","IN ","OUT ","OUT ",
-  "LOCK ",
+  "JMP",
+  "IN","IN","OUT","OUT",
+  "LOCK",
   "???",
-  "REPNE ","REP ",
+  "REPNE","REP",
   "HLT","CMC",
-  ["TEST ","???","NOT ","NEG ","MUL ","IMUL ","DIV ","IDIV "],
-  ["TEST ","???","NOT ","NEG ","MUL ","IMUL ","DIV ","IDIV "],
+  ["TEST","???","NOT","NEG","MUL","IMUL","DIV","IDIV"],
+  ["TEST","???","NOT","NEG","MUL","IMUL","DIV","IDIV"],
   "CLC","STC","CLI","CTI","CLD","STD",
-  ["INC ","DEC ","???","???","???","???","???","???"],
+  ["INC","DEC","???","???","???","???","???","???"],
   [
-    ["INC ","DEC ","CALL ","CALL ","JMP ","JMP ","PUSH ","???"],
-    ["INC ","DEC ","CALL ","???","JMP ","???","PUSH ","???"]
+    ["INC","DEC","CALL","CALL","JMP","JMP","PUSH","???"],
+    ["INC","DEC","CALL","???","JMP","???","PUSH","???"]
   ],
   //------------------------------------------------------------------------------------------------------------------------
-  //Two Byte operations
+  //Two Byte operations Opcodes 256 to 511.
+  //Opcodes plus 256 goes to 511 used by "0F", Or set directly by adding map bits "01" because "01 00000000" bin = 256 plus opcode.
   //------------------------------------------------------------------------------------------------------------------------
   [
-    ["SLDT ","STR ","LLDT ","LTR ","VERR ","VERW ","JMPE ","???"],
-    ["SLDT ","STR ","LLDT ","LTR ","VERR ","VERW ","JMPE ","???"]
+    ["SLDT","STR","LLDT","LTR","VERR","VERW","JMPE","???"],
+    ["SLDT","STR","LLDT","LTR","VERR","VERW","JMPE","???"]
   ],
   [
-    ["SGDT ","SIDT ","LGDT ","LIDT ","SMSW ","???","LMSW ","INVLPG "],
+    ["SGDT","SIDT","LGDT","LIDT","SMSW","???","LMSW","INVLPG"],
     [
       ["???","VMCALL","VMLAUNCH","VMRESUME","VMXOFF","???","???","???"],
-      ["MONITOR ","MWAIT ","CLAC","STAC","???","???","???","???"],
+      ["MONITOR","MWAIT","CLAC","STAC","???","???","???","???"],
       ["XGETBV","XSETBV","???","???","???","XEND","XTEST","???"],
-      ["VMRUN ","VMMCALL","VMLOAD ","VMSAVE ","STGI","CLGI","SKINIT ","INVLPGA "],
-      "SMSW ","???","LMSW ",
-      ["SWAPGS","RDTSCP","MONITORX ","MWAITX ","???","???","???","???"]
+      ["VMRUN","VMMCALL","VMLOAD","VMSAVE","STGI","CLGI","SKINIT","INVLPGA"],
+      "SMSW","???","LMSW",
+      ["SWAPGS","RDTSCP","MONITORX","MWAITX","???","???","???","???"]
     ]
   ],
-  ["LAR ","LAR "],["LSL ","LSL "],
+  ["LAR","LAR"],["LSL","LSL"],
   "???",
   "SYSCALL","CLTS","SYSRET","INVD",
   "WBINVD","???",
   "UD2","???",
-  [["PREFETCH ","PREFETCHW ","???","???","???","???","???","???"],"???"],
+  [["PREFETCH","PREFETCHW","???","???","???","???","???","???"],"???"],
   "FEMMS","???",
-  ["MOVUPS ","MOVSS ","MOVUPD ","MOVSD "],
-  ["MOVUPS ","MOVSS ","MOVUPD ","MOVSD "],
-  [["MOVLPS ","MOVSLDUP ","MOVLPD ","MOVDDUP "],["MOVHLPS ","MOVSLDUP ","???","MOVDDUP "]],
-  [["MOVLPS ","???","MOVLPD ","???"],["???","???","???","???"]],
-  ["UNPCKLPS ","???","UNPCKLPD ","???"],
-  ["UNPCKHPS ","???","UNPCKHPD ","???"],
-  [["MOVHPS ","MOVSHDUP ","MOVHPD ","???"],["MOVLHPS ","MOVSHDUP ","???","???"]],
-  [["MOVHPS ","???","MOVHPD ","???"],["???","???","???","???"]],
-  [["PREFETCHNTA ","PREFETCHT0 ","PREFETCHT1 ","PREFETCHT2 ","???","???","???","???"],"???"],
+  ["MOVUPS","MOVUPD","MOVSS","MOVSD"],
+  ["MOVUPS","MOVUPD","MOVSS","MOVSD"],
+  [["MOVLPS","MOVLPD","MOVSLDUP","MOVDDUP"],["MOVHLPS","???","MOVSLDUP","MOVDDUP"]],
+  [["MOVLPS","MOVLPD","???","???"],["???","???","???","???"]],
+  ["UNPCKLPS","UNPCKLPD","???","???"],
+  ["UNPCKHPS","UNPCKHPD","???","???"],
+  [["MOVHPS","MOVHPD","MOVSHDUP","???"],["MOVLHPS","???","MOVSHDUP","???"]],
+  [["MOVHPS","MOVHPD","???","???"],["???","???","???","???"]],
+  [["PREFETCHNTA","PREFETCHT0","PREFETCHT1","PREFETCHT2","???","???","???","???"],"???"],
   "???",
-  [["BNDLDX ","BNDCL ","BNDMOV ","BNDCU "],["???","BNDCL ","BNDMOV ","BNDCU "]],
-  [["BNDSTX ","BNDMK ","BNDMOV ","BNDCN "],["???","???","BNDMOV ","BNDCN "]],
+  [["BNDLDX","BNDMOV","BNDCL","BNDCU"],["???","BNDMOV","BNDCL","BNDCU"]],
+  [["BNDSTX","BNDMOV","BNDMK","BNDCN"],["???","BNDMOV","???","BNDCN"]],
   "???","???","???",
-  "NOP ",
-  ["???","MOV "],["???","MOV "],//CR and DR register Move
-  ["???","MOV "],["???","MOV "],//CR and DR register Move
-  ["???","MOV "],"???",//TR (TASK REGISTER) register Move
-  ["???","MOV "],"???",//TR (TASK REGISTER) register Move
-  ["MOVAPS ","???","MOVAPD ","???"],
-  ["MOVAPS ","???","MOVAPD ","???"],
-  ["CVTPI2PS ","CVTSI2SS ","CVTPI2PD ","CVTSI2SD "],
-  [["MOVNTPS ","MOVNTSS ","MOVNTPD ","MOVNTSD "],["???","???","???","???"]],
-  ["CVTTPS2PI ","CVTTSS2SI ","CVTTPD2PI ","CVTTSD2SI "],
-  ["CVTPS2PI ","CVTSS2SI ","CVTPD2PI ","CVTSD2SI "],
-  ["UCOMISS ","???","UCOMISD ","???"],
-  ["COMISS ","???","COMISD ","???"],
+  "NOP",
+  ["???","MOV"],["???","MOV"],//CR and DR register Move
+  ["???","MOV"],["???","MOV"],//CR and DR register Move
+  ["???","MOV"],"???",//TR (TASK REGISTER) register Move
+  ["???","MOV"],"???",//TR (TASK REGISTER) register Move
+  ["MOVAPS","MOVAPD","???","???"],
+  ["MOVAPS","MOVAPD","???","???"],
+  ["CVTPI2PS","CVTPI2PD","CVTSI2SS","CVTSI2SD"],
+  [["MOVNTPS","MOVNTPD","MOVNTSS","MOVNTSD"],["???","???","???","???"]],
+  ["CVTTPS2PI","CVTTPD2PI","CVTTSS2SI","CVTTSD2SI"],
+  ["CVTPS2PI","CVTPD2PI","CVTSS2SI","CVTSD2SI"],
+  ["UCOMISS","UCOMISD","???","???"],
+  ["COMISS","COMISD","???","???"],
   "WRMSR","RDTSC","RDMSR","RDPMC",
   "SYSENTER","SYSEXIT","???",
   "GETSEC",
@@ -219,329 +291,331 @@ Mnemonics = [
   "???",
   "", //*Three byte opcodes 0F3A
   "???","???","???","???","???",
-  "CMOVO ","CMOVNO ","CMOVB ","CMOVAE ","CMOVE ","CMOVNE ","CMOVBE ","CMOVA ",
-  "CMOVS ","CMOVNS ","CMOVP ","CMOVNP ","CMOVL ","CMOVGE ","CMOVLE ","CMOVG ",
-  [["???","???","???","???"],["MOVMSKPS ","???","MOVMSKPD","???"]],
-  ["SQRTPS ","SQRTSS ","SQRTPD ","SQRTSD "],
-  ["RSQRTPS ","RSQRTSS ","???","???"],
-  ["RCPPS ","RCPSS ","???","???"],
-  ["ANDPS ","???","ANDPD ","???"],
-  ["ANDNPS ","???","ANDNPD ","???"],
-  ["ORPS ","???","ORPD ","???"],
-  ["XORPS ","???","XORPD ","???"],
-  ["ADDPS ","ADDSS ","ADDPD ","ADDSD "],
-  ["MULPS ","MULSS ","MULPD ","MULSD "],
-  ["CVTPS2PD ","CVTSS2SD ","CVTPD2PS ","CVTSD2SS "],
-  ["CVTDQ2PS ","CVTTPS2DQ ","CVTPS2DQ ","???"],
-  ["SUBPS ","SUBSS ","SUBPD ","SUBSD "],
-  ["MINPS ","MINSS ","MINPD ","MINSD "],
-  ["DIVPS ","DIVSS ","DIVPD ","DIVSD "],
-  ["MAXPS ","MAXSS ","MAXPD ","MAXSD "],
-  ["PUNPCKLBW ","","PUNPCKLBW ",""],
-  ["PUNPCKLWD ","","PUNPCKLWD ",""],
-  ["PUNPCKLDQ ","","PUNPCKLDQ ",""],
-  ["PACKSSWB ","","PACKSSWB ",""],
-  ["PCMPGTB ","","PCMPGTB ",""],
-  ["PCMPGTW ","","PCMPGTW ",""],
-  ["PCMPGTD ","","PCMPGTD ",""],
-  ["PACKUSWB ","","PACKUSWB ",""],
-  ["PUNPCKHBW ","","PUNPCKHBW ",""],
-  ["PUNPCKHWD ","","PUNPCKHWD ",""],
-  ["PUNPCKHDQ ","","PUNPCKHDQ ",""],
-  ["PACKSSDW ","","PACKSSDW ",""],
-  ["???","???","PUNPCKLQDQ ","???"],
-  ["???","???","PUNPCKHQDQ ","???"],
-  ["MOVD ","","MOVD ",""],
-  ["MOVQ ","MOVDQU ","MOVDQA ","???"],
-  ["PSHUFW ","PSHUFHW ","PSHUFD ","PSHUFLW "],
+  "CMOVO","CMOVNO","CMOVB","CMOVAE","CMOVE","CMOVNE","CMOVBE","CMOVA",
+  "CMOVS","CMOVNS","CMOVP","CMOVNP","CMOVL","CMOVGE","CMOVLE","CMOVG",
+  [["???","???","???","???"],["MOVMSKPS","MOVMSKPD","???","???"]],
+  ["SQRTPS","SQRTPD","SQRTSS","SQRTSD"],
+  ["RSQRTPS","???","RSQRTSS","???"],
+  ["RCPPS","???","RCPSS","???"],
+  ["ANDPS","ANDPD","???","???"],
+  ["ANDNPS","ANDNPD","???","???"],
+  ["ORPS","ORPD","???","???"],
+  ["XORPS","XORPD","???","???"],
+  ["ADDPS","ADDPD","ADDSS","ADDSD"],
+  ["MULPS","MULPD","MULSS","MULSD"],
+  ["CVTPS2PD","CVTPD2PS","CVTSS2SD","CVTSD2SS"],
+  ["CVTDQ2PS","CVTPS2DQ","CVTTPS2DQ","???"],
+  ["SUBPS","SUBPD","SUBSS","SUBSD"],
+  ["MINPS","MINPD","MINSS","MINSD"],
+  ["DIVPS","DIVPD","DIVSS","DIVSD"],
+  ["MAXPS","MAXPD","MAXSS","MAXSD"],
+  ["PUNPCKLBW","PUNPCKLBW","",""],
+  ["PUNPCKLWD","PUNPCKLWD","",""],
+  ["PUNPCKLDQ","PUNPCKLDQ","",""],
+  ["PACKSSWB","PACKSSWB","",""],
+  ["PCMPGTB","PCMPGTB","",""],
+  ["PCMPGTW","PCMPGTW","",""],
+  ["PCMPGTD","PCMPGTD","",""],
+  ["PACKUSWB","PACKUSWB","",""],
+  ["PUNPCKHBW","PUNPCKHBW","",""],
+  ["PUNPCKHWD","PUNPCKHWD","",""],
+  ["PUNPCKHDQ","PUNPCKHDQ","",""],
+  ["PACKSSDW","PACKSSDW","",""],
+  ["???","PUNPCKLQDQ","???","???"],
+  ["???","PUNPCKHQDQ","???","???"],
+  ["MOVD","MOVD","",""],
+  ["MOVQ","MOVDQA","MOVDQU","???"],
+  ["PSHUFW","PSHUFD","PSHUFHW","PSHUFLW"],
   [
     "???",
     [
       "???","???",
-      ["PSRLW ","","PSRLW ",""],"???",
-      ["PSRAW ","","PSRAW ",""],"???",
-      ["PSLLW ","","PSLLW ",""],"???"
+      ["PSRLW","PSRLW","",""],"???",
+      ["PSRAW","PSRAW","",""],"???",
+      ["PSLLW","PSLLW","",""],"???"
     ]
   ],
   [
     "???",
     [
       "???","???",
-      ["PSRLD ","","PSRLD ",""],"???",
-      ["PSRAD ","","PSRAD ",""],"???",
-      ["PSLLD ","","PSLLD ",""],"???"
+      ["PSRLD","PSRLD","",""],"???",
+      ["PSRAD","PSRAD","",""],"???",
+      ["PSLLD","PSLLD","",""],"???"
     ]
   ],
   [
     "???",
     [
       "???","???",
-      ["PSRLQ ","","PSRLQ ",""],["???","???","PSRLDQ ","???"],
+      ["PSRLQ","PSRLQ","",""],["???","PSRLDQ","???","???"],
       "???","???",
-      ["PSLLQ ","","PSLLQ ",""],["???","???","PSLLDQ ","???"]
+      ["PSLLQ","PSLLQ","",""],["???","PSLLDQ","???","???"]
     ]
   ],
-  ["PCMPEQB ","","PCMPEQB ",""],
-  ["PCMPEQW ","","PCMPEQW ",""],
-  ["PCMPEQD ","","PCMPEQD ",""],
+  ["PCMPEQB","PCMPEQB","",""],
+  ["PCMPEQW","PCMPEQW","",""],
+  ["PCMPEQD","PCMPEQD","",""],
   "EMMS",
   [
-    ["VMREAD ","???","???","???"],
-    ["VMREAD ","???","EXTRQ","INSERTQ"]
+    ["VMREAD","???","???","???"],
+    ["VMREAD","EXTRQ","???","INSERTQ"]
   ],
   [
-    ["VMWRITE ","???","???","???"],
-    ["VMWRITE ","???","EXTRQ","INSERTQ"]
+    ["VMWRITE","???","???","???"],
+    ["VMWRITE","EXTRQ","???","INSERTQ"]
   ],
   "???","???",
-  ["???","???","HADDPD ","HADDPS "],
-  ["???","???","HSUBPD ","HSUBPS "],
-  ["MOVD ","MOVQ ","MOVD ","???"],
-  ["MOVQ ","MOVDQU ","MOVDQA ","???"],
-  "JO ","JNO ","JB ","JAE ","JE ","JNE ","JBE ","JA ",
-  "JS ","JNS ","JP ","JNP ","JL ","JGE ","JLE ","JG ",
-  "SETO ","SETNO ","SETB ","SETAE ","SETE ","SETNE ","SETBE ","SETA ",
-  "SETS ","SETNS ","SETP ","SETNP ","SETL ","SETGE ","SETLE ","SETG ",
-  "PUSH ","POP ",
+  ["???","HADDPD","???","HADDPS"],
+  ["???","HSUBPD","???","HSUBPS"],
+  ["MOVD","MOVD","MOVQ","???"],
+  ["MOVQ","MOVDQA","MOVDQU","???"],
+  "JO","JNO","JB","JAE","JE","JNE","JBE","JA",
+  "JS","JNS","JP","JNP","JL","JGE","JLE","JG",
+  "SETO","SETNO","SETB","SETAE","SETE","SETNE","SETBE","SETA",
+  "SETS","SETNS","SETP","SETNP","SETL","SETGE","SETLE","SETG",
+  "PUSH","POP",
   "CPUID",//Identifies the CPU and which Instructions the current CPU can use.
-  "BT ",
-  "SHLD ","SHLD ",
-  "XBTS ","IBTS ",
-  "PUSH ","POP ",
-  "RSM ",
-  "BTS ",
-  "SHRD ","SHRD",
+  "BT",
+  "SHLD","SHLD",
+  "XBTS","IBTS",
+  "PUSH","POP",
+  "RSM",
+  "BTS",
+  "SHRD","SHRD",
   [
     [
-      ["???","FXSAVE ","FXSAVE64 "],["???","FXRSTOR ","FXRSTOR64 "],
-      "LDMXCSR ","STMXCSR ",
-      ["","XSAVE ","XSAVE64 "],["","XRSTOR ","XRSTOR64 "],
-      ["CLWB ","XSAVEOPT ","XSAVEOPT64 "],
-      ["CLFLUSHOPT ","CLFLUSH ",""]
+      ["???","FXSAVE","FXSAVE64"],["???","FXRSTOR","FXRSTOR64"],
+      "LDMXCSR","STMXCSR",
+      ["","XSAVE","XSAVE64"],["","XRSTOR","XRSTOR64"],
+      ["CLWB","XSAVEOPT","XSAVEOPT64"],
+      ["CLFLUSHOPT","CLFLUSH",""]
     ],
     [
-      ["???","RDFSBASE ","???","???"],["???","RDGSBASE ","???","???"],
-      ["???","WRFSBASE ","???","???"],["???","WRGSBASE ","???","???"],
+      ["???","???","RDFSBASE","???"],["???","???","RDGSBASE","???"],
+      ["???","???","WRFSBASE","???"],["???","???","WRGSBASE","???"],
       "???",
       ["LFENCE","???","???","???","???","???","???","???"],
       ["MFENCE","???","???","???","???","???","???","???"],
       ["SFENCE","???","???","???","???","???","???","???"]
     ]
   ],
-  "IMUL ",
-  "CMPXCHG ","CMPXCHG ",
-  ["LSS ","???"],
-  "BTR ",
-  ["LFS ","???"],
-  ["LGS ","???"],
-  "MOVZX ","MOVZX ",
-  ["JMPE ","POPCNT ","???","???"],
+  "IMUL",
+  "CMPXCHG","CMPXCHG",
+  ["LSS","???"],
+  "BTR",
+  ["LFS","???"],
+  ["LGS","???"],
+  "MOVZX","MOVZX",
+  ["JMPE","POPCNT","???","???"],
   "???",
-  ["???","???","???","???","BT ","BTS ","BTR ","BTC "],
-  "BTC ",
-  ["BSF ","TZCNT ","???","BSF "],["BSR ","LZCNT ","???","BSR "],
-  "MOVSX ","MOVSX ",
-  "XADD ","XADD ",
-  ["CMPPS ","CMPSS ","CMPPD ","CMPSD "],
-  ["MOVNTI ","???"],
-  [["PINSRW ","","PINSRW ",""],["PINSRW ","","PINSRW ",""]],
-  [["???","???","???","???"],["PEXTRW ","","PEXTRW ",""]],
-  ["SHUFPS ","???","SHUFPD ","???"],
+  ["???","???","???","???","BT","BTS","BTR","BTC"],
+  "BTC",
+  ["BSF","???","TZCNT","BSF"],["BSR","???","LZCNT","BSR"],
+  "MOVSX","MOVSX",
+  "XADD","XADD",
+  ["CMPPS","CMPPD","CMPSS","CMPSD"],
+  ["MOVNTI","???"],
+  [["PINSRW","PINSRW","",""],["PINSRW","PINSRW","",""]],
+  [["???","???","???","???"],["PEXTRW","PEXTRW","",""]],
+  ["SHUFPS","SHUFPD","???","???"],
   [
     [
       "???",
-      ["","CMPXCHG8B ","CMPXCHG16B "],
+      ["","CMPXCHG8B","CMPXCHG16B"],
       "???",
-      ["","XRSTORS ","XRSTORS64 "],
-      ["","XSAVEC ","XSAVEC64 "],
-      ["","XSAVES ","XSAVES64 "],
-      ["VMPTRLD ","VMXON ","VMCLEAR ","???"],["VMPTRST ","???","???","???"]
+      ["","XRSTORS","XRSTORS64"],
+      ["","XSAVEC","XSAVEC64"],
+      ["","XSAVES","XSAVES64"],
+      ["VMPTRLD","VMCLEAR","VMXON","???"],["VMPTRST","???","???","???"]
     ],
     [
       "???",
-      "VMGETINFO ",
+      "VMGETINFO",
       "???","???","???","???",
-      "RDRAND ","RDSEED "
+      "RDRAND","RDSEED"
     ]
   ],
-  "BSWAP ","BSWAP ","BSWAP ","BSWAP ","BSWAP ","BSWAP ","BSWAP ","BSWAP ",
-  ["???","???","ADDSUBPD ","ADDSUBPS "],
-  ["PSRLW ","","PSRLW ",""],
-  ["PSRLD ","","PSRLD ",""],
-  ["PSRLQ ","","PSRLQ ",""],
-  ["PADDQ ","","PADDQ ",""],
-  ["PMULLW ","","PMULLW ",""],
-  ["???","???","MOVQ ","MOVDQ2Q "],
-  [["???","???","???","???"],["PMOVMSKB ","","PMOVMSKB ",""]],
-  ["PSUBUSB ","","PSUBUSB ",""],
-  ["PSUBUSW ","","PSUBUSW ",""],
-  ["PMINUB ","","PMINUB ",""],
-  ["PADD ","","PADD ",""],
-  ["PADDUSB ","","PADDUSB ",""],
-  ["PADDUSW ","","PADDUSW ",""],
-  ["PMAXUB ","","PMAXUB ",""],
-  ["PANDN ","","PANDN ",""],
-  ["PAVGB ","","PAVGB ",""],
-  ["PSRAW ","","PSRAW ",""],
-  ["PSRAD ","","PSRAD ",""],
-  ["PAVGW ","","PAVGW ",""],
-  ["PMULHUW ","","PMULHUW ",""],
-  ["PMULHW ","","PMULHW ",""],
-  ["???","CVTDQ2PD ","CVTTPD2DQ ","CVTPD2DQ "],
-  [["MOVNTQ ","???","MOVNTDQ ","???"],["???","???","???","???"]],
-  ["PSUBSB ","","PSUBSB ",""],
-  ["PSUBSW ","","PSUBSW ",""],
-  ["PMINSW ","","PMINSW ",""],
-  ["POR ","","POR ",""],
-  ["PADDSB ","","PADDSB ",""],
-  ["PADDSW ","","PADDSW ",""],
-  ["PMAXSW ","","PMAXSW ",""],
-  ["PXOR ","","PXOR ",""],
-  [["???","???","???","LDDQU "],["???","???","???","???"]],
-  ["PSLLW ","","PSLLW ",""],
-  ["PSLLD ","","PSLLD ",""],
-  ["PSLLQ ","","PSLLQ ",""],
-  ["PMULUDQ ","","PMULUDQ ",""],
-  ["PMADDWD ","","PMADDWD ",""],
-  ["PSADBW ","","PSADBW ",""],
-  [["???","???","???","???"],["MASKMOVQ ","???","MASKMOVDQU ","???"]],
-  ["PSUBB ","","PSUBB ",""],
-  ["PSUBW ","","PSUBW ",""],
-  ["PSUBD ","","PSUBD ",""],
-  ["PSUBQ ","","PSUBQ ",""],
-  ["PADDB ","","PADDB ",""],
-  ["PADDW ","","PADDW ",""],
-  ["PADDD ","","PADDD ",""],
+  "BSWAP","BSWAP","BSWAP","BSWAP","BSWAP","BSWAP","BSWAP","BSWAP",
+  ["???","ADDSUBPD","???","ADDSUBPS"],
+  ["PSRLW","PSRLW","",""],
+  ["PSRLD","PSRLD","",""],
+  ["PSRLQ","PSRLQ","",""],
+  ["PADDQ","PADDQ","",""],
+  ["PMULLW","PMULLW","",""],
+  ["???","MOVQ","???","MOVDQ2Q"],
+  [["???","???","???","???"],["PMOVMSKB","PMOVMSKB","",""]],
+  ["PSUBUSB","PSUBUSB","",""],
+  ["PSUBUSW","PSUBUSW","",""],
+  ["PMINUB","PMINUB","",""],
+  ["PADD","PADD","",""],
+  ["PADDUSB","PADDUSB","",""],
+  ["PADDUSW","PADDUSW","",""],
+  ["PMAXUB","PMAXUB","",""],
+  ["PANDN","PANDN","",""],
+  ["PAVGB","PAVGB","",""],
+  ["PSRAW","PSRAW","",""],
+  ["PSRAD","PSRAD","",""],
+  ["PAVGW","PAVGW","",""],
+  ["PMULHUW","PMULHUW","",""],
+  ["PMULHW","PMULHW","",""],
+  ["???","CVTTPD2DQ","CVTDQ2PD","CVTPD2DQ"],
+  [["MOVNTQ","MOVNTDQ","???","???"],["???","???","???","???"]],
+  ["PSUBSB","PSUBSB","",""],
+  ["PSUBSW","PSUBSW","",""],
+  ["PMINSW","PMINSW","",""],
+  ["POR","POR","",""],
+  ["PADDSB","PADDSB","",""],
+  ["PADDSW","PADDSW","",""],
+  ["PMAXSW","PMAXSW","",""],
+  ["PXOR","PXOR","",""],
+  [["???","???","???","LDDQU"],["???","???","???","???"]],
+  ["PSLLW","PSLLW","",""],
+  ["PSLLD","PSLLD","",""],
+  ["PSLLQ","PSLLQ","",""],
+  ["PMULUDQ","PMULUDQ","",""],
+  ["PMADDWD","PMADDWD","",""],
+  ["PSADBW","PSADBW","",""],
+  [["???","???","???","???"],["MASKMOVQ","MASKMOVDQU","???","???"]],
+  ["PSUBB","PSUBB","",""],
+  ["PSUBW","PSUBW","",""],
+  ["PSUBD","PSUBD","",""],
+  ["PSUBQ","PSUBQ","",""],
+  ["PADDB","PADDB","",""],
+  ["PADDW","PADDW","",""],
+  ["PADDD","PADDD","",""],
   "???",
   //------------------------------------------------------------------------------------------------------------------------
-  //Three Byte operations 0F38
+  //Three Byte operations 0F38.
+  //Opcodes plus 512 goes to 767 used by "0F,38", Or set directly by adding map bits "10" because "10 00000000" bin = 512 plus opcode.
   //------------------------------------------------------------------------------------------------------------------------
-  ["PSHUFB ","???","PSHUFB ","???"],
-  ["PHADDW ","???","PHADDW ","???"],
-  ["PHADDD ","???","PHADDD ","???"],
-  ["PHADDSW ","???","PHADDSW ","???"],
-  ["PMADDUBSW ","???","PMADDUBSW ","???"],
-  ["PHSUBW ","???","PHSUBW ","???"],
-  ["PHSUBD ","???","PHSUBD ","???"],
-  ["PHSUBSW ","???","PHSUBSW ","???"],
-  ["PSIGNB ","???","PSIGNB ","???"],
-  ["PSIGNW ","???","PSIGNW ","???"],
-  ["PSIGND ","???","PSIGND ","???"],
-  ["PMULHRSW ","???","PMULHRSW ","???"],
+  ["PSHUFB","PSHUFB","???","???"],
+  ["PHADDW","PHADDW","???","???"],
+  ["PHADDD","PHADDD","???","???"],
+  ["PHADDSW","PHADDSW","???","???"],
+  ["PMADDUBSW","PMADDUBSW","???","???"],
+  ["PHSUBW","PHSUBW","???","???"],
+  ["PHSUBD","PHSUBD","???","???"],
+  ["PHSUBSW","PHSUBSW","???","???"],
+  ["PSIGNB","PSIGNB","???","???"],
+  ["PSIGNW","PSIGNW","???","???"],
+  ["PSIGND","PSIGND","???","???"],
+  ["PMULHRSW","PMULHRSW","???","???"],
   "???","???","???","???",
-  ["???","???","PBLENDVB ","???"],
+  ["???","PBLENDVB","???","???"],
   "???","???","???",
-  ["???","???","BLENDVPS ","???"],
-  ["???","???","BLENDVPD ","???"],
+  ["???","BLENDVPS","???","???"],
+  ["???","BLENDVPD","???","???"],
   "???",
-  ["???","???","PTEST ","???"],
+  ["???","PTEST","???","???"],
   "???","???","???","???",
-  ["PABSB ","???","PABSB ","???"],
-  ["PABSW ","???","PABSW ","???"],
-  ["PABSD ","???","PABSD ","???"],
+  ["PABSB","PABSB","???","???"],
+  ["PABSW","PABSW","???","???"],
+  ["PABSD","PABSD","???","???"],
   "???",
-  ["???","???","PMOVSXBW ","???"],
-  ["???","???","PMOVSXBD ","???"],
-  ["???","???","PMOVSXBQ ","???"],
-  ["???","???","PMOVSXWD ","???"],
-  ["???","???","PMOVSXWQ ","???"],
-  ["???","???","PMOVSXDQ ","???"],
+  ["???","PMOVSXBW","???","???"],
+  ["???","PMOVSXBD","???","???"],
+  ["???","PMOVSXBQ","???","???"],
+  ["???","PMOVSXWD","???","???"],
+  ["???","PMOVSXWQ","???","???"],
+  ["???","PMOVSXDQ","???","???"],
   "???","???",
-  ["???","???","PMULDQ ","???"],
-  ["???","???","PCMPEQQ ","???"],
-  [["???","???","MOVNTDQA ","???"],["???","???","???","???"]],
-  ["???","???","PACKUSDW ","???"],
+  ["???","PMULDQ","???","???"],
+  ["???","PCMPEQQ","???","???"],
+  [["???","MOVNTDQA","???","???"],["???","???","???","???"]],
+  ["???","PACKUSDW","???","???"],
   "???","???","???","???",
-  ["???","???","PMOVZXBW ","???"],
-  ["???","???","PMOVZXBD ","???"],
-  ["???","???","PMOVZXBQ ","???"],
-  ["???","???","PMOVZXWD ","???"],
-  ["???","???","PMOVZXWQ ","???"],
-  ["???","???","PMOVZXDQ ","???"],
+  ["???","PMOVZXBW","???","???"],
+  ["???","PMOVZXBD","???","???"],
+  ["???","PMOVZXBQ","???","???"],
+  ["???","PMOVZXWD","???","???"],
+  ["???","PMOVZXWQ","???","???"],
+  ["???","PMOVZXDQ","???","???"],
   "???",
-  ["???","???","PCMPGTQ ","???"],
-  ["???","???","PMINSB ","???"],
-  ["???","???","PMINSD ","???"],
-  ["???","???","PMINUW ","???"],
-  ["???","???","PMINUD ","???"],
-  ["???","???","PMAXSB ","???"],
-  ["???","???","PMAXSD ","???"],
-  ["???","???","PMAXUW ","???"],
-  ["???","???","PMAXUD ","???"],
-  ["???","???","PMULLD ","???"],
-  ["???","???","PHMINPOSUW ","???"],
+  ["???","PCMPGTQ","???","???"],
+  ["???","PMINSB","???","???"],
+  ["???","PMINSD","???","???"],
+  ["???","PMINUW","???","???"],
+  ["???","PMINUD","???","???"],
+  ["???","PMAXSB","???","???"],
+  ["???","PMAXSD","???","???"],
+  ["???","PMAXUW","???","???"],
+  ["???","PMAXUD","???","???"],
+  ["???","PMULLD","???","???"],
+  ["???","PHMINPOSUW","???","???"],
   "???","???","???","???","???","???","???","???","???","???","???","???","???","???","???","???",
   "???","???","???","???","???","???","???","???","???","???","???","???","???","???","???","???",
   "???","???","???","???","???","???","???","???","???","???","???","???","???","???","???","???",
   "???","???","???","???","???","???","???","???","???","???","???","???","???","???",
-  [["???","???","INVEPT ","???"],["???","???","???","???"]],
-  [["???","???","INVVPID ","???"],["???","???","???","???"]],
-  [["???","???","INVPCID ","???"],["???","???","???","???"]],
+  [["???","INVEPT","???","???"],["???","???","???","???"]],
+  [["???","INVVPID","???","???"],["???","???","???","???"]],
+  [["???","INVPCID","???","???"],["???","???","???","???"]],
   "???","???","???","???","???","???","???","???","???","???","???","???","???","???","???","???",
   "???","???","???","???","???","???","???","???","???","???","???","???","???","???","???","???",
   "???","???","???","???","???","???","???","???","???","???","???","???","???","???","???","???",
   "???","???","???","???","???","???","???","???","???","???","???","???","???","???","???","???",
   "???","???","???","???","???","???","???","???","???","???","???","???","???","???","???","???",
   "???","???","???","???","???","???","???","???",
-  ["???","???","AESIMC ","???"],
-  ["???","???","AESENC ","???"],
-  ["???","???","AESENCLAST ","???"],
-  ["???","???","AESDEC ","???"],
-  ["???","???","AESDECLAST ","???"],
+  ["???","AESIMC","???","???"],
+  ["???","AESENC","???","???"],
+  ["???","AESENCLAST","???","???"],
+  ["???","AESDEC","???","???"],
+  ["???","AESDECLAST","???","???"],
   "???","???","???","???","???","???","???","???","???","???","???","???","???","???","???","???",
-  ["MOVBE ","???","MOVBE ","CRC32 "],["MOVBE ","???","MOVBE ","CRC32 "],
+  ["MOVBE","MOVBE","???","CRC32"],["MOVBE","MOVBE","???","CRC32"],
   "???","???","???","???",
-  ["???","ADOX ","ADCX ","???"],
+  ["???","ADCX","ADOX","???"],
   "???","???","???","???","???","???","???","???","???",
   //------------------------------------------------------------------------------------------------------------------------
-  //Three Byte operations 0F3A
+  //Three Byte operations 0F3A.
+  //Opcodes plus 768 goes to 1023 used by 0F,3A combination, Or set directly by adding map bits 11 by 1100000000 = 768 plus opcode.
   //------------------------------------------------------------------------------------------------------------------------
   "???","???","???","???","???","???","???","???",
-  ["???","???","ROUNDPS ","???"],
-  ["???","???","ROUNDPD ","???"],
-  ["???","???","ROUNDSS ","???"],
-  ["???","???","ROUNDSD ","???"],
-  ["???","???","BLENDPS ","???"],
-  ["???","???","BLENDPD ","???"],
-  ["???","???","PBLENDW ","???"],
-  ["PALIGNR ","???","PALIGNR ","???"],
+  ["???","ROUNDPS","???","???"],
+  ["???","ROUNDPD","???","???"],
+  ["???","ROUNDSS","???","???"],
+  ["???","ROUNDSD","???","???"],
+  ["???","BLENDPS","???","???"],
+  ["???","BLENDPD","???","???"],
+  ["???","PBLENDW","???","???"],
+  ["PALIGNR","PALIGNR","???","???"],
   "???","???","???","???",
-  [["???","???","PEXTRB ","???"],["???","???","PEXTRB ","???"]],
-  [["???","???","PEXTRW ","???"],["???","???","PEXTRW ","???"]],
+  [["???","PEXTRB","???","???"],["???","PEXTRB","???","???"]],
+  [["???","PEXTRW","???","???"],["???","PEXTRW","???","???"]],
   [
     [
-        ["???","???","PEXTRD ","???"],
+        ["???","PEXTRD","???","???"],
         "???",
-        ["???","???","PEXTRQ ","???"]
+        ["???","PEXTRQ","???","???"]
     ],
     [
-        ["???","???","PEXTRD ","???"],
+        ["???","PEXTRD","???","???"],
         "???",
-        ["???","???","PEXTRQ ","???"]
+        ["???","PEXTRQ","???","???"]
     ]
   ],
-  ["???","???","EXTRACTPS ","???"],
+  ["???","EXTRACTPS","???","???"],
   "???","???","???","???","???","???","???","???",
-  [["???","???","PINSRB ","???"],["???","???","PINSRB ","???"]],
-  ["???","???","INSERTPS ","???"],
+  [["???","PINSRB","???","???"],["???","PINSRB","???","???"]],
+  ["???","INSERTPS","???","???"],
   [
-    ["???","???","PINSRD ","???"],
+    ["???","PINSRD","???","???"],
     "???",
-    ["???","???","PINSRQ ","???"]
+    ["???","PINSRQ","???","???"]
   ],
   "???","???","???","???","???","???","???","???","???","???","???","???","???",
   "???","???","???","???","???","???","???","???","???","???","???","???","???","???","???","???",
-  ["???","???","DPPS ","???"],
-  ["???","???","DPPD ","???"],
-  ["???","???","MPSADBW ","???"],
+  ["???","DPPS","???","???"],
+  ["???","DPPD","???","???"],
+  ["???","MPSADBW","???","???"],
   "???",
-  ["???","???","PCLMULQDQ ","???"],
+  ["???","PCLMULQDQ","???","???"],
   "???","???","???","???","???","???","???","???","???","???","???",
   "???","???","???","???","???","???","???","???","???","???","???","???","???","???","???","???",
-  ["???","???","PCMPESTRM ","???"],
-  ["???","???","PCMPESTRI ","???"],
-  ["???","???","PCMPISTRM ","???"],
-  ["???","???","PCMPISTRI ","???"],
+  ["???","PCMPESTRM","???","???"],
+  ["???","PCMPESTRI","???","???"],
+  ["???","PCMPISTRM","???","???"],
+  ["???","PCMPISTRI","???","???"],
   "???","???","???","???","???","???","???","???","???","???","???",
   "???","???","???","???","???","???","???","???","???","???","???","???","???","???","???","???",
   "???","???","???","???","???","???","???","???","???","???","???","???","???","???","???","???",
@@ -550,92 +624,94 @@ Mnemonics = [
   "???","???","???","???","???","???","???","???","???","???","???","???","???","???","???","???",
   "???","???","???","???","???","???","???","???","???","???","???","???","???","???","???","???",
   "???","???","???","???","???","???","???","???","???","???","???","???","???","???","???","???",
-  ["???","???","AESKEYGENASSIST ","???"],
+  ["???","AESKEYGENASSIST","???","???"],
   "???","???","???","???","???","???","???","???","???","???","???","???","???","???","???","???",
-  "???","???","???","???","???","???","???","???","???","???","???","???","???","???","???","???"
-];
+  "???","???","???","???","???","???","???","???","???","???","???","???","???","???","???","???"];
 
-//------------------------------------------------------------------------------------------------------------------------
-//The Operand type array each operation code can use different operands that must be decoded in the X86-64 instruction format order.
-//------------------------------------------------------------------------------------------------------------------------
- 
-Operands = [
+/*-------------------------------------------------------------------------------------------------------------------------
+The Operand type array each operation code can use different operands that must be decoded in the X86 instruction format order.
+The order the operands are "displayed" is the order they are in the Operands string for the operation code.
+---------------------------------------------------------------------------------------------------------------------------
+Used by function ^DecodeOpcode()^
+-------------------------------------------------------------------------------------------------------------------------*/
+
+var Operands = [
   //------------------------------------------------------------------------------------------------------------------------
   //First Byte operations
   //------------------------------------------------------------------------------------------------------------------------
-  "020107010003","021607160003","070102010003","071602160003","0B0108010003","0B1609060003","","",
-  "020107010003","021607160003","070102010003","071602160003","0B0108010003","0B1609060003","","",
-  "020107010003","021607160003","070102010003","071602160003","0B0108010003","0B1609060003","","",
-  "020107010003","021607160003","070102010003","071602160003","0B0108010003","0B1609060003","","",
-  "020107010003","021607160003","070102010003","071602160003","0B0108010003","0B1609060003","","",
-  "020107010003","021607160003","070102010003","071602160003","0B0108010003","0B1609060003","","",
-  "020107010003","021607160003","070102010003","071602160003","0B0108010003","0B1609060003","","",
-  "02010701","02160716","07010201","07160216","0B010801","0B160906","","",
+  "07010B010103","070E0B0E0103","0B0107010103","0B0E070E0103","17010D010103","170E0D060103","","",
+  "07010B010103","070E0B0E0103","0B0107010103","0B0E070E0103","17010D010103","170E0D060103","","",
+  "07010B010103","070E0B0E0103","0B0107010103","0B0E070E0103","17010D010103","170E0D060103","","",
+  "07010B010103","070E0B0E0103","0B0107010103","0B0E070E0103","17010D010103","170E0D060103","","",
+  "07010B010103","070E0B0E0103","0B0107010103","0B0E070E0103","17010D010103","170E0D060103","","",
+  "07010B010103","070E0B0E0103","0B0107010103","0B0E070E0103","17010D010103","170E0D060103","","",
+  "07010B010103","070E0B0E0103","0B0107010103","0B0E070E0103","17010D010103","170E0D060103","","",
+  "07010B01","070E0B0E","0B010701","0B0E070E","17010D01","170E0D06","","",
   "","","","","","","","","","","","","","","","",
-  "0112","0112","0112","0112","0112","0112","0112","0112",
-  "0112","0112","0112","0112","0112","0112","0112","0112",
+  "030A","030A","030A","030A","030A","030A","030A","030A",
+  "030A","030A","030A","030A","030A","030A","030A","030A",
   "","","",
-  "07160204",
+  "0B0E0704",
   "","","","",
-  "0906","071602160906",
-  "0901","071602160901",
-  "10010D02","10160D02","0D020F01","0D020F16",
-  "0A010002000C","0A010002000C","0A010002000C","0A010002000C","0A010002000C","0A010002000C","0A010002000C","0A010002000C",
-  "0A010002000C","0A010002000C","0A010002000C","0A010002000C","0A010002000C","0A010002000C","0A010002000C","0A010002000C",
-  ["020108010003","020108010003","020108010003","020108010003","020108010003","020108010003","020108010003","02010801"],
-  ["021608060003","021608060003","021608060003","021608060003","021608060003","021608060003","021608060003","02160806"],
+  "0D06","0B0E070E0D06",
+  "0D01","0B0E070E0D01",
+  "23011B02","230E1B02","1B022101","1B02210E",
+  "110101020104","110101020104","110101020104","110101020104","110101020104","110101020104","110101020104","110101020104",
+  "110101020104","110101020104","110101020104","110101020104","110101020104","110101020104","110101020104","110101020104",
+  ["07010D010103","07010D010103","07010D010103","07010D010103","07010D010103","07010D010103","07010D010103","07010D01"],
+  ["070E0D060103","070E0D060103","070E0D060103","070E0D060103","070E0D060103","070E0D060103","070E0D060103","070E0D06"],
   "",
-  ["021608010003","021608010003","021608010003","021608010003","021608010003","021608010003","021608010003","02160801"],
-  "02010701","02160716",
-  "070102010003","071602160003",
-  "020107010001","021607160001",
-  "070102010001","071602160001",
-  ["020207000001","021607000001"],
-  ["07160200",""],
-  "070002020001",
-  ["0212","","","","","","",""],
-  ["","","",""],"0B1601160003","0B1601160003","0B1601160003","0B1601160003","0B1601160003","0B1601160003","0B1601160003",
+  ["070E0D010103","070E0D010103","070E0D010103","070E0D010103","070E0D010103","070E0D010103","070E0D010103","070E0D01"],
+  "07010B01","070E0B0E",
+  "0B0107010103","0B0E070E0103",
+  "07010B010101","070E0B0E0101",
+  "0B0107010101","0B0E070E0101",
+  ["07020A000101","070E0A000101"],
+  ["0B0E0600",""],
+  "0A0007020101",
+  ["070A","","","","","","",""],
+  ["","","",""],"170E030E0103","170E030E0103","170E030E0103","170E030E0103","170E030E0103","170E030E0103","170E030E0103",
   ["","",""],["","",""],
   "","",
   ["","",""],["","",""],
   "","",
-  "0B0106010001","0B1606160001",
-  "06010B010001","06160B160001",
-  "10010F01","10160F16",
-  "0F011001","0F161016",
-  "0B010801","0B160906",
-  "1001","1016","0F01","0F16","1001","1016",
-  "010108010001","010108010001","010108010001","010108010001","010108010001","010108010001","010108010001","010108010001",
-  "011608160001","011608160001","011608160001","011608160001","011608160001","011608160001","011608160001","011608160001",
-  ["02010801","02010801","02010801","02010801","02010801","02010801","02010801","02010801"],
-  ["02160801","02160801","02160801","02160801","02160801","02160801","02160801","02160801"],
-  "08020004","0004",
+  "170105010101","170E050E0101",
+  "050117010101","050E170E0101",
+  "23012101","230E210E",
+  "21012301","210E230E",
+  "17010D01","170E0D06",
+  "2301","230E","2101","210E","2301","230E",
+  "03010D010101","03010D010101","03010D010101","03010D010101","03010D010101","03010D010101","03010D010101","03010D010101",
+  "030E0D0E0101","030E0D0E0101","030E0D0E0101","030E0D0E0101","030E0D0E0101","030E0D0E0101","030E0D0E0101","030E0D0E0101",
+  ["07010D01","07010D01","07010D01","07010D01","07010D01","07010D01","07010D01","07010D01"],
+  ["070E0D01","070E0D01","070E0D01","070E0D01","070E0D01","070E0D01","070E0D01","070E0D01"],
+  "0D020104","0104",
   "","",
-  ["020108010001","","","","","","","0801"],
-  ["021609060001","","","","","","","0A04"],
-  "08020801","",
-  "0802","","1303",
-  "0801","",
+  ["07010D010101","","","","","","","0D01"],
+  ["070E0D060101","","","","","","","1104"],
+  "0D020D01","",
+  "0D02","","1403",
+  "0D01","",
   ["","",""],
-  ["02011301","02011301","02011301","02011301","02011301","02011301","02011301","02011301"],
-  ["02161301","02161301","02161301","02161301","02161301","02161301","02161301","02161301"],
-  ["02010C01","02010C01","02010C01","02010C01","02010C01","02010C01","02010C01","02010C01"],
-  ["02160C01","02160C01","02160C01","02160C01","02160C01","02160C01","02160C01","02160C01"],
+  ["07011401","07011401","07011401","07011401","07011401","07011401","07011401","07011401"],
+  ["070E1401","070E1401","070E1401","070E1401","070E1401","070E1401","070E1401","070E1401"],
+  ["07011901","07011901","07011901","07011901","07011901","07011901","07011901","07011901"],
+  ["070E1901","070E1901","070E1901","070E1901","070E1901","070E1901","070E1901","070E1901"],
   "","","",
-  "1101",
+  "1F01",
   //------------------------------------------------------------------------------------------------------------------------
   //X87 FPU
   //------------------------------------------------------------------------------------------------------------------------
   [
-    ["0304","0304","0304","0304","0304","0304","0304","0304"],
-    ["12000304","12000304","0304","0304","12000304","12000304","12000304","12000304"]
+    ["0609","0609","0609","0609","0609","0609","0609","0609"],
+    ["24000609","24000609","0609","0609","24000609","24000609","24000609","24000609"]
   ],
   [
-    ["0304","","0304","0304","0300","0302","0300","0302"],
+    ["0609","","0609","0609","0609","0609","0609","0609"],
     [
-      "0300","0300",
+      "0609","0609",
       ["","","","","","","",""],
-      "0300",
+      "0609",
       ["","","","","","","",""],
       ["","","","","","","",""],
       ["","","","","","","",""],
@@ -643,114 +719,114 @@ Operands = [
     ]
   ],
   [
-    ["0304","0304","0304","0304","0304","0304","0304","0304"],
+    ["0609","0609","0609","0609","0609","0609","0609","0609"],
     [
-      "12000304","12000304","12000304","12000304","",
+      "24000609","24000609","24000609","24000609","",
       ["","","","","","","",""],"",""
     ]
   ],
   [
-    ["0304","0304","0304","0304","","0320","","0320",""],
+    ["0609","0609","0609","0609","","0609","","0609",""],
     [
-      "12000304","12000304","12000304","12000304",
+      "24000609","24000609","24000609","24000609",
       ["","","","","","","",""],
-      "12000304","12000304",""
+      "24000609","24000609",""
     ]
   ],
   [
-    ["0310","0310","0310","0310","0310","0310","0310","0310"],
-    ["03101200","03101200","0310","0310","03101200","03101200","03101200","03101200"]
+    ["0609","0609","0609","0609","0609","0609","0609","0609"],
+    ["06092400","06092400","0609","0609","06092400","06092400","06092400","06092400"]
   ],
   [
-    ["0310","0310","0310","0310","0310","","0300","0302"],
-    ["0310","0310","0310","0310","0310","0310","",""]
+    ["0609","0609","0609","0609","0609","","0609","0609"],
+    ["0609","0609","0609","0609","0609","0609","",""]
   ],
   [
-    ["0302","0302","0302","0302","0302","0302","0302","0302"],
+    ["0609","0609","0609","0609","0609","0609","0609","0609"],
     [
-      "03021200","03021200","0302",
+      "06092400","06092400","0609",
       ["","","","","","","",""],
-      "03021200","03021200","03021200","03021200"
+      "06092400","06092400","06092400","06092400"
     ]
   ],
   [
-    ["0302","0302","0302","0302","0320","0310","0320","0310"],
+    ["0609","0609","0609","0609","0609","0609","0609","0609"],
     [
-      "0302","0302","0302","0302",
-      ["0B02","","","","","","",""],
-      "12000302","12000302",
+      "0609","0609","0609","0609",
+      ["1702","","","","","","",""],
+      "24000609","24000609",
       ""
     ]
   ],
   //------------------------------------------------------------------------------------------------------------------------
   //End of X87 FPU
   //------------------------------------------------------------------------------------------------------------------------
-  "0A010008","0A010008","0A010008","0A010008",
-  "0B010801","0B160801",
-  "08010B01","08010B16",
-  "0A040004","0A0400040008",
+  "11010100","11010100","11010100","11010100",
+  "17010D01","170E0D01",
+  "0D011701","0D01170E",
+  "11040104","110401040100",
   "",
-  "0A0100040008",
-  "0B010D02","0B160D02",
-  "0D020B01","0D020B16",
+  "110101040100",
+  "17011B02","170E1B02",
+  "1B021701","1B02170E",
   "","","","","","",
-  ["02010801","","02010003","02010003","0B010201","0201","0B010201","0201"],
-  ["02160906","","02160003","02160003","0B160216","0216","0B160216","0B160216"],
+  ["07010D01","","07010103","07010103","17010701","0701","17010701","0701"],
+  ["070E0D06","","070E0103","070E0103","170E070E","070E","170E070E","170E070E"],
   "","","","","","",
-  ["02010003","02010003","","","","","",""],
+  ["07010103","07010103","","","","","",""],
   [
-    ["02160003","02160003","02120004","022C0004","02120004","022C0004","0212",""],
-    ["02160003","02160003","02120004","","02120004","","0212",""]
+    ["070E0103","070E0103","070A0104","07040104","070A0104","07040104","070A",""],
+    ["070E0103","070E0103","070A0104","","070A0104","","070A",""]
   ],
   //------------------------------------------------------------------------------------------------------------------------
   //Two Byte operations
   //------------------------------------------------------------------------------------------------------------------------
   [
-    ["0202","0202","0202","0202","0202","0202","0216",""],
-    ["0216","0216","0202","0202","0202","0202","0216",""]
+    ["0702","0702","0702","0702","0702","0702","070E",""],
+    ["070E","070E","0702","0702","0702","0702","070E",""]
   ],
   [
-    ["0220","0220","0220","0220","0202","","0202","0200"],
+    ["0700","0700","0700","0700","0702","","0702","0600"],
     [
       ["","","","","","","",""],
-      ["0B100C100D10","0B100C10","","","","","",""],
+      ["170819081B08","17081908","","","","","",""],
       ["","","","","","","",""],
-      ["0B10","","0B10","0B10","","","0B04","0B100C04"],
-      "0216","","0202",
-      ["","","0B100C100D10","0B100C100D10","","","",""]
+      ["1708","","1708","1708","","","1704","17081904"],
+      "070E","","0702",
+      ["","","170819081B08","170819081B08","","","",""]
     ]
   ],
-  ["07160202","07160216"],["07160202","07160216"],"",
+  ["0B0E0702","0B0E070E"],["0B0E0702","0B0E070E"],"",
   "","","","",
   "","","","",
-  [["0200","0200","","","","","",""],""],
+  [["0600","0600","","","","","",""],""],
   "","",
-  ["07820540","07820504","07820540","07820510"],
-  ["05400782","05040782","05400782","05100782"],
-  [["07820210","07820540","07820210","07820510"],["07820540","07820540","","07820510"]],
-  [["02100782","","02100782",""],["","","",""]],
-  ["07820540","","07820540",""],
-  ["07820540","","07820540",""],
-  [["07820210","07820540","07820210",""],["07820540","07820540","",""]],
-  [["02100782","","02100782",""],["","","",""]],
-  [["0200","0200","0200","0200","","","",""],""],
+  ["0A040640","0A040640","0A040604","0A040606"],
+  ["06400A04","06400A04","06040A04","06060A04"],
+  [["0A040708","0A040708","0A040640","0A040606"],["0A040640","","0A040640","0A040606"]],
+  [["07080A04","07080A04","",""],["","","",""]],
+  ["0A040640","0A040640","",""],
+  ["0A040640","0A040640","",""],
+  [["0A040708","0A040708","0A040640",""],["0A040640","","0A040640",""]],
+  [["07080A04","07080A04","",""],["","","",""]],
+  [["0600","0600","0600","0600","","","",""],""],
   "",
-  [["07860210","07860210","07860280","07860210"],["","07860210","07860286","07860210"]],
-  [["02100786","07860210","02800786","07860210"],["","","02860786","07860210"]],
+  [["0A0B0708","0A0B06??","0A0B0708","0A0B0708"],["","0A0B06??","0A0B0708","0A0B0708"]],
+  [["07080A0B","06??0A0B","0A0B0708","0A0B0708"],["","06??0A0B","","0A0B0708"]],
   "","","",
-  "0216",
-  ["","021007830001"],["","021007840001"],
-  ["","078302100001"],["","078402100001"],
-  ["","021007850001"],"",
-  ["","078502100001"],"",
-  ["07820540","","07820540",""],
-  ["05400782","","05400782",""],
-  ["07820410","07820214","07820410","07820214"],
-  [["05400782","05040782","05400782","02100782"],["","","",""]],
-  ["07810510","07140504","07810540","07140510"],
-  ["07810510","07140504","07810540","07140510"],
-  ["07820504","","07820510",""],
-  ["07820504","","07820510",""],
+  "070E",
+  ["","07080A0C0101"],["","07080A0D0101"],
+  ["","0A0C07080101"],["","0A0D07080101"],
+  ["","07080A0E0101"],"",
+  ["","0A0E07080101"],"",
+  ["0A040640","0A040640","",""],
+  ["06400A04","06400A04","",""],
+  ["0A040609","0A040609","0A04070C","0A04070C"],
+  [["06400A04","06400A04","06040A04","07080A04"],["","","",""]],
+  ["0A0A0606","0A0A0640","0B0C0604","0B0C0606"],
+  ["0A0A0606","0A0A0640","0B0C0604","0B0C0606"],
+  ["0A040604","0A040606","",""],
+  ["0A040604","0A040606","",""],
   "","","","",
   "","","",
   "",
@@ -758,328 +834,328 @@ Operands = [
   "",
   "",//Three byte opcodes 0F3A
   "","","","","",
-  "07160216","07160216","07160216","07160216","07160216","07160216","07160216","07160216",
-  "07160216","07160216","07160216","07160216","07160216","07160216","07160216","07160216",
-  [["","","",""],["07040540","","07040540",""]],
-  ["07820540","07820504","07820540","07820510"],
-  ["07820540","07820504","",""],
-  ["07820540","07820504","",""],
-  ["07820540","","07820540",""],
-  ["07820540","","07820540",""],
-  ["07820540","","07820540",""],
-  ["07820540","","07820540",""],
-  ["07820540","07820504","07820540","07820510"],
-  ["07820540","07820504","07820540","07820510"],
-  ["07820510","07820504","07820540","07820510"],
-  ["07820540","07820540","07820540",""],
-  ["07820540","07820504","07820540","07820510"],
-  ["07820540","07820504","07820540","07820510"],
-  ["07820540","07820504","07820540","07820510"],
-  ["07820540","07820504","07820540","07820510"],
-  ["07810404","","07820540",""],
-  ["07810404","","07820540",""],
-  ["07810404","","07820540",""],
-  ["07810410","","07820540",""],
-  ["07810410","","07820540",""],
-  ["07810410","","07820540",""],
-  ["07810410","","07820540",""],
-  ["07810410","","07820540",""],
-  ["07810410","","07820540",""],
-  ["07810410","","07820540",""],
-  ["07810410","","07820540",""],
-  ["07810410","","07820540",""],
-  ["","","07820540",""],
-  ["","","07820540",""],
-  ["07810214","","07820214",""],
-  ["07810410","07820540","07820540",""],
-  ["078104100801","078205400801","078205400801","078205400801"],
+  "0B0E070E","0B0E070E","0B0E070E","0B0E070E","0B0E070E","0B0E070E","0B0E070E","0B0E070E",
+  "0B0E070E","0B0E070E","0B0E070E","0B0E070E","0B0E070E","0B0E070E","0B0E070E","0B0E070E",
+  [["","","",""],["0B040640","0B040640","",""]],
+  ["0A040640","0A040640","0A040604","0A040606"],
+  ["0A040640","","0A040604",""],
+  ["0A040640","","0A040604",""],
+  ["0A040640","0A040640","",""],
+  ["0A040640","0A040640","",""],
+  ["0A040640","0A040640","",""],
+  ["0A040640","0A040640","",""],
+  ["0A040640","0A040640","0A040604","0A040606"],
+  ["0A040640","0A040640","0A040604","0A040606"],
+  ["0A040606","0A040640","0A040604","0A040606"],
+  ["0A040640","0A040640","0A040640",""],
+  ["0A040640","0A040640","0A040604","0A040606"],
+  ["0A040640","0A040640","0A040604","0A040606"],
+  ["0A040640","0A040640","0A040604","0A040606"],
+  ["0A040640","0A040640","0A040604","0A040606"],
+  ["0A0A0604","0A040640","",""],
+  ["0A0A0604","0A040640","",""],
+  ["0A0A0604","0A040640","",""],
+  ["0A0A0609","0A040640","",""],
+  ["0A0A0609","0A040640","",""],
+  ["0A0A0609","0A040640","",""],
+  ["0A0A0609","0A040640","",""],
+  ["0A0A0609","0A040640","",""],
+  ["0A0A0609","0A040640","",""],
+  ["0A0A0609","0A040640","",""],
+  ["0A0A0609","0A040640","",""],
+  ["0A0A0609","0A040640","",""],
+  ["","0A040640","",""],
+  ["","0A040640","",""],
+  ["0A0A070C","0A04070C","",""],
+  ["0A0A0609","0A040640","0A040640",""],
+  ["0A0A06090D01","0A0406400D01","0A0406400D01","0A0406400D01"],
   [
     "",
     [
       "","",
-      ["04100801","","05400801",""],"",
-      ["04100801","","05400801",""],"",
-      ["04100801","","05400801",""],""
+      ["06090D01","06400D01","",""],"",
+      ["06090D01","06400D01","",""],"",
+      ["06090D01","06400D01","",""],""
     ]
   ],
   [
     "",
     [
       "","",
-      ["04100801","","05400801",""],"",
-      ["04100801","","05400801",""],"",
-      ["04100801","","05400801",""],""
+      ["06090D01","06400D01","",""],"",
+      ["06090D01","06400D01","",""],"",
+      ["06090D01","06400D01","",""],""
     ]
   ],
   [
     "",
     [
       "","",
-      ["04100801","","05400801",""],["","","05400801",""],
+      ["06090D01","06400D01","",""],["","06400D01","",""],
       "","",
-      ["04100801","","05400801",""],["","","05400801",""]
+      ["06090D01","06400D01","",""],["","06400D01","",""]
     ]
   ],
-  ["07810410","","07820540",""],
-  ["07810410","","07820540",""],
-  ["07810410","","07820540",""],
-  "",
+    ["0A0A0609","0A040640","",""],
+    ["0A0A0609","0A040640","",""],
+    ["0A0A0609","0A040640","",""],
+    "",
   [
-    ["02100710","","",""],
-    ["02100710","","078208010801","0782054008010801"]
+    ["07080B08","","",""],
+    ["07080B08","0A040D010D01","","0A0406400D010D01"]
   ],
   [
-    ["07100210","","",""],
-    ["07100210","","07820540","07820540"]
+    ["0B080708","","",""],
+    ["0B080708","0A040640","","0A040640"]
   ],
   "","",
-  ["","","07820540","07820540"],
-  ["","","07820540","07820540"],
-  ["02140781","07820510","02140782",""],
-  ["04100781","05400782","05400782",""],
-  "0A04000C","0A04000C","0A04000C","0A04000C","0A04000C","0A04000C","0A04000C","0A04000C",
-  "0A04000C","0A04000C","0A04000C","0A04000C","0A04000C","0A04000C","0A04000C","0A04000C",
-  "0201","0201","0201","0201","0201","0201","0201","0201",
-  "0201","0201","0201","0201","0201","0201","0201","0201",
-  "1400","1400",
+  ["","0A040640","","0A040640"],
+  ["","0A040640","","0A040640"],
+  ["070C0A0A","070C0A04","0A040606",""],
+  ["06090A0A","06400A04","06400A04",""],
+  "11040104","11040104","11040104","11040104","11040104","11040104","11040104","11040104",
+  "11040104","11040104","11040104","11040104","11040104","11040104","11040104","11040104",
+  "0701","0701","0701","0701","0701","0701","0701","0701",
+  "0701","0701","0701","0701","0701","0701","0701","0701",
+  "2600","2600",
   "",
-  "021607160003",
-  "021607160801","021607160C01",
-  "07160216","02160716",
-  "1500","1500",
+  "070E0B0E0103",
+  "070E0B0E0D01","070E0B0E1901",
+  "0B0E070E","070E0B0E",
+  "2800","2800",
   "",
-  "021607160003",
-  "021607160801","021607160C01",
+  "070E0B0E0103",
+  "070E0B0E0D01","070E0B0E1901",
   [
     [
-      ["","0200","0200"],["","0200","0200"],
-      "0204","0204",
-      ["","0200","0200"],["","0200","0200"],
-      ["0200","0200","0200"],
-      ["0200","0200",""]
+      ["","0600","0600"],["","0600","0600"],
+      "0704","0704",
+      ["","0600","0600"],["","0600","0600"],
+      ["0600","0600","0600"],
+      ["0600","0600",""]
     ],
     [
-      ["","0214","",""],["","0214","",""],
-      ["","0214","",""],["","0214","",""],
+      ["","","070C",""],["","","070C",""],
+      ["","","070C",""],["","","070C",""],
       "",
       ["","","","","","","",""],
       ["","","","","","","",""],
       ["","","","","","","",""]
     ]
   ],
-  "07160216",
-  "020107010003","021607160003",
-  ["0716022C",""],
-  "021607160003",
-  ["0716022C",""],
-  ["0716022C",""],
-  "07160201","07160202",
-  ["0A04","07060206","",""],"",
-  ["","","","","021608010003","021608010003","021608010003","021608010003"],
-  "071602160003",
-  ["07160216","07160216","","07160216"],["07160216","07160216","","07160216"],
-  "07160201","07160202",
-  "020107010003","021607160003",
-  ["078205400801","078205040801","078205400801","078205100801"],
-  ["02140714",""],
-  [["078102020801","","078202020801",""],["078102040801","","078202040801",""]],
-  [["","","",""],["071404100801","","071405100801",""]],
-  ["078205400801","","078205400801",""],
+  "0B0E070E",
+  "07010B010103","070E0B0E0103",
+  ["0B0E0704",""],
+  "070E0B0E0103",
+  ["0B0E0704",""],
+  ["0B0E0704",""],
+  "0B0E0701","0B0E0702",
+  ["1104","","0B060706",""],"",
+  ["","","","","070E0D010103","070E0D010103","070E0D010103","070E0D010103"],
+  "0B0E070E0103",
+  ["0B0E070E","","0B0E070E","0B0E070E"],["0B0E070E","","0B0E070E","0B0E070E"],
+  "0B0E0701","0B0E0702",
+  "07010B010103","070E0B0E0103",
+  ["0A0406400D01","0A0406400D01","0A0406040D01","0A0406060D01"],
+  ["070C0B0C",""],
+  [["0A0A07020D01","0A0407020D01","",""],["0A0A07040D01","0A0407040D01","",""]],
+  [["","","",""],["0B0C06090D01","0B0C06060D01","",""]],
+  ["0A0406400D01","0A0406400D01","",""],
   [
     [
       "",
-      ["","02100003","02400003"],
+      ["","07080103","07100103"],
       "",
-      ["","0200","0200"],
-      ["","0200","0200"],
-      ["","0200","0200"],
-      ["0210","0210","0210",""],["0210","","",""]
+      ["","0600","0600"],
+      ["","0600","0600"],
+      ["","0600","0600"],
+      ["0708","0708","0708",""],["0708","","",""]
     ],
     [
       "",
       "",
       "","","","",
-      "0216","0216"
+      "070E","070E"
     ]
   ],
-  "0116","0116","0116","0116","0116","0116","0116","0116",
-  ["","","07820540","07820540"],
-  ["07810410","","07820540",""],
-  ["07810410","","07820540",""],
-  ["07810410","","07820540",""],
-  ["07810410","","07820540",""],
-  ["07810410","","07820540",""],
-  ["","","05100782","07810540"],
-  [["","","",""],["07140410","","07140540",""]],
-  ["07810410","","07820540",""],
-  ["07810410","","07820540",""],
-  ["07810410","","07820540",""],
-  ["07810410","","07820540",""],
-  ["07810410","","07820540",""],
-  ["07810410","","07820540",""],
-  ["07810410","","07820540",""],
-  ["07810410","","07820540",""],
-  ["07810410","","07820540",""],
-  ["07810410","","07820540",""],
-  ["07810410","","07820540",""],
-  ["07810410","","07820540",""],
-  ["07810410","","07820540",""],
-  ["07810410","","07820540",""],
-  ["","07820510","07820540","07820540"],
-  [["04100781","","05400782",""],["","","",""]],
-  ["07810410","","07820540",""],
-  ["07810410","","07820540",""],
-  ["07810410","","07820540",""],
-  ["07810410","","07820540",""],
-  ["07810410","","07820540",""],
-  ["07810410","","07820540",""],
-  ["07810410","","07820540",""],
-  ["07810410","","07820540",""],
-  [["","","","07820540"],["","","",""]],
-  ["07810410","","07820540",""],
-  ["07810410","","07820540",""],
-  ["07810410","","07820540",""],
-  ["07810410","","07820540",""],
-  ["07810410","","07820540",""],
-  ["07810410","","07820540",""],
-  [["","","",""],["07810410","","07820540",""]],
-  ["07810410","","07820540",""],
-  ["07810410","","07820540",""],
-  ["07810410","","07820540",""],
-  ["07810410","","07820540",""],
-  ["07810410","","07820540",""],
-  ["07810410","","07820540",""],
-  ["07810410","","07820540",""],
+  "030E","030E","030E","030E","030E","030E","030E","030E",
+  ["","0A040640","","0A040640"],
+  ["0A0A0609","0A040640","",""],
+  ["0A0A0609","0A040640","",""],
+  ["0A0A0609","0A040640","",""],
+  ["0A0A0609","0A040640","",""],
+  ["0A0A0609","0A040640","",""],
+  ["","06060A04","","0A0A0640"],
+  [["","","",""],["0B0C0609","0B0C0640","",""]],
+  ["0A0A0609","0A040640","",""],
+  ["0A0A0609","0A040640","",""],
+  ["0A0A0609","0A040640","",""],
+  ["0A0A0609","0A040640","",""],
+  ["0A0A0609","0A040640","",""],
+  ["0A0A0609","0A040640","",""],
+  ["0A0A0609","0A040640","",""],
+  ["0A0A0609","0A040640","",""],
+  ["0A0A0609","0A040640","",""],
+  ["0A0A0609","0A040640","",""],
+  ["0A0A0609","0A040640","",""],
+  ["0A0A0609","0A040640","",""],
+  ["0A0A0609","0A040640","",""],
+  ["0A0A0609","0A040640","",""],
+  ["","0A040640","0A040606","0A040640"],
+  [["06090A0A","06400A04","",""],["","","",""]],
+  ["0A0A0609","0A040640","",""],
+  ["0A0A0609","0A040640","",""],
+  ["0A0A0609","0A040640","",""],
+  ["0A0A0609","0A040640","",""],
+  ["0A0A0609","0A040640","",""],
+  ["0A0A0609","0A040640","",""],
+  ["0A0A0609","0A040640","",""],
+  ["0A0A0609","0A040640","",""],
+  [["","","","0A040640"],["","","",""]],
+  ["0A0A0609","0A040640","",""],
+  ["0A0A0609","0A040640","",""],
+  ["0A0A0609","0A040640","",""],
+  ["0A0A0609","0A040640","",""],
+  ["0A0A0609","0A040640","",""],
+  ["0A0A0609","0A040640","",""],
+  [["","","",""],["0A0A0609","0A040640","",""]],
+  ["0A0A0609","0A040640","",""],
+  ["0A0A0609","0A040640","",""],
+  ["0A0A0609","0A040640","",""],
+  ["0A0A0609","0A040640","",""],
+  ["0A0A0609","0A040640","",""],
+  ["0A0A0609","0A040640","",""],
+  ["0A0A0609","0A040640","",""],
   "",
   //------------------------------------------------------------------------------------------------------------------------
   //Three Byte operations 0F38
   //------------------------------------------------------------------------------------------------------------------------
-  ["07810410","","07820540",""],
-  ["07810410","","07820540",""],
-  ["07810410","","07820540",""],
-  ["07810410","","07820540",""],
-  ["07810410","","07820540",""],
-  ["07810410","","07820540",""],
-  ["07810410","","07820540",""],
-  ["07810410","","07820540",""],
-  ["07810410","","07820540",""],
-  ["07810410","","07820540",""],
-  ["07810410","","07820540",""],
-  ["07810410","","07820540",""],
+  ["0A0A0609","0A040640","",""],
+  ["0A0A0609","0A040640","",""],
+  ["0A0A0609","0A040640","",""],
+  ["0A0A0609","0A040640","",""],
+  ["0A0A0609","0A040640","",""],
+  ["0A0A0609","0A040640","",""],
+  ["0A0A0609","0A040640","",""],
+  ["0A0A0609","0A040640","",""],
+  ["0A0A0609","0A040640","",""],
+  ["0A0A0609","0A040640","",""],
+  ["0A0A0609","0A040640","",""],
+  ["0A0A0609","0A040640","",""],
   "","","","",
-  ["","","078205401600",""],
+  ["","0A0406401600","",""],
   "","","",
-  ["","","078205401600",""],
-  ["","","078205401600",""],
+  ["","0A0406401600","",""],
+  ["","0A0406401600","",""],
   "",
-  ["","","07820540",""],
+  ["","0A040640","",""],
   "","","","",
-  ["07810410","","07820540",""],
-  ["07810410","","07820540",""],
-  ["07810410","","07820540",""],
+  ["0A0A0609","0A040640","",""],
+  ["0A0A0609","0A040640","",""],
+  ["0A0A0609","0A040640","",""],
   "",
-  ["","","07820510",""],
-  ["","","07820504",""],
-  ["","","07820502",""],
-  ["","","07820510",""],
-  ["","","07820504",""],
-  ["","","07820510",""],
+  ["","0A040606","",""],
+  ["","0A040604","",""],
+  ["","0A040602","",""],
+  ["","0A040606","",""],
+  ["","0A040604","",""],
+  ["","0A040606","",""],
   "","",
-  ["","","07820540",""],
-  ["","","07820540",""],
-  [["","","07820540",""],["","","",""]],
-  ["","","07820540",""],
+  ["","0A040640","",""],
+  ["","0A040640","",""],
+  [["","0A040640","",""],["","","",""]],
+  ["","0A040640","",""],
   "","","","",
-  ["","","07820510",""],
-  ["","","07820504",""],
-  ["","","07820502",""],
-  ["","","07820510",""],
-  ["","","07820504",""],
-  ["","","07820510",""],
+  ["","0A040606","",""],
+  ["","0A040604","",""],
+  ["","0A040602","",""],
+  ["","0A040606","",""],
+  ["","0A040604","",""],
+  ["","0A040606","",""],
   "",
-  ["","","07820540",""],
-  ["","","07820540",""],
-  ["","","07820540",""],
-  ["","","07820540",""],
-  ["","","07820540",""],
-  ["","","07820540",""],
-  ["","","07820540",""],
-  ["","","07820540",""],
-  ["","","07820540",""],
-  ["","","07820540",""],
-  ["","","07820540",""],
+  ["","0A040640","",""],
+  ["","0A040640","",""],
+  ["","0A040640","",""],
+  ["","0A040640","",""],
+  ["","0A040640","",""],
+  ["","0A040640","",""],
+  ["","0A040640","",""],
+  ["","0A040640","",""],
+  ["","0A040640","",""],
+  ["","0A040640","",""],
+  ["","0A040640","",""],
   "","","","","","","","","","","","","","","","",
   "","","","","","","","","","","","","","","","",
   "","","","","","","","","","","","","","","","",
   "","","","","","","","","","","","","","",
-  [["","","07140240",""],["","","",""]],
-  [["","","07140240",""],["","","",""]],
-  [["","","07140240",""],["","","",""]],
+  [["","0B0C0710","",""],["","","",""]],
+  [["","0B0C0710","",""],["","","",""]],
+  [["","0B0C0710","",""],["","","",""]],
   "","","","","","","","","","","","","","","","",
   "","","","","","","","","","","","","","","","",
   "","","","","","","","","","","","","","","","",
   "","","","","","","","","","","","","","","","",
   "","","","","","","","","","","","","","","","",
   "","","","","","","","",
-  ["","","07820540",""],
-  ["","","07820540",""],
-  ["","","07820540",""],
-  ["","","07820540",""],
-  ["","","07820540",""],
+  ["","0A040640","",""],
+  ["","0A040640","",""],
+  ["","0A040640","",""],
+  ["","0A040640","",""],
+  ["","0A040640","",""],
   "","","","","","","","","","","","","","","","",
-  ["07160216","","07160216","07160201"],["02160716","","02160716","07060216"],
+  ["0B0E070E","0B0E070E","","0B0E0701"],["070E0B0E","070E0B0E","","0B06070E"],
   "","","","",
-  ["","07140214","07140214",""],
+  ["","0B0C070C","0B0C070C",""],
   "","","","","","","","","",
   //------------------------------------------------------------------------------------------------------------------------
   //Three Byte operations 0F3A
   //------------------------------------------------------------------------------------------------------------------------
   "","","","","","","","",
-  ["","","078205400801",""],
-  ["","","078205400801",""],
-  ["","","078205400801",""],
-  ["","","078205400801",""],
-  ["","","078205400801",""],
-  ["","","078205400801",""],
-  ["","","078205400801",""],
-  ["078104100801","","078205400801",""],
+  ["","0A0406400D01","",""],
+  ["","0A0406400D01","",""],
+  ["","0A0406400D01","",""],
+  ["","0A0406400D01","",""],
+  ["","0A0406400D01","",""],
+  ["","0A0406400D01","",""],
+  ["","0A0406400D01","",""],
+  ["0A0A06090D01","0A0406400D01","",""],
   "","","","",
-  [["","","020107820801",""],["","","021407820801",""]],
-  [["","","020207820801",""],["","","021407820801",""]],
+  [["","07010A040D01","",""],["","070C0A040D01","",""]],
+  [["","07020A040D01","",""],["","070C0A040D01","",""]],
   [
     [
-      ["","","020407820801",""],
+      ["","07040A040D01","",""],
       "",
-      ["","","021007820801",""]
+      ["","07080A040D01","",""]
     ],
     [
-      ["","","020407820801",""],
+      ["","07040A040D01","",""],
       "",
-      ["","","021007820801",""]
+      ["","07080A040D01","",""]
     ]
   ],
-  ["","","021407820801",""],
+  ["","070C0A040D01","",""],
   "","","","","","","","",
-  [["","","078202010801",""],["","","078202040801",""]],
-  ["","","078205040801",""],
+  [["","0A0407010D01","",""],["","0A0407040D01","",""]],
+  ["","0A0406040D01","",""],
   [
-    ["","","078202040801",""],
+    ["","0A0407040D01","",""],
     "",
-    ["","","078202100801",""]
+    ["","0A0407080D01","",""]
   ],
   "","","","","","","","","","","","","",
   "","","","","","","","","","","","","","","","",
-  ["","","078205400801",""],
-  ["","","078205400801",""],
-  ["","","078205400801",""],
+  ["","0A0406400D01","",""],
+  ["","0A0406400D01","",""],
+  ["","0A0406400D01","",""],
   "",
-  ["","","078205400801",""],
+  ["","0A0406400D01","",""],
   "","","","","","","","","","","",
   "","","","","","","","","","","","","","","","",
-  ["","","078205400801",""],
-  ["","","078205400801",""],
-  ["","","078205400801",""],
-  ["","","078205400801",""],
+  ["","0A0406400D01","",""],
+  ["","0A0406400D01","",""],
+  ["","0A0406400D01","",""],
+  ["","0A0406400D01","",""],
   "","","","","","","","","","","",
   "","","","","","","","","","","","","","","","",
   "","","","","","","","","","","","","","","","",
@@ -1088,1529 +1164,1673 @@ Operands = [
   "","","","","","","","","","","","","","","","",
   "","","","","","","","","","","","","","","","",
   "","","","","","","","","","","","","","","","",
-  ["","","078205400801",""],
+  ["","0A0406400D01","",""],
   "","","","","","","","","","","","","","","","",
-  "","","","","","","","","","","","","","","",""
+  "","","","","","","","","","","","","","","",""];
+
+/*-------------------------------------------------------------------------------------------------------------------------
+This object stores a single decoded Operand, and gives it an number in "Operand Number" (OperandNum) for the order they are
+read in the operand string. It also stores all of the Settings for the operands.
+---------------------------------------------------------------------------------------------------------------------------
+The order that the operands are in the operand string is different than the order that they read in series by the CPU.
+X86 uses a decoder circuit with each operand encoding in series. The "Reg opcode" decodes first if used, then
+"ModR/M, SIB, Disp" if ModR/M is used, then Immediate is last. Each encoding that is switched open in series along the
+decoder is controlled by the X86 control unit based on the instruction code. The control unit can pick the order to use
+the operands, but the order the operands are read in will never change. Each Operand is sorted into an decoder array in
+the order they are decoded by the CPU in series.
+---------------------------------------------------------------------------------------------------------------------------
+The following X86 patent link might help http://www.google.com/patents/US7640417
+---------------------------------------------------------------------------------------------------------------------------
+Used by function ^DecodeOperandString()^ Which sets the operand active and gives them there settings.
+The operands that are set are decoded by the function ^DecodeOperands()^ and after the operands decode they are deactivated.
+The order the Operands are in the operand string is the order they will be displayed because OpNum is set the order they are read in.
+-------------------------------------------------------------------------------------------------------------------------*/
+
+var Operand = function(){
+
+  return(
+    {
+
+      Type:0, //The operand type some operands have different formats like DecodeImmediate() which has a type input.
+
+      BySizeAttrubute:false, //Effects how size is used depends on which operand type for which operand across the decoder array.
+
+      /*-------------------------------------------------------------------------------------------------------------------------
+      How Size is used depends on the operand it is along the decoder array for which function it uses to
+      decode Like DecodeRegValue(), or Decode_ModRM_SIB_Address(), and lastly DecodeImmediate() as they all take the BySize, and
+      Size setting. Each encoding type is extended to 32, then to 64 this allows some instructions to extend while some do not.
+      -------------------------------------------------------------------------------------------------------------------------*/
+
+      Size:0x00,
+
+      OperandNum:0, //The operand number basically the order each operand is read in the operand string.
+
+      Active:false, //This is set by the set function not all operand are used across the decoder array.
+
+      //set the operands attributes then set it active in the decoder array.
+
+      set:function(T, BySize, Settings, OperandNumber)
+      {
+        this.Type = T;
+        this.BySizeAttrubute = BySize;
+        this.Size = Settings;
+        this.OpNum = OperandNumber; //Give the operand the number it was read in the operand string.
+        this.Active = true; //set the operand active so it's settings are decoded by the ^DecodeOperands()^ function.
+      },
+
+      //Deactivates the operand after they are decoded by the ^DecodeOperands()^ function.
+
+      Deactivate:function(){ this.Active = false; }
+    }
+  );
+
+};
+
+/*-------------------------------------------------------------------------------------------------------------------------
+The Decoder array is the order each operand is decoded in if used. They are set during the decoding of the operand string
+using the function ^DecodeOperandString()^ which also gives each operand an number for the order they are read in.
+Then they are decoded by the Function ^DecodeOperands()^ which decodes each set operand across the decoder array in order.
+The number the operands are set during the decoding of the operand string for the order they are read is the order they
+will be positioned after decoding. As the operands are decoded they are also Deactivated so the next instruction can be
+decoded using different operands.
+---------------------------------------------------------------------------------------------------------------------------
+Uses by functions ^DecodeOperandString()^, and ^DecodeOperands()^.
+-------------------------------------------------------------------------------------------------------------------------*/
+
+var X86Decoder = [
+  /*-------------------------------------------------------------------------------------------------------------------------
+  First operand that is always decoded is "Reg Opcode" if used.
+  Uses the function ^DecodeRegValue()^ the input RValue is the three first bits of the opcode.
+  -------------------------------------------------------------------------------------------------------------------------*/
+  new Operand(), //Reg Opcode if used.
+  /*-------------------------------------------------------------------------------------------------------------------------
+  The Second operand that is decoded in series is the ModR/M address if used.
+  Reads a byte using function ^Decode_ModRM_SIB_Value()^ gives it to the function ^Decode_ModRM_SIB_Address()^ which only
+  reads the Mode, and Base register for the address, and then decodes the SIB byte if base register is "100" binary in value.
+  does not use the Register value in the ModR/M because the register can also be used as a group opcode used by the
+  function ^DecodeOpcode()^, or uses a different register with a different address pointer.
+  -------------------------------------------------------------------------------------------------------------------------*/
+  new Operand(), //ModR/M address if used.
+  /*-------------------------------------------------------------------------------------------------------------------------
+  The third operand that is decoded if used is for the ModR/M reg bits.
+  Uses the already decoded byte from ^Decode_ModRM_SIB_Value()^ gives the three bit reg value to the function ^DecodeRegValue()^.
+  ModR/M address, and reg are usually used together, but can also change direction in the encoding string.
+  -------------------------------------------------------------------------------------------------------------------------*/
+  new Operand(), //ModR/M reg bits if used.
+  /*-------------------------------------------------------------------------------------------------------------------------
+  The fourth operand that is decoded in sequence is the first Immediate input if used.
+  The function ^DecodeImmediate()^ starts reading bytes as a number for input to instruction.
+  -------------------------------------------------------------------------------------------------------------------------*/
+  new Operand(), //First Immediate if used.
+  /*-------------------------------------------------------------------------------------------------------------------------
+  The fifth operand that is decoded in sequence is the second Immediate input if used.
+  The function ^DecodeImmediate()^ starts reading bytes as a number for input to instruction.
+  -------------------------------------------------------------------------------------------------------------------------*/
+  new Operand(), //Second Immediate if used (Note that the instruction "Enter" uses two immediate inputs).
+  /*-------------------------------------------------------------------------------------------------------------------------
+  Vector extension instruction codes allow the selection of the vector register value that is stored into variable
+  VectorRegister that applies to the selected SSE instruction that is read after that uses it.
+  The adjusted vector value is given to the function ^DecodeRegValue()^.
+  -------------------------------------------------------------------------------------------------------------------------*/
+  new Operand(), //Vector register if used. And if vector exstestion is applied to the SSE instruction.
+  /*-------------------------------------------------------------------------------------------------------------------------
+  Immediate Register encoding if used.
+  During the decoding of the immediate operands the ^DecodeImmediate()^ function stores the read IMM into an variable called
+  IMMValue. The upper four bits of IMMValue is given to the input RValue to the function ^DecodeRegValue()^.
+  -------------------------------------------------------------------------------------------------------------------------*/
+  new Operand(), //Immediate Register encoding if used.
+  /*-------------------------------------------------------------------------------------------------------------------------
+  It does not matter which order the explicit operands decode as they do not require reading another byte.
+  Explicit operands are selected internally in the cpu for instruction codes that only use one register, or pointer, or number input.
+  -------------------------------------------------------------------------------------------------------------------------*/
+  new Operand(), //Explicit Operand one.
+  new Operand(), //Explicit Operand two.
+  new Operand(), //Explicit Operand three.
+  new Operand()  //Explicit Operand four.
 ];
 
-//-------------------------------------------------------------------------------------------------------------------------
-//The Hex String stores the Bytes of decoded instruction it is shown to the left side of the disassembled instruction
-//-------------------------------------------------------------------------------------------------------------------------
+/*-------------------------------------------------------------------------------------------------------------------------
+SizeAttrSelect controls the General arithmetic extended sizes "8/16/32/64", and SIMD Vector register extended sizes
+"128/256/512/1024". Each encoding type is extended to 32, then to 64 this allows some instructions to extend while some do not.
+---------------------------------------------------------------------------------------------------------------------------
+General arithmetic sizes "8/16/32/64" change by operand override which makes all operands go 16 bit.
+The width bit which is in the REX prefix makes operands go all 64 bits the changes depend on the instructions adjustable size.
+The value system goes as follows: 0=8, or 16, then 1=Default32, then 2=Max64. Smallest to largest in order.
+Changeable from prefixes. Code 66 hex is operand override, 48 hex is the REX.W setting. By default operands are 32 bit
+in size in both 32 bit mode, and 64 bit modes so by default the Size attribute setting is 1 in value so it lines up with 32.
+In the case of fewer size settings the size system aligns in order to the correct prefix settings.
+---------------------------------------------------------------------------------------------------------------------------
+If in 16 bit mode the 16 bit operand size trades places with 32, so when operand override is used goes from 16 to 32.
+Also in 32 bit mode any size that is 64 changes to 32, but except for operands that do not use the BySize system.
+---------------------------------------------------------------------------------------------------------------------------
+During Vector length size settings "128/256/512" the SizeAttrSelect uses the vector length bits as a 0 to 3 value from
+smallest to largest Note 1024 is Reserved the same system used for General arithmetic sizes "8/16/32/64" that go in order.
+With one difference if any size attribute lower in size like 64, or 32 is active these are used as the Broadcast round size
+for memory vector in the EVEX prefix.
+---------------------------------------------------------------------------------------------------------------------------
+Used by the function ^GetOperandSize()^ which uses a fast base 2 logarithm system,
+and the function ^DecodeOpcode()^ which uses the current size setting for operation names that change by size.
+-------------------------------------------------------------------------------------------------------------------------*/
 
-var InstructionHex = "";
+var SizeAttrSelect = 1;
 
-//-------------------------------------------------------------------------------------------------------------------------
-//The Instruction Position String stores the start position of a decoded binary instruction in memory
-//-------------------------------------------------------------------------------------------------------------------------
+/*-------------------------------------------------------------------------------------------------------------------------
+SSE is set true to allow SSE instructions to be used with vector Extensions such as VEX2, VEX3, and EVEX.
+This blocks all other valid Arithmetic opcodes from being combined with vector Extensions that are not SIMD instructions.
+This also blocks the ST, and MM X87 FPU registers allowing only the new XMM Vector Registers in SIMD to be used with
+Vector Extensions.
+---------------------------------------------------------------------------------------------------------------------------
+SSE is Set true during the Decoding of operands if Any SSE vector operands are used for extended SIMD Sizes "128/256/512".
+And if the Instruction uses SIMD vectors, and Vector extension is active from the function ^DecodePrefixAdjustments()^
+then the instruction is an valid Vector extension.
+-------------------------------------------------------------------------------------------------------------------------*/
 
-var InstructionPos = "";
+var SSE = false;
 
-//-------------------------------------------------------------------------------------------------------------------------
-//Opcode Base value changes when code 0F is used which makes the next opcode start at 255+ in the Mnemonic array,and operamd type.
-//-------------------------------------------------------------------------------------------------------------------------
+/*-------------------------------------------------------------------------------------------------------------------------
+The Extension is set 2 during opcode 62 hex in which the ^DecodePrefixAdjustments()^ decodes the settings.
+The Extension is set 1 during opcodes C4, and C5 hex in which the ^DecodePrefixAdjustments()^ decodes the settings.
+By default Extension is 0 for decoding of instructions normally.
+---------------------------------------------------------------------------------------------------------------------------
+Used by function ^DecodeOpcode()^ adds the letter "V" to the instruction name to show it uses Vector adjustments.
+Used By function ^DecodeOperandString()^ which allows the Vector operand to be used if existent in the operand string.
+when the Function ^DecodeOperands()^ completes if the instruction uses no Vector unit operands the instruction is invalid.
+SSE is set true if vector operands are used from the vector unit.
+-------------------------------------------------------------------------------------------------------------------------*/
 
-var OpBase = 0;
+var Extension = 0;
 
-//-------------------------------------------------------------------------------------------------------------------------
-//The simulated 64 bit address binary location uses two 32 bit integers bellow
-//-------------------------------------------------------------------------------------------------------------------------
+/*-------------------------------------------------------------------------------------------------------------------------
+Pointer size plus 16 bit's used by FAR JUMP and other instructions.
+For example FAR JUMP is size attributes 16/32/64 normally 32 is the default size, but it is 32+16=48 FWORD PTR.
+In 16 bit CPU mode the FAR jump defaults to 16 bits, but because it is a far jump it is 16+16=32 which is DWORD PTR.
+Set by the function ^DecodeOperandString()^ for if the ModR/M operand uses a far pointer address.
+---------------------------------------------------------------------------------------------------------------------------
+Used by the function ^Decode_ModRM_SIB_Address()^.
+-------------------------------------------------------------------------------------------------------------------------*/
 
-var Pos64=0x00000000,Pos32=0x00000000;
+var FarPointer = 0;
 
-//-------------------------------------------------------------------------------------------------------------------------
-//The actual position in the Binary code array is bellow Javascript array uses UInt32 for the index.
-//-------------------------------------------------------------------------------------------------------------------------
+/*-------------------------------------------------------------------------------------------------------------------------
+AddressOverride is hex opcode 67 then when used with any operation that uses the ModR/M in address mode the ram address
+goes down one in bit mode. Switches 64 address mode to 32 bit address mode, and in 32 bit mode the address switches to
+16 bit address mode which uses a completely different ModR/M format. When in 16 bit mode the address switches to 32 bit.
+Set true when Opcode 67 is read by ^DecodePrefixAdjustments()^ which effects the next opcode that is not a prefix opcode
+then is set false after instruction decodes.
+---------------------------------------------------------------------------------------------------------------------------
+Used by the function ^Decode_ModRM_SIB_Address()^.
+-------------------------------------------------------------------------------------------------------------------------*/
 
-var CodePos32=0x00000000;
+var AddressOverride = false;
 
-//-------------------------------------------------------------------------------------------------------------------------
-//Decoding display options.
-//-------------------------------------------------------------------------------------------------------------------------
+/*-------------------------------------------------------------------------------------------------------------------------
+Extended Register value changes by the "R bit" in the REX prefix, or by the "Double R bit" settings in EVEX Extension
+which makes the Register operand reach to a max value of 32 registers along the register array.
+Normally the Register selection in ModR/M, and Reg Opcode is limited to three bits in binary 000 = 0 to 111 = 7.
+RegExtend stores the two binary bits that are added onto the three bit register selection.
+---------------------------------------------------------------------------------------------------------------------------
+When RegExtend is 00,000 the added lower three bits is 00,000 = 0 to 00,111 = 7.
+When RegExtend is 01,000 the added lower three bits is 01,000 = 8 to 01,111 = 15.
+When RegExtend is 10,000 the added lower three bits is 10,000 = 16 to 10,111 = 23.
+When RegExtend is 11,000 the added lower three bits is 11,000 = 24 to 10,111 = 31.
+---------------------------------------------------------------------------------------------------------------------------
+The Register Extend bits make the binary number from a 3 bit number to a 5 bit number by combining the EVEX.R'R bits.
+The REX opcode, and EVEX opcode 62 hex are decoded with function ^DecodePrefixAdjustments()^ which contain R bit settings.
+---------------------------------------------------------------------------------------------------------------------------
+Used by function ^DecodeRegValue()^.
+-------------------------------------------------------------------------------------------------------------------------*/
 
-var ShowInstructionHex = true; //setting to show the hex code of the instruction beside the decoded instruction output.
-var ShowInstructionPos = true; //setting to show the instruction address position.
+var RegExtend = 0;
 
-//-------------------------------------------------------------------------------------------------------------------------
-//The Rex prefix setting bits.
-//-------------------------------------------------------------------------------------------------------------------------
+/*-------------------------------------------------------------------------------------------------------------------------
+The base register is used in ModR/M address mode, and Register mode and can be extended to 8 using the "B bit" setting
+from the REX prefix, or VEX Extension, and EVEX Extension, however in EVEX the tow bits "X, and B" are used together to
+make the base register reach 32 in register value if the ModR/M is in Register mode.
+---------------------------------------------------------------------------------------------------------------------------
+The highest the Base Register can be extended is from a 3 bit number to a 5 bit number.
+---------------------------------------------------------------------------------------------------------------------------
+Used by the function ^Decode_ModRM_SIB_Address()^.
+-------------------------------------------------------------------------------------------------------------------------*/
 
-var Rex = [
-  0, //index 0 of the Rex array is the Rex.B Bit
-  0, //index 1 of the Rex array is the Rex.X Bit
-  0, //index 2 of the Rex array is the Rex.R Bit
-  0, //index 3 of the Rex array is the Rex.W Bit
-  0  //index 4 of the Rex array is used to identifies the REX prefix effects the current instruction
-     //index 4 is set 1 in value when the REX Prefix is used Then the REX prefix setting values apply to the attributes of the operation operands
-     //after a operation decodes index 4 is set back to 0 stooping the REX prefix from effecting the next instruction unless used.
-  ];
+var BaseExtend = 0;
 
-//-------------------------------------------------------------------------------------------------------------------------
-//The Override Operands size prefix. If used is set true however after a operation decodes is set false,unless used again same thing as the REX prefix just effects different attributes of the operands.
-//Note is also used as a Precision size override prefix for a SSE type operation code.
-//-------------------------------------------------------------------------------------------------------------------------
+/*-------------------------------------------------------------------------------------------------------------------------
+The index register is used in ModR/M memory address mode if the base register is "100" bin in the ModR/M which sets SIB mode.
+The Index register can be extended to 8 using the "X bit" setting when the Index register is used.
+The X bit setting is used in the REX prefix settings, and also the VEX Extension, and EVEX Extension.
+---------------------------------------------------------------------------------------------------------------------------
+The highest the Index Register can be extended is from a 3 bit number to a 4 bit number.
+---------------------------------------------------------------------------------------------------------------------------
+Used by the function ^Decode_ModRM_SIB_Address()^.
+-------------------------------------------------------------------------------------------------------------------------*/
 
-var OvOperands = false;
+var IndexExtend = 0;
 
-//--------------------------------------------------------------------------------------------------
-//When the RAM override prefix is active the registers used for the ModR/M address change to 32 bit they are normally 64 bit.
-//If used is set true however after a operation decodes is set false.
-//Works The same as the REX Prefix and Override Operands size prefix however effects different operand attributes.
-//--------------------------------------------------------------------------------------------------
+/*-------------------------------------------------------------------------------------------------------------------------
+The VEX Extension, and EVEX Extension have an Vector register selection built in for SSE operation codes that use the
+vector register. This operand will not be read in the "operand string" if VEX, or EVEX prefix was not decoded in the
+function ^DecodePrefixAdjustments()^. During a VEX, or EVEX version of the SSE instruction the vector bits are a 4 bit
+binary value of 0 to 15, and are extended in EVEX to 32 by adding the EVEX.V bit to the vector register value.
+---------------------------------------------------------------------------------------------------------------------------
+Used with the function ^DecodeRegValue()^ to decode Register value.
+-------------------------------------------------------------------------------------------------------------------------*/
 
-var OvRam = false;
+var VectorRegister = 0;
 
-//--------------------------------------------------------------------------------------------------
-//The prefix string holds the REP,and Lock prefix if used. After a operation code decodes it is set back to a empty string.
-//if any mnemonic is used such as F0,F2,or F3 the mnemonic name goes into the Prefix string because F0 is the lock prefix etcetera.
-//The REP prefix repeats the operation till the counting register is 0 such as F3 which is the REP mnemonic.
-//Only one prefix like this can be used over top an operation code as it applies to the hole operation and must be shown before the disassembled operation code.
-//Remember The prefix string holds the REP,and Lock prefix if used. After a operation code decodes it is set back to a empty string.
-//The added prefix is the last Prefix used before the Operation code and the Prefix variable is added before the disassemble instruction string.
-//if no Lock or REP prefix is used the Disassembled instruction is a empty string.
-//--------------------------------------------------------------------------------------------------
+/*-------------------------------------------------------------------------------------------------------------------------
+The EVEX Extension has an mask Register value selection for {K0-K7} mask to destination operand.
+The K mask register is always displayed to the destination operand in any Vector instruction used with EVEX settings.
+---------------------------------------------------------------------------------------------------------------------------
+The {K} is added onto the first operand in OpNum before returning the decoded operands from the function ^DecodeOperands()^.
+-------------------------------------------------------------------------------------------------------------------------*/
 
-var PrefixG1 = "", PrefixG2 = ""; //Note the lock prefix trades places with the XRelease, and XAcquire HLE prefix depending on prefix order.
+var MaskRegister = 0;
 
-//--------------------------------------------------------------------------------------------------
-//The variable Bellow is set true to when the Repeat prefix is read so if the lock setting prefix is read after it is set false this tells us that the Repeat prefixes do not come after the LOCK Setting then G1, and G2 do not need to trade places,
-//however when the variable is true then G1, and G2 have to trade places because of the order the the lock and repeat prefixes are the other way around.
-//The LOCK prefix, and REPNE, or REP prefix must be used together otherwise the REPNE stays the REPNE prefix and does not switch to XAcquire even if the operation allows it as an HLE.
-//--------------------------------------------------------------------------------------------------
+/*-------------------------------------------------------------------------------------------------------------------------
+The EVEX Extension has an zero mask bit setting for {z} zeroing off the registers.
+---------------------------------------------------------------------------------------------------------------------------
+The {z} is added onto the first operand in OpNum before returning the decoded operands from the function ^DecodeOperands()^.
+-------------------------------------------------------------------------------------------------------------------------*/
 
-var HLEFlipG1G2 = false;
+var ZeroMerg = false;
 
-//--------------------------------------------------------------------------------------------------
-//Switches the the Prefix hex code f3 for Rep to The XRelease for intel HLE instructions.
-//--------------------------------------------------------------------------------------------------
-
-var XRelease = false;
-
-//--------------------------------------------------------------------------------------------------
-//Switches the the Prefix hex code f2 for Repne to The XAcquire prefix for Intel HLE instructions.
-//--------------------------------------------------------------------------------------------------
-
-var XAcquire = false;
-
-//--------------------------------------------------------------------------------------------------
-//Switches the REPNE prefix to BND used under some opcodes for MPX based Code.
-//--------------------------------------------------------------------------------------------------
-
-var BND = false;
-
-//--------------------------------------------------------------------------------------------------
-//changes X86-64 null prefixes 2Eand 3E to HT,and HNT only used with jump instructions.
-//--------------------------------------------------------------------------------------------------
-
-var HT = false;
-
-//--------------------------------------------------------------------------------------------------
-//Address Segment override prefix string used with the ModR/M pointer.
-//--------------------------------------------------------------------------------------------------
+/*-------------------------------------------------------------------------------------------------------------------------
+SegOverride is the bracket that is added onto the start of the decoded address it is designed this way so that if a segment
+Override Prefix is used it is stored with the segment.
+---------------------------------------------------------------------------------------------------------------------------
+used by function ^Decode_ModRM_SIB_Address()^.
+-------------------------------------------------------------------------------------------------------------------------*/
 
 var SegOverride = "[";
 
-//--------------------------------------------------------------------------------------------------
-//RAM Pointer sizes are controlled by the GetOperandSize function which uses the Size Setting attributes for the address
-//the Selected Pointer index that is used is the value given back from the GetOperandSize function based on the Size setting
-//attributes given to The Decode_ModRM_SIB_Address function,and the possible Multimedia RegMode.
-//--------------------------------------------------------------------------------------------------
+/*-------------------------------------------------------------------------------------------------------------------------
+The EVEX Extension has an broadcast rounding system in which some operations support "B32{1to16}, B64{1to8}".
+---------------------------------------------------------------------------------------------------------------------------
+During Vector length size settings "128/256/512" the SizeAttrSelect uses the vector length bits as a 0 to 3 value from
+smallest to largest Note 1024 is Reserved the same system used for General arithmetic sizes "8/16/32/64" that go in order.
+With one difference if any size attribute lower in size like 64, or 32 is active these are used as the Broadcast round size
+for memory vector in the EVEX prefix.
+---------------------------------------------------------------------------------------------------------------------------
+Used by the function ^GetOperandSize()^, and the function ^Decode_ModRM_SIB_Address()^.
+-------------------------------------------------------------------------------------------------------------------------*/
 
+var BRound = false;
 
-PTRS=[
-  "", //index 0 of this PTRS array uses no pointer size if GetOperandSize returns no size which is 0
-  "BYTE PTR ", //index 1 of this PTRS array uses a pointer that is 8 in size if GetOperandSize returns 1 for 8 in size
-  "WORD PTR ", //index 2 of this PTRS array uses a pointer that is 16 in size if GetOperandSize returns 2 for 16 in size
-  "DWORD PTR ", //index 3 of this PTRS array uses a pointer that is 32 in size if GetOperandSize returns 3 for 32 in size
-  "FWORD PTR ", //index 4 of this PTRS array uses a pointer that is 48 in size if GetOperandSize returns 4 for 48 in size
-  ["QWORD PTR ","MMWORD PTR "], //index 5 of this PTRS array uses a pointer that is 64 in size if GetOperandSize returns 5 for 64 in size,But uses two names the other name in the array is for the Multimedia pointer
-  "TBYTE PTR ", //index 6 of this PTRS array uses a pointer that is 80 in size if GetOperandSize returns 6 for 80 in size
-  ["OWORD PTR ","XMMWORD PTR "] //index 7 of this PTRS array uses a pointer that is 128 in size if GetOperandSize returns 7 for 128 in size,But uses two names the other name in the array is for the Multimedia pointer
-];
+/*-------------------------------------------------------------------------------------------------------------------------
+The Width Bit is used differently in vector extended instructions as a separator in the opcode map for more operations.
+--------------------------------------------------------------------------------------------------------------------------
+Used by function ^DecodeOpcode()^.
+-------------------------------------------------------------------------------------------------------------------------*/
 
-//--------------------------------------------------------------------------------------------------
-//SIB byte scale Note the Scale bits value is the selected index of the array bellow only used under
-//a Memory address that uses the SIB Address mode which uses another byte for the address selection
-//used by the Decode_ModRM_SIB_Address function.
-//--------------------------------------------------------------------------------------------------
+var WidthBit = 0;
 
-var scale=[
-  "", //when scale bits are 0 in value no scale multiple is used
-  "*2", //when scale bits are 1 in value a scale multiple of times two is used
-  "*4", //when scale bits are 2 in value a scale multiple of times four is used
-  "*8"  //when scale bits are 3 in value a scale multiple of times eight is used
-];
+/*-------------------------------------------------------------------------------------------------------------------------
+This may seem confusing, but the 8 bit high low registers are used all in "low order" when any REX prefix is used.
+Set RexActive true when the REX Prefix is used, for the High, and low Register separation.
+---------------------------------------------------------------------------------------------------------------------------
+Used by function ^DecodeRegValue()^
+-------------------------------------------------------------------------------------------------------------------------*/
 
-//-------------------------------------------------------------------------------------------------------------------------
-//The Register array holds arrays in order from 0 though 7 for the GetOperandSize Which are called your General use registers Which is controlled by the size setting Attributes
-//A SizeSetting attribute higher in value that is not a valid Size Setting attribute uses the Register groups STi,MM,XMM,CR,DR They are separate from the General use registers that change by Size Attributes and operand size setting prefixes
-//The function DecodeRegValue Handles decoding a Register values.
-//-------------------------------------------------------------------------------------------------------------------------
+var RexActive = false;
 
-REG=[
+/*-------------------------------------------------------------------------------------------------------------------------
+The SIMD value is set according to SIMD MODE for SSE prefixes (none, 66, F2, F3), then by value of VEX.pp, and EVEX.pp.
+Changes the selected opcode in ^DecodeOpcode()^ function.
+---------------------------------------------------------------------------------------------------------------------------
+Used by the function ^DecodeOpcode()^.
+-------------------------------------------------------------------------------------------------------------------------*/
 
-  //The first array at element 0 of this REG array
-  //Is used only if there is no size setting given back from the GetOperandSize function
-  //which bellow is the segment register selection
+var SIMD = 0;
+
+/*-------------------------------------------------------------------------------------------------------------------------
+Some operands use the value of the Immediate operand as an opcode, or upper 4 bits as Another register, or condition codes.
+The Immediate is decoded normally, but this variable stores the integer value of the first IMM byte for the other byte
+encodings if used.
+---------------------------------------------------------------------------------------------------------------------------
+Used By the function ^DecodeOpcode()^ for condition codes, and by ^DecodeOperands()^ using the upper four bits as a register.
+-------------------------------------------------------------------------------------------------------------------------*/
+
+var IMMValue = 0;
+
+/*-------------------------------------------------------------------------------------------------------------------------
+Prefix G1, and G2 are used with Intel HLE, and other prefix codes such as repeat the instruction which can be applied to
+any instruction unless it is an SIMD instruction.
+-------------------------------------------------------------------------------------------------------------------------*/
+
+var PrefixG1 = "", PrefixG2 = "";
+
+/*-------------------------------------------------------------------------------------------------------------------------
+Intel HLE is used with basic arithmetic instructions like Add, and subtract, and shift operations.
+Intel HLE instructions replace the Repeat, and lock prefixes with XACQUIRE, and XRELEASE.
+---------------------------------------------------------------------------------------------------------------------------
+This is used by function ^DecodeInstruction()^.
+-------------------------------------------------------------------------------------------------------------------------*/
+
+var XRelease = false, XAcquire = false;
+
+/*-------------------------------------------------------------------------------------------------------------------------
+Intel HLE flip "G1 is used as = REP (XACQUIRE), or RENP (XRELEASE)", and "G2 is used as = LOCK" if the lock prefix was
+not read first then G1, and G2 flip. Also XACQUIRE, and XRELEASE replace REP, and REPNE if the LOCK prefix is used with
+REP, or REPNE if the instruction supports Intel HLE.
+---------------------------------------------------------------------------------------------------------------------------
+This is used by function ^DecodeInstruction()^.
+-------------------------------------------------------------------------------------------------------------------------*/
+
+var HLEFlipG1G2 = false;
+
+/*-------------------------------------------------------------------------------------------------------------------------
+Replaces segment overrides CS, and DS with HT, and HNT prefix for Branch taken and not taken used by jump instructions.
+---------------------------------------------------------------------------------------------------------------------------
+This is used by functions ^Decode_ModRM_SIB_Address()^, and ^DecodeInstruction()^.
+-------------------------------------------------------------------------------------------------------------------------*/
+
+var HT = false;
+
+/*-------------------------------------------------------------------------------------------------------------------------
+Instruction that support MPX replace the REPNE prefix with BND if operation is a MPX instruction.
+---------------------------------------------------------------------------------------------------------------------------
+This is used by function ^DecodeInstruction()^.
+-------------------------------------------------------------------------------------------------------------------------*/
+
+var BND = false;
+
+/*-------------------------------------------------------------------------------------------------------------------------
+The Invalid Instruction variable is very important as some bit settings in vector extension create invalid operation codes.
+Also some opcodes are invalid in different cpu bit modes.
+---------------------------------------------------------------------------------------------------------------------------
+Functions ^DecodePrefixAdjustments()^ ,^DecodeRegValue()^, and ^Decode_ModRM_SIB_Address()^ Set the Invalid Opcode for
+if any invalid instruction encodings are used. The function ^DecodeInstruction()^ returns an invalid instruction if Invalid Operation is set.
+-------------------------------------------------------------------------------------------------------------------------*/
+
+var InvalidOp = false;
+
+/*-------------------------------------------------------------------------------------------------------------------------
+The Register array holds arrays in order from 0 though 7 for the GetOperandSize function Which goes by Prefix size settings,
+and SIMD Vector length instructions.
+---------------------------------------------------------------------------------------------------------------------------
+Used by functions ^DecodeRegValue()^, ^Decode_ModRM_SIB_Address()^.
+-------------------------------------------------------------------------------------------------------------------------*/
+
+REG = [
+
+  /*REG array Index 0 Is used only if the value returned from the GetOperandSize is 0 in value which is the 8 bit size names
+  and selection of the general use Arithmetic registers. However this array element has two arrays of 8 bit registers
+  The reason is that the Register names change under 8 bit register selection if any rex prefix is used reason is explained bellow.*/
 
   [
-    
-    //Segment Registers names index 0 to 7
-    
-    "ES","CS","SS","DS","FS","GS","ST(-2)","ST(-1)",
-    
-    //Segment Registers names index 8 to 15 when Extended,But does nothing so the same Registers are used over again in case the condition is met 
-    
-    "ES","CS","SS","DS","FS","GS","ST(-2)","ST(-1)"
-    
-  ],
+    //8 bit registers without any rex prefix active is the normal low byte to high byte order of the first 4 general use registers using 8 bits.
 
-  //The second array which is at element 1 of this REG array
-  //Is used only if the value returned from the GetOperandSize function is 1 in value
-  //which is the 8 bit size names and selection of the general use registers.
-  //However this array element has two arrays of 8 bit registers The reason is that the
-  //Register names change under 8 bit register selection if any rex prefix is used reason is explained bellow.
-
-  [
-    
-    //8 bit registers without any rex prefix active is the normal low byte to high byte order of the first 4 general use registers using 8 bits
-    
     [
-      
-      //Registers 8 bit names without any rex prefix index 0 to 7
-      
-      "AL","CL","DL","BL","AH","CH","DH","BH",
-      
-      //Registers 8 bit names without any rex prefix index 8 to 15
-      //In order to extend to registers 8 to 15 requires the REX prefix so the registers are shown as empty.
-      
-      "","","","","","","",""
-      
+      //Registers 8 bit names without any rex prefix index 0 to 7.
+
+      "AL", "CL", "DL", "BL", "AH", "CH", "DH", "BH"
     ],
-    
-    //8 bit registers with any rex prefix active uses all 15 registers in low byte selection
-    
+
+    //8 bit registers with any rex prefix active uses all 15 registers in low byte order.
+
     [
-      
       //Registers 8 bit names with any rex prefix index 0 to 7
-      
-      "AL","CL","DL","BL","SPL","BPL","SIL","DIL",
-      
-      //Registers 8 bit names Extended with any rex prefix index 8 to 15
-      
-      "R8B","R9B","R10B","R11B","R12B","R13B","R14B","R15B"
-      
+
+      "AL", "CL", "DL", "BL", "SPL", "BPL", "SIL", "DIL",
+
+      /*Registers 8 bit names Extended using the REX.R extends setting in the Rex prefix, or VEX.R bit, or EVEX.R.
+      What ever RegExtend is set based on prefix settings is added to the select Reg Index*/
+
+      "R8B", "R9B", "R10B", "R11B", "R12B", "R13B", "R14B", "R15B"
     ]
-    
   ],
 
-  //The third array which is element 2 of this REG array
-  //Is used only if the value returned from the GetOperandSize function is 2 in value
-  //which bellow is the general use register names 16 in size
+  /*REG array Index 1 Is used only if the value returned from the GetOperandSize is 1 in value
+  which bellow is the general use Arithmetic register names 16 in size*/
 
   [
-    
-    //Registers 16 bit names index 0 to 7
-    
-    "AX","CX","DX","BX","SP","BP","SI","DI",
-    
-    //Registers 16 bit names extended index 8 to 15
-    
-    "R8W","R9W","R10W","R11W","R12W","R13W","R14W","R15W"
-    
-  ],
-  
-  //The fourth array which is element 3 of this REG array
-  //Is used only if the value from the GetOperandSize function is 3 in value
-  //which bellow is the general use register names 32 in size
-  
-  [
-    
-    //Registers 32 bit names index 0 to 7
-    
-    "EAX","ECX","EDX","EBX","ESP","EBP","ESI","EDI",
-    
-    //Registers 32 bit names extended index 8 to 15
-    
-    "R8D","R9D","R10D","R11D","R12D","R13D","R14D","R15D"
-    
-  ],
-  
-  //The fith array which is element 4 of this REG array is general use registers 48 in size,But there is no general use Registers 48 in size
-  //so this array column remains nothing
-  
-  [],
+    //Registers 16 bit names index 0 to 15
 
-  //The sixth array which is element 5 of this REG array
-  //Is used only if the value returned from the GetOperandSize function is 5 in value
-  //which bellow is the general use register names 64 in size
-  
-  [
-    
-    //Registers 64 bit names index 0 to 7
-    
-    "RAX","RCX","RDX","RBX","RSP","RBP","RSI","RDI",
-    
-    //Registers 64 bit extended names index 8 to 15
-    
-    "R8","R9","R10","R11","R12","R13","R14","R15"
-    
+    "AX", "CX", "DX", "BX", "SP", "BP", "SI", "DI", "R8W", "R9W", "R10W", "R11W", "R12W", "R13W", "R14W", "R15W"
   ],
-  
-  //The seventh array which is element 6 of this REG array is general use registers 80 in size,But there is no general use Registers 80 in size
-  //so this array column remains nothing.
-  
-  [],
-  
-  //The eight array which is element 7 of this REG array is general use registers 128 in size,But there is no general use Registers 128 in size
-  //so this array column remains nothing.
-  
-  [],
-  
-  //The other registers such as The ST registers,MM,and XMM are completely separate from the General Use Registers
-  
-  //REG array element 8
-  
+
+  /*REG array Index 2 Is used only if the value from the GetOperandSize function is 2 in value
+  which bellow is the general use Arithmetic register names 32 in size*/
+
   [
-    
+    //Registers 32 bit names index 0 to 15
+
+    "EAX", "ECX", "EDX", "EBX", "ESP", "EBP", "ESI", "EDI", "R8D", "R9D", "R10D", "R11D", "R12D", "R13D", "R14D", "R15D"
+  ],
+
+  /*REG array Index 3 Is used only if the value returned from the GetOperandSize is 3 in value
+  which bellow is the general use Arithmetic register names 64 in size*/
+
+  [
+    //general use Arithmetic registers 64 names index 0 to 15
+
+    "RAX", "RCX", "RDX", "RBX", "RSP", "RBP", "RSI", "RDI", "R8", "R9", "R10", "R11", "R12", "R13", "R14", "R15"
+  ],
+
+  //REG array Index 4 SIMD registers 128 in size.
+
+  [
+    //Register XMM names index 0 to 15
+
+    "XMM0", "XMM1", "XMM2", "XMM3", "XMM4", "XMM5", "XMM6", "XMM7", "XMM8", "XMM9", "XMM10", "XMM11", "XMM12", "XMM13", "XMM14", "XMM15",
+
+    //Register XMM names index 16 to 31 (Note different bit EVEX prefixes allow higher Extension values in the Register Extend variables)
+
+    "XMM16", "XMM17", "XMM18", "XMM19", "XMM20", "XMM21", "XMM22", "XMM23", "XMM24", "XMM25", "XMM26", "XMM27", "XMM28", "XMM29", "XMM30", "XMM31"
+  ],
+
+  //REG array Index 5 SIMD registers 256 in size.
+
+  [
+    //Register YMM names index 0 to 15
+
+    "YMM0", "YMM1", "YMM2", "YMM3", "YMM4", "YMM5", "YMM6", "YMM7", "YMM8", "YMM9", "YMM10", "YMM11", "YMM12", "YMM13", "YMM14", "YMM15",
+
+    //Register YMM names index 16 to 31 (Note different bit EVEX prefixes allow higher Extension values in the Register Extend variables)
+
+    "YMM16", "YMM17", "YMM18", "YMM19", "YMM20", "YMM21", "YMM22", "YMM23", "YMM24", "YMM25", "YMM26", "YMM27", "YMM28", "YMM29", "YMM30", "YMM31"
+  ],
+
+  //REG array Index 6 SIMD registers 512 in size.
+
+  [
+    //Register ZMM names index 0 to 15
+
+    "ZMM0", "ZMM1", "ZMM2", "ZMM3", "ZMM4", "ZMM5", "ZMM6", "ZMM7", "ZMM8", "ZMM9", "ZMM10", "ZMM11", "ZMM12", "ZMM13", "ZMM14", "ZMM15",
+
+    //Register ZMM names index 16 to 31 (Note different bit EVEX prefixes allow higher Extension values in the Register Extend variables)
+
+    "ZMM16", "ZMM17", "ZMM18", "ZMM19", "ZMM20", "ZMM21", "ZMM22", "ZMM23", "ZMM24", "ZMM25", "ZMM26", "ZMM27", "ZMM28", "ZMM29", "ZMM30", "ZMM31"
+  ],
+
+  //REG array Index 7 SIMD registers 1024 bit (Reserved)
+
+  [
+    //Register unknowable names index 0 to 15
+
+    "?MM0", "?MM1", "?MM2", "?MM3", "?MM4", "?MM5", "?MM6", "?MM7", "?MM8", "?MM9", "?MM10", "?MM11", "?MM12", "?MM13", "?MM14", "?MM15",
+
+    //Register unknowable names index 16 to 31 (Note different bit EVEX prefixes allow higher Extension values in the Register Extend variables)
+
+    "?MM16", "?MM17", "?MM18", "?MM19", "?MM20", "?MM21", "?MM22", "?MM23", "?MM24", "?MM25", "?MM26", "?MM27", "?MM28", "?MM29", "?MM30", "?MM31"
+  ],
+
+  /*The Registers bellow this line do not change size they are completely separate registers used for special purposes that have one single size.
+  These registers are selected by index based on the setting number value instead of size attributes used by GetOperandSize.
+  every function has been set up to go by both size attributes and by one strict size setting which is used as a number for the selected index.
+  When the BySize adjustment is false.*/
+
+  //REG array Index 8
+
+  [
+    //Segment Registers names index 0 to 7
+
+    "ES", "CS", "SS", "DS", "FS", "GS", "ST(-2)", "ST(-1)"
+  ],
+
+  //REG array Index 9
+
+  [
     //ST registers Names index 0 to 7
-    
-    "ST(0)","ST(1)","ST(2)","ST(3)","ST(4)","ST(5)","ST(6)","ST(7)",
-    
-    //ST register Names extended index 8 to 15
-    //These registers do not extend so repeat the same registers over for if the extend condition is met
-    
-    "ST(0)","ST(1)","ST(2)","ST(3)","ST(4)","ST(5)","ST(6)","ST(7)"
-    
+    //note these are used with the X87 FPU, but are aliased to MM in SIMD.
+
+    "ST(0)", "ST(1)", "ST(2)", "ST(3)", "ST(4)", "ST(5)", "ST(6)", "ST(7)"
   ],
 
-  //REG array element 9
-  
+  //REG index 10 Intel MM qword technology MMX vector instructions.
+  //These can not be used with Vector extensions as they are the ST registers, but use the SIMD unit.
+  //The new XMM registers that where added during SSE can be adjusted by vector length as they are separate,
+  //but still use the same SIMD unit.
+
   [
-    
     //Register MM names index 0 to 7
-    
-    "MM0","MM1","MM2","MM3","MM4","MM5","MM6","MM7",
-    
-    //Register MM names extended index 8 though 15
-    //These registers do not extend so repeat the same registers over for if the extend condition is met
-    
-    "MM0","MM1","MM2","MM3","MM4","MM5","MM6","MM7"
-    
-  ],
-  
-  //REG array element 10
-  //Note I plan on putting in sub arrays into YMM,ZMM registers 0 to 31 for AVX in this XMM element section.
-  //However I am deciding between two methods That I am coming up with and visualizing based on how the Vectorization instructions work,but before I do this I still have to add SSE4.1 and 4.2 also SSSE3.
 
-  [
-    
-    //Register XMM names index 0 to 7
-    
-    "XMM0","XMM1","XMM2","XMM3","XMM4","XMM5","XMM6","XMM7",
-    
-    //Register XMM names extended index 8 though 15
-    
-    "XMM8","XMM9","XMM10","XMM11","XMM12","XMM13","XMM14","XMM15"
-    
+    "MM0", "MM1", "MM2", "MM3", "MM4", "MM5", "MM6", "MM7"
   ],
 
-  //REG array element 11
+  //REG Array Index 11
 
   [
-    
-    //control Registers index 0 to 7
-    
-    "CR0","CR1","CR2","CR3","CR4","CR5","CR6","CR7",
-    
-    //control registers extended index 8 though 15
-    
-    "CR8","CR9","CR10","CR11","CR12","CR13","CR14","CR15"
-    
+    //BND0 to BND3,and CR0 to CR3 for two byte opcodes 0x0F1A,and 0x0F1B register index 0 to 7
+
+    "BND0", "BND1", "BND2", "BND3", "CR0", "CR1", "CR2", "CR3"
   ],
 
-  //REG array element 12
+  //REG array Index 12
 
   [
-    
-    //debug registers index 0 to 7
-    
-    "DR0","DR1","DR2","DR3","DR4","DR5","DR6","DR7",
-    
-    //debug registers extended index 8 though 15
-    
-    "DR8","DR9","DR10","DR11","DR12","DR13","DR14","DR15"
-    
+    //control Registers index 0 to 15
+
+    "CR0", "CR1", "CR2", "CR3", "CR4", "CR5", "CR6", "CR7", "CR8", "CR9", "CR10", "CR11", "CR12", "CR13", "CR14", "CR15"
   ],
-  
-  //REG array element 13
+
+  //REG array Index 13
 
   [
-    
+    //debug registers index 0 to 15
+
+    "DR0", "DR1", "DR2", "DR3", "DR4", "DR5", "DR6", "DR7", "DR8", "DR9", "DR10", "DR11", "DR12", "DR13", "DR14", "DR15"
+  ],
+
+  //REG array Index 14
+
+  [
     //TR registers index 0 to 7
-    
-    "TR0","TR1","TR2","TR3","TR4","TR5","TR6","TR7",
-    
-    //TR registers extended index 8 though 15
-    
-    "TR0","TR1","TR2","TR3","TR4","TR5","TR6","TR7"
-    
+
+    "TR0", "TR1", "TR2", "TR3", "TR4", "TR5", "TR6", "TR7"
   ],
 
-  //REG Array element 14
+  //REG Array Index 15 uses the K registers.
 
   [
-    //BND0 to BND3,and CR0 to CR3 for two byte opcodes 0F1A,and 0F1B register index 0 to 7
+    //K registers index 0 to 7
 
-    "BND0","BND1","BND2","BND3","CR0","CR1","CR2","CR3",
-
-    //BND0 to BND3,and CR0 to CR3 for two byte opcodes 0F1A,and 0F1B registers extended index 8 to 15
-
-    "BND0","BND1","BND2","BND3","CR0","CR1","CR2","CR3"
+    "K0", "K1", "K2", "K3", "K4", "K5", "K6", "K7"
   ]
 
 ]; //end of REG array structure
 
-//-------------------------------------------------------------------------------------------------------------------------
-//This function moves the simulated 64 bit address by one and caries to the 64 bit section of the simulated address when the end of the 32 bit int is reached
-//This function also moves the binary code array position by one
-//-------------------------------------------------------------------------------------------------------------------------
+/*-------------------------------------------------------------------------------------------------------------------------
+RAM Pointer sizes are controlled by the GetOperandSize function which uses the Size Setting attributes for
+the select pointer in the PTR array alignment. The REG array above uses the same alignment to the returned
+size attribute except address pointers have far address pointers which are 16 bits plus there (8, or 16)/32/64 size attribute.
+---------------------------------------------------------------------------------------------------------------------------
+Far pointers add 16 bits to the default pointer sizes.
+16 bits become 16+16=32 DWORD, 32 bits becomes 32+16=48 FWORD, and 64+16=80 TBYTE.
+The function GetOperandSize goes 0=8 bit, 1=16 bit, 2=32 bit, 3=64 bit, 4=128, 5=256, 6=512, 7=1024.
+---------------------------------------------------------------------------------------------------------------------------
+The pointers are stored in doubles this is so every second position is each size setting.
+So the Returned size attribute has to be in multiples of 2 each size multiplied by 2 looks like this.
+(0*2=0)=8 bit, (1*2=2)=16 bit, (2*2=4)=32 bit, (3*2=6)=64 bit, (4*2=8)=128, (5*2=10)=256, (6*2=12)=512.
+This is the same as moving by 2 this is why each pointer is in groups of two before the next line.
+When the 16 bit shift is used for far pointers only plus one is added for the 16 bit shifted name of the pointer.
+---------------------------------------------------------------------------------------------------------------------------
+Used by the function ^Decode_ModRM_SIB_Address()^.
+-------------------------------------------------------------------------------------------------------------------------*/
 
-function IncreasePos()
-{
-  Pos32+=1;
+PTR = [
 
-  //if the first 32 bits of the simulated 64 bit address position is grater than a max 32 bit value set Pos32 0 and carry one to the Pos64 integer that is 32 bits
+  //Pointer array index 0 when GetOperandSize returns size 0 then times 2 for 8 bit pointer.
+  //In plus 16 bit shift array index 0 is added by 1 making 0+1=1 no pointer name is used.
+  //The blank pointer is used for instructions like LEA which loads the effective address.
+  "BYTE PTR ", "",
 
-  if(Pos32 > 0xFFFFFFFF)
+  //Pointer array index 2 when GetOperandSize returns size 1 then times 2 for 16 bit pointer alignment.
+  //In plus 16 bit shift index 2 is added by 1 making 2+1=3 The 32 bit pointer name is used (mathematically 16+16=32).
+  "WORD PTR ", "DWORD PTR ",
+
+  //Pointer array index 4 when GetOperandSize returns size 2 then multiply by 2 for index 4 for the 32 bit pointer.
+  //In plus 16 bit shift index 4 is added by 1 making 4+1=5 the 48 bit Far pointer name is used (mathematically 32+16=48).
+  "DWORD PTR ", "FWORD PTR ",
+
+  //Pointer array index 6 when GetOperandSize returns size 3 then multiply by 2 gives index 6 for the 64 bit pointer.
+  //The Non shifted 64 bit pointer has two types the 64 bit vector "MM", and regular "QWORD" the same as the REG array.
+  //In plus 16 bit shift index 6 is added by 1 making 6+1=7 the 80 bit TBYTE pointer name is used (mathematically 64+16=80).
+  "QWORD PTR ", "TBYTE PTR ",
+
+  //Pointer array index 8 when GetOperandSize returns size 4 then multiply by 2 gives index 8 for the 128 bit Vector pointer.
+  //In far pointer shift the MMX vector pointer is used.
+  //MM is desinged to be used when the by size system is false using index 9 for Pointer, and index 10 for Reg.
+  "XMMWORD PTR ",  "MMWORD PTR ",
+
+  //Pointer array index 10 when GetOperandSize returns size 5 then multiply by 2 gives index 10 for the 256 bit SIMD pointer.
+  //In far pointer shift the OWORD pointer is used with the bounds instructions it is also designed to be used when the by size is set false same as MM.
+  "YMMWORD PTR ", "OWORD PTR ",
+
+  //Pointer array index 12 when GetOperandSize returns size 6 then multiply by 2 gives index 12 for the 512 bit pointer.
+  //In plus 16 bit shift index 12 is added by 1 making 12+1=13 there is no 528 bit pointer name (mathematically 5126+16=528).
+  "ZMMWORD PTR ", "ERROR PTR ",
+
+  //Pointer array index 14 when GetOperandSize returns size 7 then multiply by 2 gives index 12 for the 1024 bit pointer.
+  //In plus 16 bit shift index 14 is added by 1 making 12+1=13 there is no 1 bit pointer name (mathematically 5126+16=528).
+  "?MMWORD PTR ", "ERROR PTR "];
+
+/*-------------------------------------------------------------------------------------------------------------------------
+SIB byte scale Note the Scale bits value is the selected index of the array bellow only used under
+a Memory address that uses the SIB Address mode which uses another byte for the address selection.
+---------------------------------------------------------------------------------------------------------------------------
+used by the ^Decode_ModRM_SIB_Address function^.
+-------------------------------------------------------------------------------------------------------------------------*/
+
+var scale = [
+ "", //when scale bits are 0 in value no scale multiple is used
+ "*2", //when scale bits are 1 in value a scale multiple of times two is used
+ "*4", //when scale bits are 2 in value a scale multiple of times four is used
+ "*8"  //when scale bits are 3 in value a scale multiple of times eight is used
+ ];
+
+/*-------------------------------------------------------------------------------------------------------------------------
+This function moves the simulated 64 bit address by one and caries to the 64 bit section of the simulated address when the
+end of the 32 bit int is reached. This function also moves the binary code array position CodePos32 by one basically this
+function is used to progress the disassembler as it is decoding a sequence of bytes.
+-------------------------------------------------------------------------------------------------------------------------*/
+
+function NextByte(){
+
+  //record the starting position.
+  
+  if( InstructionPos == "" ){ InstructionPos = GetPosition(); }
+
+  //Add the current byte as hex to InstructionHex which will be displayed beside the decoded instruction.
+  //After an instruction decodes InstructionHex is only added beside the instruction if ShowInstructionHex is active.
+
+  var t = BinCode[CodePos32].toString(16); //convert the byte to hex.
+  if (t.length == 1) { t = "0" + t; } //pad it to tow hex digits as a byte.
+  InstructionHex += t; //add it to the current bytes used for the decode instruction.
+  t = null; //set the temporary string used for padding it to a hex byte null.]
+
+  //Move the Simulated 64 bit address by one byte for the next byte.
+
+  Pos32 += 1;
+
+  //if the first 32 bits of the simulated 64 bit address position is grater than a max 32 bit value carry to Pos64.
+
+  if (Pos32 > 0xFFFFFFFF)
   {
-    Pos32=0x00000000;
-    Pos64+=1;
+    Pos32 = 0x00000000;
+    Pos64 += 1;
   }
 
-  //if the 64 bit address reaches it's end the default behavior of the 64 bit instruction pointer inside the CPU adding by one at max address position is start back at 0
+  //if the carry 64 bit address reaches it's end the default behavior of the 64 bit instruction pointer register is
+  //to start back at 0.
 
-  if(Pos64 > 0xFFFFFFFF)
+  if (Pos64 > 0xFFFFFFFF)
   {
-    Pos64=0x00000000;
+    Pos64 = 0x00000000;
   }
 
   //add the 32 bit array index position by one for the binary code array
 
-  CodePos32+=1;
+  CodePos32 += 1;
 
   //if the code position reaches the end of the array index
 
-  if(CodePos32 > 0xFFFFFFFF)
+  if (CodePos32 > 0xFFFFFFFF)
   {
-    //load the BinCode array from index 0 till index the last 32 bit index with the next 32 section and start CodePos32 over to read the 32 indexes over with the new 32 section the simulated 64 bit address holds the real position
-    CodePos=0; //for now lets just set it 0 without adding in the binary disk read library
+    CodePos = 0; //for now lets just set it 0 without adding in the binary disk read library
   }
 
 }
 
-//-------------------------------------------------------------------------------------------------------------------------
-//takes a 64 bit hex string and sets it as the 64 address position
-//-------------------------------------------------------------------------------------------------------------------------
+/*-------------------------------------------------------------------------------------------------------------------------
+Takes a 64 bit hex string and sets it as the 64 address position.
+-------------------------------------------------------------------------------------------------------------------------*/
 
-function SetBasePosition(Address64)
-{
-  Pos32 = parseInt(Address64.slice(-8),16);
-  Pos64 = parseInt(Address64.substring(0,Address64.length-8),16);
+function SetBasePosition( Address64 ){
+  Pos32 = parseInt(Address64.slice(-8), 16);
+  Pos64 = parseInt(Address64.substring(0, Address64.length - 8), 16);
+  if ( Pos32 < 0 ) { Pos32 += Math.pow( 2, 32 ); }
+  if ( Pos64 < 0 ) { Pos64 += Math.pow( 2, 32 ); }
 }
 
-//-------------------------------------------------------------------------------------------------------------------------
-//gives back the current 64 bit address position
-//-------------------------------------------------------------------------------------------------------------------------
+/*-------------------------------------------------------------------------------------------------------------------------
+Gives back the current 64 bit address position.
+-------------------------------------------------------------------------------------------------------------------------*/
 
-function GetPosition()
-{
-  for (var S32 = Pos32.toString(16); S32.length < 8; S32 = "0" + S32);
-  for (var S64 = Pos64.toString(16); S64.length < 8; S64 = "0" + S64);
-  return((S64+S32).toUpperCase());
+function GetPosition(){
+  for (var S32 = Pos32.toString(16) ; S32.length < 8; S32 = "0" + S32);
+  for (var S64 = Pos64.toString(16) ; S64.length < 8; S64 = "0" + S64);
+  return ((S64 + S32).toUpperCase());}
+
+/*-------------------------------------------------------------------------------------------------------------------------
+Moves the dissembler 64 bit simulated address, and CodePos32 to correct address.
+-------------------------------------------------------------------------------------------------------------------------*/
+
+function GotoPosition( Address64 ){
+  //Split the selected Address into two 32 bit numbers.
+  var LocPos32 = parseInt(Address64.slice(-8), 16);
+  var LocPos64 = parseInt(Address64.substring(0, Address64.length - 8), 16);
+  //Find the difference between the current simulated 64 address and the selected address location.
+  var Dif32 = Pos32 - LocPos32, Dif64 = Pos64 - LocPos64;
+  //Subtract the difference to the CodePos32 Section.
+  CodePos32 -= Dif32;
+  //Because JavaScript will convert the number to a 32 bit signified integer the negative value has to be subtracted into a full 32 bit value.
+  if ( CodePos32 < 0 ) { CodePos32 += (Math.pow( 2, 32 ) ); }
+  //Set the Simulated Pos32, and Pos64 to the Selected address 64.First step if negative subtracted into a full 32 bit value.
+  if ( LocPos32 < 0 ) { LocPos32 += Math.pow( 2, 32 ); }
+  if ( LocPos64 < 0 ) { LocPos64 += Math.pow( 2, 32 ); }
+  //Set Pos32, and Pos64.
+  Pos32 = LocPos32; Pos64 = LocPos64;
+  //If Dif 64 is not 0 the address is out of rage of the 32 bit section.
+  if ( Dif64 !== 0 ) { return (false); }
+  //Otherwise return true for that the address Position is moved in range correctly.
+  return (true);
 }
 
-//-------------------------------------------------------------------------------------------------------------------------
-//Different operands in the X86 processor have different Size Attributes controlled by the prefix instructions.
-//The size setting are codded in for each operation which use a binary number that uses 7 bits like this 0000000
-//an zero indicates a size setting is false well a one in value indicates it is settable to that size
-//0=128 BIT,0=80 BIT,0=64 BIT,0=48 BIT,0=32 BIT,0=16 BIT,0=8 BIT
-//A size setting of 0101011 means the following bellow
-//0=128 BIT,1=80 BIT,0=64 BIT,1=48 BIT,0=32 BIT,1=16 BIT,1=8 BIT
-//this means that the size setting attributes are 80 BIT,48 BIT,16 BIT,and 8 BIT
-//-------------------------------------------------------------------------------------------------------------------------
+/*-------------------------------------------------------------------------------------------------------------------------
+Finds bit positions to the Size attribute indexes in REG array, and Pointer Array. For the Size Attribute variations.
+-------------------------------------------------------------------------------------------------------------------------*/
 
-function GetOperandSize(SizeSetting)
-{
-  //The variable "n" bellow is a number that is 0 though 7 that is the result from this function which are used by different binary decoding functions that take the 7 Bit Size setting attributes
-  //when the result of "n" is 0 from this function means there is no size setting which is used for Segment registers which is a convenient simplification,or Pointer addresses that have no size name
-  //when the result of "n" is 1 from this function means the operand size is 8 BIT which is used by General use Registers 8 in size,or "BYTE PTR" pointer address 8 in size,or Immediate input 8 in size
-  //when the result of "n" is 2 from this function means the operand size is 16 BIT which is used by General use Registers 16 in size,or "WORD PTR" pointer address 16 in size,or Immediate input 16 in size
-  //when the result of "n" is 3 from this function means the operand size is 32 BIT which is used by General use Registers 32 in size,or "DWORD PTR" pointer address 32 in size,or Immediate input 32 in size
-  //when the result of "n" is 4 from this function means the operand size is 48 BIT which is only used by "FWORD PTR" pointer address 48 in size,or Immediate input 48 in size
-  //when the result of "n" is 5 from this function means the operand size is 64 BIT which is used by General use Registers 64 in size,also "QWORD PTR",or "MMWORD PTR" pointer address 64 in size,or Immediate input 64 in size
-  //when the result of "n" is 6 from this function means the operand size is 80 BIT which is only used by "TBYTE PTR" pointer address 80 in size
-  //when the result of "n" is 7 from this function means the operand size is 128 BIT which is used by "OWORD PTR",or "XMMWORD PTR" pointer address 128 in size.
-  
-  var n=0;
+function GetOperandSize( SizeAttribute ){
 
-  //the variables bellow are B128,B80,B64,B48,B32,B16,and B8 These variables will contain each binary digit for each size setting as a true or false value 0=false,and 1=true
+  //Log 2
 
-  var B128=SizeSetting>>6,B80=(SizeSetting>>5)&1,B64=(SizeSetting>>4)&1,B48=(SizeSetting>>3)&1,B32=(SizeSetting>>2)&1,B16=(SizeSetting>>1)&1,B8=(SizeSetting)&1;
+  var p2 = Math.log(2);
 
-  //Rex 64 Uses the next highest setting that is active past 48 bit normally it is always 64 bit,But in a few rare instructions it will go 80 bit.
+  //Most Significant bit is the log of 2 Floored, thus gives bit position.
+  //The highest size setting attribute biggest to smallest order S1 to S3.
 
-  if(Rex[3]&Rex[4]) //check if the Rex prefix is active and 64 is active
+  var S1 = (Math.floor((Math.log(SizeAttribute) / p2)));
+
+  //convert the Bit Position of the log into it's value and remove it by subtracting it.
+
+  SizeAttribute -= Math.pow(2, S1);
+
+  //----------------------------------------------------------------------------------------------------------------------------------------
+  //If Max size is 128 or bigger Vectors use the smaller 64, and 32 Attribute to Broadcast round.
+  //----------------------------------------------------------------------------------------------------------------------------------------
+
+  if(S1 >= 4)
   {
-    if(B128) //check if 128 BIT is an active size setting for this Operand
+    var BRoundAttr = SizeAttribute & 0x0F; //bit attributes 64 and lower.
+
+    //If Broadcast round is active return the Attribute bit position only if BRoundAttr has an bit setting and is not 0.
+
+    if(BRound)
     {
-      return(7); //return the size as 7 for 128 bit
-    }
-    if(B80) //else check if 80 BIT is an active size setting for this Operand
-    {
-      return(6); //return the size as 6 for 80 bit
-    }
-    else if(B64) //else go 64 BIT which is normal for the REX 64 prefix only if 64 is an active size setting for this Operand
-    {
-      return(5); //return the size as 5 for 64 bit
-    }
-  }
-  
-  //Find The Default Size it is 48 bit or one size lower till the first active size going lower down from 48 bit
-  //normally the default size is 32 bit by the majority of operations,But in a few rare instructions it will go 48 bit by default.
-  
-  if(B48) //check if 48 bit is an active size if so then
-  {
-    n=4; //set the size of "n" to 4 which is 48 BIT
-  }
-  else if(B32) //else check if 32 bit is an active size if so then
-  {
-    n=3; //set the size of "n" to 3 which is 32 BIT
-  }
-  else if(B16 & (!B64 | OvOperands)) //else check if 16 bit is an active size if so then
-  {
-    n=2; //set the size of "n" to 2 which is 16 BIT
-  }
-  else if(B8) //else check if 8 bit is an active size if so then
-  {
-    n=1; //set the size of "n" to 1 which is 8 BIT
-  }
-  
-  //The value of N now holds the default size
+      if(BRoundAttr !== 0)
+      {
+        return(Math.floor((Math.log(BRoundAttr) / p2))); //return Bit position.
+      }
 
-  //if the Operand Size override prefix is active this allows the Default size to go one size lower
-  //normally the default size is 32 so it ends up being 16 however if it is 48 then the next size that is lower is 32.
-  //Eight in size can not be reduced with the Operand size override prefix because there is no size smaller.
-  //only reduce to one size lower if the size setting is an active size setting for the operations operand size.
+      //else Broadcast round is invalid for the pointer address return -1.
 
-  if(OvOperands) //if the Operand Size override prefix is active then
-  {
-    if(n==4&B32) //if "n" is default size 4 which is 48 BIT,and if 32 BIT is active then
-    {
-      n=3; //size adjust 48 BIT to 32 BIT set "n" to 3 in value which is 32 BIT which is one size smaller than 48 BIT
+      else { return(-1); }
+
     }
-    else if(n==3&B16) //else if "n" is default size 3 which is 32 BIT,and if 16 BIT is active then
-    {
-      n=2; //size adjust 32 BIT to 16 BIT set "n" to 2 in value which is 16 BIT which is one size smaller than 32 BIT
-    }
+
+    SizeAttribute -= BRoundAttr; //If Broadcast round is not active remove it from the Size Attributes.
   }
 
-  //if there is no size 48 Bit and lower some operands only use 64,80,or 128 Bit as the only Size
+  //find the Second Most Significant bit Size setting.
 
-  if(n==0) //check if no size setting found by going 48 BIT and bellow to find default Operand size which was all done above then check 64 and up
-  {
-    if(B64) //if 64 BIT is an active size setting then
-    {
-      n=5; //Set the value of "n" to 5 which is 64 BIT
-    }
-    else if(B80) //else if 80 BIT is an active size setting then 
-    {
-      n=6; //Set the value of "n" to 6 which is 80 BIT
-    }
-    else if(B128) //else if 128 BIT is an active size setting then 
-    {
-      n=7; //Set the value of "n" to 6 which is 128 BIT
-    }
-  }
+  var S2 = (Math.floor((Math.log(SizeAttribute) / p2)));
 
-  //return the operands correct size based on it's size settings,and any prefix size adjustments.
+  //Remove the found bit position size.
 
-  return(n);
+  SizeAttribute -= Math.pow(2, S2);
+
+  //find the third Most Significant bit Size setting.
+
+  var S3 = (Math.floor((Math.log(SizeAttribute) / p2)));
+
+  //----------------------------------------------------------------------------------------------------------------------------------------
+  //If there is no size attributes then set S1 to -1 then the rest are set to S1 as they should have no size setting.
+  //----------------------------------------------------------------------------------------------------------------------------------------
+
+  if (S1 == Number.NEGATIVE_INFINITY) { S1 = -1; }
+
+  //----------------------------------------------------------------------------------------------------------------------------------------
+  //The Operand Override Size attribute is aliased to S1 if no Size setting attribute for S2.
+  //----------------------------------------------------------------------------------------------------------------------------------------
+
+  if (S2 == Number.NEGATIVE_INFINITY) { S2 = S1; }
+
+  //----------------------------------------------------------------------------------------------------------------------------------------
+  //If there is no Third size attribute then Size attributes shift down. This is so the smaller size is the lower size attribute.
+  //----------------------------------------------------------------------------------------------------------------------------------------
+
+  if (S3 == Number.NEGATIVE_INFINITY) { S3 = S2; S2 = S1; }
+
+  //In 32/16 bit mode the operand size must never exceed 32.
+
+  if (BitMode <= 1 & S2 == 3){ S2 = 2; }
+
+  //In 16 bit mode The operand override is always active until used. This makes all operands 16 bit size.
+  //When Operand override is used it is the default 32 size. Flip S3 with S2.
+
+  if(BitMode === 0) { var t = S3; S3 = S2; S2 = t; t = null; }
+
+  //note the fourth size that is -1 in the returned size attribute is Vector length 11=3 which is invalid unless Intel decides to add 1024 bit vectors.
+
+  return( ( [S3, S2, S1, -1] )[SizeAttrSelect] );
+
 }
 
-//-------------------------------------------------------------------------------------------------------------------------
-//This function returns an array with three elements
-//The first element is the two bits for the ModR/M byte,or the SIB byte scale as a number value 0 to 3
-//The second element is the three bits for the ModR/M byte Opcode/Reg bits,or the SIB Index Register value as a number value 0 to 7
-//The third element is the last three bits for the ModR/M byte for the R/M bits,or the SIB Base Register value as a number value 0 to 7
-//-------------------------------------------------------------------------------------------------------------------------
- 
-function Decode_ModRM_SIB_Value()
-{
+/*-------------------------------------------------------------------------------------------------------------------------
+This function returns an int array with three elements.
+---------------------------------------------------------------------------------------------------------------------------
+The first element is the two bits for the ModR/M byte, or the SIB byte scale as a number value 0 to 3
+The second element is the three bits for the ModR/M byte Opcode/Reg bits, or the SIB Index Register value as a number value 0 to 7
+The third element is the last three bits for the ModR/M byte the R/M bits, or the SIB Base Register value as a number value 0 to 7
+-------------------------------------------------------------------------------------------------------------------------*/
+
+function Decode_ModRM_SIB_Value(){
+
   //Get the current position byte value
- 
+
   var v = BinCode[CodePos32];
 
-  //Add the byte as a hex byte to the current bytes used for decoding the instruction which will be shown next to the decoded instruction
-  //add hex codes of the decoded operation only if ShowInstructionHex decoding is active
-
-  if(ShowInstructionHex)
-  {
-    var t = v.toString(16); //convert the SIB,or ModR/M byte to hex
-    if ( t.length == 1 ){t = "0" + t;} //pad it to tow hex digits as a byte
-    InstructionHex += t; //add it to the current bytes used for the decode instruction
-    t = null; //set the temporary string used for padding it to a hex byte null
-  }
- 
   //The first tow binary digits of the read byte is the Mode bits of the ModR/M byte or
   //The first tow binary digits of the byte is the Scale bits of the SIB byte
- 
+
   var ModeScale = (v >> 6) & 0x03; //value 0 to 3
- 
+
   //The three binary digits of the read byte after the first two digits is the OpcodeReg Value of the ModR/M byte or
   //The three binary digits of the read byte after the first two digits is the Index Register value for the SIB byte
- 
-  var OpcodeRegIndex=(v >> 3) & 0x07; //value 0 to 7
- 
+
+  var OpcodeRegIndex = (v >> 3) & 0x07; //value 0 to 7
+
   //The three binary digits at the end of the read byte is the R/M (Register,or Memory) Value of the ModR/M byte or
   //The three binary digits at the end of the read byte is the Base Register Value of the SIB byte
- 
-  var RMBase=v & 0x07; //value 0 to 7
- 
+
+  var RMBase = v & 0x07; //value 0 to 7
+
   //Put the array together containing the three indexes with the value
   //Note both the ModR/M byte and SIB byte use the same bit value pattern
- 
-  var ByteValueArray=[
-    ModeScale,//Index 0 is the first tow bits for the Mode,or Scale Depending on what the byte value is used for
-    OpcodeRegIndex,//Index 1 is the three bits for the OpcodeReg,or Index Depending on what the byte value is used for
-    RMBase //Index 2 is the three bits for the RM,or BASE bits Depending on what the byte value is used for
+
+  var ByteValueArray = [
+    ModeScale,//Index 0 is the first tow bits for the Mode, or Scale Depending on what the byte value is used for.
+    OpcodeRegIndex,//Index 1 is the three bits for the OpcodeReg, or Index Depending on what the byte value is used for.
+    RMBase //Index 2 is the three bits for the RM, or BASE bits Depending on what the byte value is used for.
   ];
- 
-  //Move the Decoders Position by one
- 
-  IncreasePos();
- 
-  //return the array containing the decoded values of the byte
- 
-  return(ByteValueArray);
+
+  //Move the Decoders Position by one.
+
+  NextByte();
+
+  //return the array containing the decoded values of the byte.
+
+  return (ByteValueArray);
+
 }
 
-//-------------------------------------------------------------------------------------------------------------------------
-//The function Bellow is designed To decode any register operand including RAM Pointer address Registers
-//"RValue" is the Register value given to this function from a Reg/OpCode or even a ModR/M byte or even an opcode register value
-//or even SIB
-//-------------------------------------------------------------------------------------------------------------------------
-//Since X86-64 only uses 3 bits of binary to select a register the max value is 7 which is why
-//The Register array index is 0 though 7 for the register names,however 8 is
-//added to the selected register when extended to use selectable index 8 though 15
-//-------------------------------------------------------------------------------------------------------------------------
-//"Size" is used by the GetOperandSize function to give back a number that is 0 though 7 based on the size attributes of the
-//Register Selection And Prefix overrides Each Array in the REG array corresponds to the number given back from GetOperandSize
-//for the correct Array list to use with "RValue" for a index 0 though 7 across that selected list,and can be extended to 8 though 15
-//-------------------------------------------------------------------------------------------------------------------------
-//"Extend" Is used as a true or false value which tells the DecodeRegValue function to extend the Selected RValue to 8 though 15
-//using the Selected REG array list
-//-------------------------------------------------------------------------------------------------------------------------
-//Lastly any size setting bigger than 7 bits of binary is not a valid size setting for the GetOperandSize function the max value of
-//7 binary digits is 127 so any value less than 128 is a valid size setting. If The size setting is 128
-//then The separate ST registers are used which is REG array element 8. The calculation 128-120=8 is used to calculate element
-//8,and size 129 is 129-120=9 which is the MM Registers then 130-120=10 which is the XMM registers. Size is subtracted into 120 to
-//Find The Element to use 8 and up as the array list for the register names Which "RValue will select from" or set
-//-------------------------------------------------------------------------------------------------------------------------
-//"Extend" can also use a Boolean logic comparison to which prefix extends the decoded REG value
-//A good example of this is the Decode_ModRM_SIB_Address function
-//-------------------------------------------------------------------------------------------------------------------------
+/*-------------------------------------------------------------------------------------------------------------------------
+When input type is value 0 decode the immediate input regularly to it's size setting for accumulator Arithmetic, and IO.
+When input type is value 1 decode the immediate input regularly, but zeros out the upper 4 bits for Register encoding.
+When input type is value 2 decode the immediate as a relative address used by jumps, and function calls.
+When input type is value 3 decode the immediate as a Integer Used by Displacements.
+---------------------------------------------------------------------------------------------------------------------------
+The function argument SizeSetting is the size attributes of the IMM that is decoded using the GetOperandSize function.
+The Imm uses two size setting, the first 4 bits are used for the Immediate actual adjustable sizes 8,16,32,64.
+The second 4 bits is padding for sizes 8,16,32,64 to match destination operand for if the imm does not adjust bigger into
+the bigger destination.
+---------------------------------------------------------------------------------------------------------------------------
+If BySize is false the SizeSetting is used numerically as a single size selection as
+0=8,1=16,2=32,3=64 by size setting value.
+-------------------------------------------------------------------------------------------------------------------------*/
 
-function DecodeRegValue(RValue,SizeSetting,Extend)
-{
+function DecodeImmediate( type, BySize, SizeSetting ){
 
-  var IndexExtend = 0; //by default is 0
-  var RegGroup = 0; //the selected register REG array
-
-  if(Extend) //If Extend is true then
-  {
-    IndexExtend = 8; //set plus 8 to Array index for the selected "RValue" (Register Value)
-  }
-
-  //Check if it is a valid size setting
-
-  if(SizeSetting < 128) //if the size setting is less than 128 it is a valid size setting
-  {
-    //get the size from the GetOperandSize function which will be the selected array in the REG array
-    //the possible values given back go 0 to 6 based on the value of "n" in the GetOperandSize function
-    //each value corresponds to a array that contains the register names for that size in the REG array
-    
-    RegGroup = GetOperandSize(SizeSetting); //the register array list that will be used from the REG array by size using the GetOperandSize function
-    
-    //general use registers 48,80,and 128 in size do not exist If
-    //Elements 4,6,and 7 return no register name from this function
-    
-    if(RegGroup == 4 | RegGroup == 6 | RegGroup == 7)
-    {
-      return("");
-    }
-    
-    //Check if the RegGroup is the 8 bit registers if it is there is two lists for 8 bit registers
-    //normally 8 bit registers go in low byte to high byte order in the CPU,BUT if the rex prefix is used regardless of what setting is
-    //active they all go in low Byte order.
-    
-    if(RegGroup == 1) //if the reg group is 8 Bit which is separated into two for without REX Prefix,or with REX prefix
-    {
-
-      if(Rex[4]) //If the REX prefix is active then the Extends input can possibly be active then use use element 1 of the RegGroup 8 in size
-      {
-        //return the Selected 8 bit register in low byte order with the possible IndexExtend
-        
-        return(REG[RegGroup][1][RValue+IndexExtend]);
-      }
-      
-      else //else then Extend is false and there is no active rex prefix then use array element 0 as the 8 bit RegGroup
-      {
-        //return the the Selected 8 bit Register normally using array 0 with the low byte to high byte order array
-        //without the added Index Extend as it is impossible under the first 8 bit register group
-        
-        return(REG[RegGroup][0][RValue]);
-      }
-
-    }
-
-    //If this line is reached then it is not an 8 Bit register Selection the rest of the register Index array groups decode normally
-    //as the other register size groups with the correct register names are not split into two separate arrays like the 8 bit registers
-
-    return(REG[RegGroup][RValue+IndexExtend]); //Return the Selected Register from the Register array then selected Register value index
-  }
-  
-  //if this line is reached the Size setting is not bellow 128 which means the size setting is invalid then
-  //subtract 120 into size to start at 8 or higher from invalid size 128 which allows to use the other Register array groups
-  
-  RegGroup = SizeSetting - 120;
-
-  if(RegGroup < REG.length & RegGroup >= 8) //check if the REG element is in range of the REG group arrays
-  {
-  
-    //return the the Selected Register note these Registers do not change in size they do not work based on a Size setting attribute like a Regular
-    //Register operand which is why operations that use these separated registers show they take STi registers or XMM with one single size Attribute
-    //for all instructions
-  
-    return(REG[RegGroup][RValue+IndexExtend]);
-
-  }
-  
-  //if this line is reached there is no valid register groups list arrays to use for this register value return no Register name from this function
-  
-  return("");
-  
-}
-
-//-------------------------------------------------------------------------------------------------------------------------
-//When function argument type is value 0 decode the immediate input regularly to it's size setting
-//When function argument type is value 1 decode the immediate input With the Extendable sing bit
-//When function argument type is value 2 decode the immediate as a relative address
-//When function argument type is value 3 decode the immediate as a Integer Used by Displacements.
-//The function argument Size is the size attributes of the IMM that is decoded using the GetOperandSize function
-//-------------------------------------------------------------------------------------------------------------------------
-
-function DecodeImmediate(SizeSetting,type)
-{
   var imm = ""; //this will store each byte in reverse order for little endian format as a hex string
 
-  //all Immediate input types read the number of digits to there size setting,But can end up using it differently
-  //get the default operand size from the size setting of this IMM operand using a previously built GetOperandSize function
+  var S = SizeSetting & 0x0F; //Size is SizeSetting unless BySize is true.
+  var PAD = SizeSetting >> 4; //PAD is SizeSetting unless BySize is true.
 
-  var n = GetOperandSize(SizeSetting);
-
-  //the possible values of n are
-  //n=0 no size setting
-  //n=1 one single byte basically IMM8
-  //n=2 two bytes basically IMM16
-  //n=3 four bytes basically IMM32
-  //n=4 six bytes basically IMM48
-  //n=5 eight bytes basically IMM64
-  //n=6 ten bytes basically IMM80 there is no IMM 80 Bit in a 64 Bit Machine
-  //n=7 sixteen bytes basically IMM128 there is no IMM 128 Bit in a 64 Bit Machine
-  //note normally the value of n is used as a index value in the decode arrays which is why it goes from 0 up in value
-  
-  //If the size is bigger than 64 return no value from this function
-  
-  if(n >= 6)
+  if(BySize)
   {
-    return("");
+
+      S = GetOperandSize(S); //holds the decoded size setting value.
+
+      PAD = S; //PAD is current size unless the Size Setting has Size settings for pad sizes.
+
+      if (SizeSetting > 0x0F) //if higher 4 bits is used then go by size attribute for Immediate Sizes that have to be padded to.
+      {
+          PAD = GetOperandSize(PAD); //PAD is size unless the Size Setting has Size settings it can pad till.
+      }
+
   }
-  
-  //calculate how many bytes that are going to have to be read based on the value of n
-  //n=1 is 1 byte
-  //n=2 is 2 bytes
-  //n=3 is 4 bytes
-  //n=4 is 6 bytes
-  //n=5 is 8 bytes
-  
-  if (n >= 3) //when the value of n is greater than or equal to 3 then
+
+  //the possible values of S are S=0 IMM8, S=1 IMM16, S=2 IMM32, S=3 IMM64.
+  //calculate how many bytes that are going to have to be read based on the value of S
+  //S=0 is 1 byte, S=1 is 2 bytes, S=2 is 4 bytes, S=3 is 8 bytes
+
+  var n = Math.pow( 2, S ); //The Number of bytes to read is 2 to the power of S.
+
+  //store the byte of the immediate because IMM8 can use different encodings.
+
+  IMMValue = BinCode[CodePos32];
+
+  //Loop and Move the Decoder to the next byte Code position to the number of bytes to reads.
+
+  for (var i = 0, v = ""; i < n; i++, NextByte())
   {
-    n = (n - 1) * 2; //The rest of the values are minus one to n then multiply by 2
+      v = BinCode[CodePos32].toString(16); //convert the current Bin Code array Position byte to a ASCII hex string
+
+      if (v.length < 2) //if the Hex byte is one digit which is half a byte then
+      {
+          v = "0" + v; //pad the read byte value to a byte if it's less than two hex digits
+      }
+
+      imm = v + imm; //put each byte into the back of the string basically building the string backwards in memory
   }
-  
-  //Loop and increase the Code position and simulated 64 bit address to the number of bytes "n" reads
-  
-  for (var i=0,v = ""; i < n; i++,IncreasePos()) //Increase the position using the function Increase pos
-  {
-    v = BinCode[CodePos32].toString(16); //convert the current Bin Code array Position byte to a ASCII hex string
-    
-    if (v.length < 2) //if the Hex byte is one digit which is half a byte then
-    {
-      v = "0" + v; //pad the read byte value to a byte if it's less than two hex digits
-    }
-    
-    imm = v + imm; //put each byte into the back of the string basically building the string backwards in memory
-    
-    //Add the byte as a hex byte to the current bytes used for decoding the instruction which will be shown next to the decoded instruction
-    //add hex codes of the decoded operation only if ShowInstructionHex decoding is active
 
-    if(ShowInstructionHex)
-    {
-      InstructionHex += v; //put each byte Read in order into the Instruction Hex decode output
-    }
+  //The above loop will correctly read the value based on the immediate operands size and store it into the variable "imm".
+
+  //If the IMM type is used with an register operand on the upper four bit's then the IMM byte does not use the upper 4 bit's.
+
+  if(type == 1) { imm = "0" + imm.substring(1, imm.length); }
+
+  //If the IMM type is for relative address, or Singed Integer set up the two 32 bit integers for 64 simulation.
+
+  if (type == 2 | type == 3)
+  {
+      //convert the immediate into two hex strings that are 32 in size because JavaScript only works with 32 bit integers
+
+      var HexStr32 = imm.slice(-8);
+      var HexStr64 = imm.substring(0, imm.length - 8);
+
+      //convert both sections into A 32 bit integer
+
+      var Imm32Int32 = parseInt(HexStr32, 16);
+      var Imm64Int32 = parseInt(HexStr64, 16);
+
+      //find the number of bytes to use from 32 bit number section.
+      //the minim value is 4 bytes because JavaScript maxes out at int 32, But if the Relative Immediate is smaller it will use the smaller value as number of bytes.
+
+      var B32 = Math.min(4, n); //32 bit is usable by sizes 8, 16, 32
+
+      //note B64 is not necessary because IMM goes 32 then 64 in size so aether the 64 sections is used, or not used.
+
+      if (type == 2) //if it is a Relative address type
+      {
+
+          //the math equation bellow multiples the IMM size by 8 to find how many binary bits are needed to be calculated for the number of bytes
+          //then 2 to the power of size times 8 calculates the max value for each binary digit to byte size subtracting by one starts at max value
+
+          var bits32 = Math.pow(2, B32 * 8) - 1; //The first 32 bits
+
+          //Add the first 32 bits normally if the tow numbers have to carry to the 64 section of the 32 bit integer
+
+          var Carrie64 = 0x00000000;
+
+          if ((Imm32Int32 + Pos32) > 0xFFFFFFFF)
+          {
+              Carrie64 = 0x00000003;
+          }
+
+          //Find the bits higher up if any as the none effected bits after the relative add
+
+          var RIMM32 = (Pos32 - (Pos32 & bits32)) & 0xFFFFFFFF; //Because IMM goes 8, 16, 32 RIMM has to be calculated for unused sections higher in size.
+
+          //start adding up the 32, and 64 section to number of bits allowed from 32 till 64
+
+          var IMM32 = (Pos32 + Imm32Int32) & bits32;
+          var IMM64 = (Pos64 + Imm64Int32 + Carrie64) & 0xFFFFFFFF;
+
+          //add back the rest of the remaining value that has not been effected by bits size because of Relative IMM size
+
+          IMM32 += RIMM32;
+          if ( S != 3 ) { IMM64 += Pos64; } //IMM goes from 32 to 64 so the 64 section is used, or aether not used.
+
+          //the above would be perfect for relative Position sizes 8,16,32,64 if JavaScript did not max out at a 32 bit singed integer
+          //fix negative sing error by inverting the value with 32 bit add to max 32 plus one for correction
+          //reason JavaScript uses 32 bit integers by default this is one of the ways to correct values that go to the
+          //32 bit known as sing bit
+
+          if (IMM32 < 0) { IMM32 = (0xFFFFFFFF + IMM32) + 1; }
+          if (IMM64 < 0) { IMM64 = (0xFFFFFFFF + IMM64) + 1; }
+
+          //If the OvOperands prefix is used 66 hex which sets SizeAttrSelect 0 then IMM64 is zeroed out and IMM32 is fixed to & 0x0000FFFF basically first 16 calculated bits
+
+          if (SizeAttrSelect === 0) { IMM64 = 0x00000000; IMM32 = IMM32 & 0x0000FFFF; }
+
+          //convert to hex, and pad it to 0 for correct size for both 32 bit parts of the 64 address.
+
+          for (IMM32 = IMM32.toString(16) ; IMM32.length < 8; IMM32 = "0" + IMM32);
+          for (IMM64 = IMM64.toString(16) ; IMM64.length < 8; IMM64 = "0" + IMM64);
+
+          //Put the 64 bit address together.
+
+          imm = IMM64 + IMM32;
+      }
+
+      else if (type == 3) //if it is singed int Displacement Calculate and simulate Integer Center Points for Immediate Sizes 8,16,32.
+      {
+          var Sing = false; //the sing value for if the Displacement is added or subtracted from center.
+
+          //Simulate negative positive integers using values bigger than 32.
+
+          var Half32 = Math.pow(2, (B32 * 8) - 1); //calculate the 32 bit value center for integers smaller than 32 or are 32.
+
+          if (Imm32Int32 >= Half32) //when the value is higher than the center it is negative.
+          {
+              Sing = true; //set sing true for negative.
+              HexStr32 = (Half32 - (-(Half32 - Imm32Int32))).toString(16); //simulate the integer center point give the value as a positive number sizes 32 and bellow
+          }
+
+          for (var HTB = B32 * 2; HexStr32.length < HTB; HexStr32 = "0" + HexStr32); //pad to the number of bytes for the integer that is 32 or bellow
+
+          imm = HexStr32; //set IMM the new center for this hex string
+
+          if (Sing) { imm = "-" + imm; } else { imm = "+" + imm; } //set IMM to add or subtract for the integer sing
+
+      }
+
   }
-  
-  //The above loop will correctly read the value based on the immediate operands size and store it into the imm variable
 
-  //IMM type one
-  //this IMM type will extend open to all 64 or 16 digits based on the prefix size setting if the IMM does not go that size it will read the default size,BUT
-  //if the last binary digit is one it flips the rest of the extended open immediate input all ones and vice versa only if the immediate does not go to the bigger size setting by default
+  //PAD the Immediate to it's actual size some Immediate's do not match the size the Destination operand is even by there size attributes.
+  //if PAD is different than pad the IMM to correct size using the last bit as the sing.
 
-  if (type == 1)
-  {
-    //there is no Extended size to extend to if the size matches the size of the read imm "var ExSize=n; " this changes depending on conditions bellow
-    
-    var ExSize = n;
-    
-    //check the most significant bit of the IMM for if it is a 1 in value this is easily done by comparing the last hex digit of the number
-    //the very last hex digit of the number that has bean read is used which represents the last four binary digits of the hex value
-    //the "and logic" operation &8 basically 8 is 1000 binary and we are asking if the last binary digit is a one using the "and logic operator" well canceling out all other digits
-    //we then move the result over to the right three times making 1000 give us a 1 if the last digit was a logic 1 in value
-    //the value given back is a Boolean number in which 1 gives a value of true and 0 gives a value of false which is directly usable by the if comparison statement
-
-    var sing = (parseInt(imm.substring(0,1),16) & 8) >> 3;
-    
-    //pad the Immediate to the extend size using FF hex which FF is 11111111 in binary if the sing bit is logic one otherwise 00 which is 00000000 binary
-    
-    var pad = "00"; //by default pads using 00000000 binary
-    
-    if (sing) //if the last bit is active then
-    {
-      pad = "FF"; //pad using 11111111 binary
-    }
-    
-    //note the pad value is added to what the extended size is so basically if extend size is bigger than the immediate size
-    //The pad value is added till the immediate matches the extended size
-    //if the REX 64 prefix is active and the Immediate input is smaller than 64 in size
-    
-    if ((Rex[3] & Rex[4]) & (n < 8))
-    {
-      //set the extend size to 64
-      
-      ExSize = 16; //16 hex digits is 64 binary digits because 16 * 4 = 64 in which one hex digit is four binary digits
-    }
-    
-    //else if the operand override prefix is active and the Immediate input is smaller than 16 in size
-    
-    else if (OvOperands & (n < 2))
-    {
-      //set the extend size to 16
-      
-      ExSize = 4; // 4 hex digits is 4 * 4 = 16
-    }
-    
-    //start padding it to the Extend Size if ExSize size is bigger than the immediate size pad till they match size.
-    
-    for (; imm.length < ExSize; imm = pad + imm);
-  }
-  
-  //If the IMM type is for relative address,or Singed Integer set up the two 32 bit integers for 64 simulation
-  
-  else if (type == 2 | type == 3)
+  if(PAD != S)
   {
 
-    //convert the immediate into two hex strings that are 32 in size because JavaScript only works with 32 bit integers
+      //Use the same calculation that S used to find number of bytes except multiply by 2 because 2 hex digits is one byte
 
-    var HexStr32 = imm.slice(-8);
-    var HexStr64 = imm.substring(0,imm.length-8);
-    
-    //convert both numbers into A 32 bit integer
-    
-    var Imm32Int32 = parseInt(HexStr32,16);
-    var Imm64Int32 = parseInt(HexStr64,16);
-    
-    //find the number of bytes to use from 32 bit number sections that represent the 64 Bit section
-    //the max value is 0 only if the Relative Immediate is not higher in value than the first 32 bits
-    
-    var B64 = Math.max(0,n - 4);
-    
-    //find the number of bytes to use from 32 bit number sections that represent the 32 Bit section
-    //the minim value is 4 bytes because JavaScript max value in int 32,But if the Relative Immediate is smaller it will use the smaller value as number of bytes.
-    
-    var B32 = Math.min(4,n);
-    
-    if(type == 2) //if it is a Relative address
-    {
-    
-      //the math equation bellow multiples the IMM default size by 8 to find how many binary bits are needed to be calculated for the number of bytes
-      //then 2 to the power of size times 8 calculates the max value for each binary digit to byte size subtracting by one starts at max value
-      
-      var bits32 = Math.pow(2,B32 * 8) - 1; //The first 32 bits
-      var bits64 = Math.pow(2,B64 * 8) - 1; //anything above 32 byte size
-      
-      //Add the first 32 bits normally as a float use the value to check if the tow numbers have to carry to the 64 section of the 32 bit integer bit
-      
-      var Carrie64 = 0x00000000;
-    
-      if((Imm32Int32 + Pos32) > 0xFFFFFFFF)
-      {
-        Carrie64 = 0x00000003;
-      }
-      
-      //Find the bits higher up if any as the none effected bits after the relative add
-      
-      var RIMM32 = (Pos32 - (Pos32 & bits32)) & 0xFFFFFFFF;
-      
-      //do the same for 64
-      
-      var RIMM64 = (Pos64 - (Pos64 & bits64)) & 0xFFFFFFFF;
-      
-      //start adding up the 32 and 64 section to number of bits allowed from 32 till 64
-      
-      var IMM32 = (Pos32 + Imm32Int32) & bits32;
-      var IMM64 = (Pos64 + Imm64Int32 + Carrie64) & bits64;
-      
-      //add back the rest of the remaining value that has not been effected by bits size because of Relative IMM size
-      
-      IMM32 += RIMM32;
-      IMM64 += RIMM64;
+      PAD = Math.pow( 2, PAD ) * 2;
 
-      //the above would be perfect for any relative Position size if JavaScript did not max out at a 32 bit singed integer
-      //fix negative sing error by inverting the value with 32 bit add to max 32 plus one for correction
-      //reason JavaScript uses 32 bit integers by default this is one of the ways to correct values that go to the
-      //32 bit known as sing bit
-      
-      if (IMM32 < 0)
+      //convert last binary bit to a boolean
+
+      var sing = (parseInt(imm.substring(0, 1), 16) & 8) >> 3;
+
+      //pad the Immediate to the extend size using FF hex which FF is 11111111 in binary if the sing bit is logic one otherwise 00 which is 00000000 binary
+
+      var pd = "00"; //by default pads using 00000000 binary
+
+      if (sing) //if the last bit is active then
       {
-        IMM32 = (0xFFFFFFFF + IMM32) + 1;
-      }
-      
-      if (IMM64 < 0)
-      {
-        IMM64 = (0xFFFFFFFF + IMM64) + 1;
-      }
-      
-      //If the OvOperands prefix is used 66 hex IMM64 is zeroed out and IMM32 is fixed to & 0x0000FFFF basically first 16 calculated bits
-  
-      if(OvOperands)
-      {
-        IMM64 = 0x00000000;
-        IMM32 = IMM32 & 0x0000FFFF;
-      }
-      
-      //convert to hex and pad it to 0 for correct size for both 32 bit parts of the 64 address
-      
-      for (IMM32 = IMM32.toString(16); IMM32.length < 8; IMM32 = "0" + IMM32);
-      for (IMM64 = IMM64.toString(16); IMM64.length < 8; IMM64 = "0" + IMM64);
-      
-      //Put the 64 bit address together
-  
-      imm=IMM64+IMM32;
-    }
-    
-    else if (type == 3) //Calculate and simulate Integer Center Points for all different Immediate Sizes
-    {
-      var Sing = false; //the sing value for if the Displacement is added or subtracted from center
-      
-      //Simulate negative positive integers using values bigger than 32
-      
-      if(B64 > 0) //if any bytes are used in the 32 bit integer for the 64 bit section then
-      {
-        var Half64 = Math.pow(2,(B64 * 8) - 1 ); //calculate the 32 bit value center value of the 64 bit section
-        
-        if(Imm64Int32 >= Half64)  //when the value is higher than the center it is negative
-        {
-          Sing=true; //set the sing bit true for negative
-          HexStr64=(Half64-(-(Half64-Imm64Int32))-1).toString(16); //simulate the center point and have the number come back as a positive
-          HexStr32=(0xFFFFFFFF-Imm32Int32+1).toString(16); //the last 32 bits only invert
-        }
-        
-        for(;HexStr32.length<8;HexStr32="0"+HexStr32); //pad the first 32 bits fully
-        
-        for(var HTB=B64*2;HexStr64.length<HTB;HexStr64="0"+HexStr64); //pad the next 32 bit number for the 64 bits to the number of bytes used for 64 bit section
-        
-        imm = HexStr64+HexStr32; //set IMM to this centered hex string
+          pd = "FF"; //pad using 11111111 binary
       }
 
-      else if(B32 > 0) //else simulate 32 and bellow as a center point
-      {
-        var Half32 = Math.pow(2,(B32 * 8) - 1 ); //calculate the 32 bit value center for integers smaller than 32 or are 32
-        
-        if(Imm32Int32 >= Half32) //when the value is higher than the center it is negative
-        {
-          Sing=true; //set sing true for negative
-          HexStr32=(Half32-(-(Half32-Imm32Int32))).toString(16); //simulate the integer center point give the value as a positive number sizes 32 and bellow
-        }
-        
-        for(var HTB=B32*2;HexStr32.length<HTB;HexStr32="0"+HexStr32); //pad to the number of bytes for the integer that is 32 or bellow
-      
-        imm = HexStr32; //set IMM the new center for this hex string
-      
-      }
-      
-      if(Sing){imm = "-" + imm;}else{imm = "+" + imm;} //set IMM to add or subtract for the integer sing
-    }
-  
+      //start padding.
+
+      for (; imm.length < PAD; imm = pd + imm);
+
   }
 
   //return the immediate result
 
   return (imm.toUpperCase());
+
 }
 
-//--------------------------------------------------------------------------------------------------
-//The function Decode_ModRM_SIB_Value() gives back a array 3 in size that contains the three values for the ModR/M byte
-//Before calling this function you must create a variable that holds the ModR/M array from the function Decode_ModRM_SIB_Value()
-//the array is then given to this function as the function argument input ModRMArray
-//This function will decode the Full SIB byte and Immediate Relative address,and Displacements
-//--------------------------------------------------------------------------------------------------
-//The only value that is not used is the Reg/(Digit Opcode) because it is not part of the address
-//The array you give to this function for the ModR/M byte is used again though the DecodeInstruction process,But
-//uses the Reg/(Digit Opcode) value from the array as aether a Register value under a different operand or
-//a Operation code selection
-//--------------------------------------------------------------------------------------------------
-//This function only fully decodes the parts that make the Address location
-//Which is the Mod bits of the ModR/M and The R/M bits
-//If the Mode bits are 00,01,and 10 this uses the R/M bits in Memory address pointer mode
-//If The R/M bits are in Memory address pointer mode and the R/M bits is 100 basically 4 in value 
-//The Next byte is used for as a SIB also Modes 01,and 10 add a displacement to the address which must be Decoded
-//After the SIB if used. If The R/M bits are 101 The Address is a Relative location.
-//The R/M bits can be any Register value Except for 100,101 inside an address pointer using modes 00,01,or 10.
-//--------------------------------------------------------------------------------------------------
-//If the Mod bits are 3 which is 11 binary then the R/M bits are used as a selected register Without the Address Pointer
-//The only value not used is the Reg/(Digit Opcode) of the ModR/M byte which is decoded as a Register
-//under a different operand or used as a secondary opcode selection
-//--------------------------------------------------------------------------------------------------
-//RegMode is used under the Register mode of the R/M bits when the Mode setting is 11 basically 3 in value
-//when RegMode is 0 the General use Register Mode is used
-//when RegMode is 1 the Registers are the ST registers note
-//when RegMode is 2 the registers are the MM registers
-//when RegMode is 3 the registers are the XMM registers
-//--------------------------------------------------------------------------------------------------
-//SizeSetting is a 7 bit value used by the GetOperandSize function for the correct pointer size or
-//used for General use register selection under Register mode 0
-//--------------------------------------------------------------------------------------------------
+/*-------------------------------------------------------------------------------------------------------------------------
+Decode registers by Size attributes, or a select register index.
+-------------------------------------------------------------------------------------------------------------------------*/
 
-function Decode_ModRM_SIB_Address(ModRMArray,RegMode,SizeSetting)
-{
+function DecodeRegValue( RValue, BySize, Setting ) {
 
-  var out = ""; //the variable out is what stores the decoded address
+  //If By size is true Use the Setting with the GetOperandSize
 
-  //check if the Mode bits are a Memory address Mode.
-  //ModR/M Memory address Pointer modes are 0,1,and 2 while Mode 3 is register Mode
+  if (BySize)
+  {
+    Setting = GetOperandSize(Setting); //get decoded size value.
 
-  var s = GetOperandSize(SizeSetting);
+     //If no Vector extension is active Make sure Size attribute uses the default vector size. 
+      
+     if( Extension == 0 ) 
+     {
+        Setting = 4;
+     }
+  }
 
-  if(ModRMArray[0] <= 2) //if Mode bits are less than equal to 2 it is a Memory address pointer type
+  //check if Register is a XMM register which allows SIMD vector extension.
+
+  if(Setting >= 4 & Setting <= 7){ SSE = true; }
+
+  //if 8 bit Registers
+
+  if (Setting === 0)
+  {
+    //if any Rex Prefix
+
+    if (RexActive) { return (REG[0][1][ RValue ]); }
+
+    //else use high low order
+
+    else { return (REG[0][0][ RValue ]); }
+  }
+
+  //No other Separations.
+
+  RValue %= REG[Setting].length; //Limit RValue to max amount of extended register indexes.
+
+  //Return the Register.
+
+  return (REG[Setting][ RValue ]);
+
+}
+
+/*-------------------------------------------------------------------------------------------------------------------------
+Decode the ModR/M pointer, and Optional SIB if used.
+Note if by size attributes is false the lower four bits is the selected Memory pointer,
+and the higher four bits is the selected register.
+-------------------------------------------------------------------------------------------------------------------------*/
+
+function Decode_ModRM_SIB_Address( ModRM, BySize, Setting ){
+
+  var out = ""; //the variable out is what stores the decoded address pointer, or Register if Register mode.
+
+  //-------------------------------------------------------------------------------------------------------------------------
+  //If the ModR/M is not in register mode decode it as an Effective address.
+  //-------------------------------------------------------------------------------------------------------------------------
+
+  if(ModRM[0] != 3)
   {
 
-    var Disp = 0; //The Immediate displacement size is 0 by default which means it is not used
+    //-------------------------------------------------------------------------------------------------------------------------
+    //The Selected Size is setting unless BySize attribute is true.
+    //-------------------------------------------------------------------------------------------------------------------------
 
-    //-----------------------------set the displacement size if ModR/M address Mode is 1 in value a displacement of 8 is used-----------------------------
-
-    if(ModRMArray[0] == 1) //if Mode bits are one in value then
+    if (BySize)
     {
-      Disp = parseInt("0000001",2); //set the Displacement Immediate to a 8 in size
+      Setting = (GetOperandSize(Setting) << 1) | FarPointer;
     }
 
-    //-----------------------------set the displacement size if ModR/M address Mode is 2 in value a displacement of 32 is used-----------------------------
+    //-------------------------------------------------------------------------------------------------------------------------
+    //If By size attributes is false the selected Memory pointer is the first four bits of the size setting for all pointer indexes 0 to 15.
+    //Also if By size attribute is also true the selected by size index can not exceed 15 anyways which is the max combination the first four bits.
+    //-------------------------------------------------------------------------------------------------------------------------
 
-    else if(ModRMArray[0] == 2) //else if the Mod bits are 2 in value then
+    Setting = Setting & 0x0F;
+
+    //check if Address size is a XMM  which allows SIMD vector extension.
+
+    if( ( Setting >= 8 & Setting <= 14 ) & ( Setting % 2 <= 0 ) )
     {
-      Disp = parseInt("0000100",2); //set the Displacement Immediate to 32 in size
-    }
-  
-    var DispType = 3; //normally the Displacement is a Singed int value,But if the right condition is met then it will sing bit extends 64 under SIB 
-  
-    var AddressRegSize = parseInt("0010000",2); //The Register size for A Memory Address is 64 by default
-  
-    if(OvRam) //if the Ram override prefix is active the registers used from the Memory address pointer is 32 in size 
-    {
-      AddressRegSize = parseInt("0000100",2);
-    }
-
-    //if the size is 64,or 128 which change based on Multimedia RegMode
-
-    if(s == 5 | s == 7)
-    {
-      //if RegMode is Multimedia use the Multimedia pointers under 64 and 128
-
-      if(RegMode > 1)
+      SSE = true;
+      
+      //If no Vector extension is active Make sure Size attribute uses the default vector size. 
+      
+      if( Extension == 0 ) 
       {
-        out = PTRS[s][1];
-      }
-
-      //else use Normal pointers under size 64,128
-
-      else
-      {
-        out = PTRS[s][0];
+         Setting = 8;
       }
     }
 
-    //else it is not 64,or 128 go by value of "s" given from the GetOperand size function
+    //-------------------------------------------------------------------------------------------------------------------------
+    //Get the pointer size by Size setting.
+    //-------------------------------------------------------------------------------------------------------------------------
 
-    else
-    {
-      out = PTRS[s];
-    }
+    out = PTR[Setting];
 
-    //Add what the segment override is if any and then the left braket
+    //Add the Segment override left address bracket if any segment override was used otherwise the SegOverride string should be just a normal left bracket.
 
     out += SegOverride;
 
-    //-----------------------------if the ModR/M Base Register is 4 in value decode the Address as a SIB-----------------------------
+    //-------------------------------------------------------------------------------------------------------------------------
+    //calculate the actual address size according to the Address override and the CPU bit mode.
+    //-------------------------------------------------------------------------------------------------------------------------
+    //AddressSize 1 is 16, AddressSize 2 is 32, AddressSize 3 is 64.
+    //The Bit mode is the address size except AddressOverride reacts differently in different bit modes.
+    //In 16 bit AddressOverride switches to the 32 bit ModR/M effective address system.
+    //In both 32/64 the Address size goes down by one is size.
+    //-------------------------------------------------------------------------------------------------------------------------
 
-    if(ModRMArray[2] == 4)
+    var AddressSize = BitMode + 1;
+
+    if (AddressOverride)
     {
-      
-      var HasBaseReg = true; //The Base Register can be canceled out
-      var HasIndexReg = true; //The Index Register can Be canceled out for the SIB address byte
+      AddressSize = AddressSize - 1;
 
-      var SIB = Decode_ModRM_SIB_Value(); //get the SIB byte values
+      //the only time the address size is 0 is if the BitMode is 16 bit's and is subtracted by one resulting in 0.
 
-      //when The REX.X prefix is active the the Index register can go register value 4
-      //when The Index register is value 4 it cancels out except for under the REX.X prefix
-
-      HasIndexReg = ( Rex[1] & Rex[4] ) | SIB[1] != 4;
-      
-      //check if the base register is 5 in value and that the ModR/M Mode is 00 this activates Disp 32
-      
-      if(ModRMArray[0] == 0 & SIB[2] == 5)
+      if(AddressSize === 0)
       {
-        HasBaseReg = false; //This cancels out the Base Register
-        
-        //check if the Index register is canceled out as well
-        //if the REX.X prefix is not active,and  index is register value 4 cancels out the Index Register 
-        
-        if(!HasIndexReg) //if the Index is canceled out then
+        AddressSize = 2; //set the address size to 32 bit from the 16 bit address mode.
+      }
+    }
+
+    /*-------------------------------------------------------------------------------------------------------------------------
+    The displacement size Displacement*N calculation.
+    ---------------------------------------------------------------------------------------------------------------------------
+    In 16/32/64 the mode setting 1 will always add a Displacement of 8 to the address.
+    In 16 the Mode setting 2 adds a displacement of 16 to the address.
+    In 32/64 the Mode Setting 2 for the effective address adds an displacement of 32 to the effective address.
+    -------------------------------------------------------------------------------------------------------------------------*/
+
+    var Disp = ModRM[0] - 1; //Let disp relate size to mode value of the ModR/M.
+
+    //if 32 bit and above, and if Mode is 2 then disp size is disp32.
+
+    if(AddressSize >= 2 & ModRM[0] == 2)
+    {
+      Disp += 1; //Only one more higher in size is 32.
+    }
+
+    /*-------------------------------------------------------------------------------------------------------------------------
+    End of Displacement*N calculation.
+    -------------------------------------------------------------------------------------------------------------------------*/
+
+    /*-------------------------------------------------------------------------------------------------------------------------
+    Normally the displacement type is an relative Immediate that is added ("+"),
+    or subtracted ("-") from the center point to the selected base register,
+    and the size depends on mode settings 1, and 2, and also Address bit mode (Displacement*N calculation).
+    Because the normal ModR/M format was limited to Relative addresses, and unfixed locations,
+    so some modes, and registers combinations where used for different Immediate displacements.
+    -------------------------------------------------------------------------------------------------------------------------*/
+
+    var DispType = 3; //by default the displacement size is added to the selected base register, or Index register if SIB byte combination is used.
+
+    //-------------------------------------------16 Bit ModR/M address decode logic-------------------------------------------
+
+    if( AddressSize == 1 )
+    {
+
+      //if ModR/M mode bits 0, and Base Register value is 6 then disp16 with DispType mode 0.
+
+      if(AddressSize === 1 & ModRM[0] === 0 & ModRM[2] === 6)
+      {
+        Disp = 1;
+        DispType = 0;
+      }
+
+      //BX , BP switch based on bit 2 of the Register value
+
+      if( ModRM[2] < 4 ){ out += REG[ AddressSize ][ 3 + ( ModRM[2] & 2 ) ] + "+"; }
+
+      //The first bit switches between Destination index, and source index
+
+      if( ModRM[2] < 6 ){ out += REG[ AddressSize ][ 6 + ( ModRM[2] & 1 ) ]; }
+
+      //[BP], and [BX] as long as Mode is not 0, and Register is not 6 which sets DispType 0.
+
+      else if ( DispType !== 0 ) { out += REG[ AddressSize ][ 17 - ( ModRM[2] << 1 ) ]; }
+
+    } //End of 16 bit ModR/M decode logic.
+
+    //-------------------------------------------Else 32/64 ModR/M-------------------------------------------
+
+    else
+    {
+
+      //if Mode is 0 and Base Register value is 5 then it uses an Relative (RIP) disp32.
+
+      if(ModRM[0] === 0 & ModRM[2] === 5)
+      {
+        Disp = 3;
+        DispType = 2;
+      }
+
+      //check if Base Register is 4 which goes into the SIB address system
+
+      if(ModRM[2] == 4)
+      {
+
+        //Decode the SIB byte.
+
+        var SIB = Decode_ModRM_SIB_Value();
+
+        //Calculate the Index register with it's Extended value because the index register will only cancel out if 4 in value.
+
+        var IndexReg = IndexExtend | SIB[1];
+
+        //check if the base register is 5 in value in the SIB without it's added extended value, and that the ModR/M Mode is 0 this activates Disp32
+
+        if (ModRM[0] === 0 & SIB[2] == 5)
         {
-          DispType = 1; //sing extend the Disp32 because it effects the hole 64 address
+          Disp = 2; //Set Disp32
+
+          //check if the Index register is canceled out as well
+
+          if (IndexReg == 4) //if the Index is canceled out then
+          {
+            DispType = 0; //a regular IMM32 is used as the address.
+
+            //*if the Address size is 64 then the 32 bit Immediate must pad to the full 64 bit address.
+
+            if(AddressSize == 3) { Disp = 50; }
+          }
         }
-        
-        Disp = parseInt("0000100",2); //set the Displacement Immediate to 32 in size
-      }
-      
-      //else decode the base register normally
-      
-      else
-      {
-        out = out + DecodeRegValue(SIB[2],//SIB Base register value
-        AddressRegSize,//The register size 32/64 Because of the RAM override Prefix
-        Rex[0] & Rex[4] //The Extend condition is the REX.B prefix
-        );
-      }
-      
-      //if Index Register is not Canceled out
-      
-      if(HasIndexReg)
-      {
-        
-        //if the Base Register is not Canceled out
-        
-        if(HasBaseReg)
+
+        //Else Base register is not 5, and the Mode is not 0 then decode the base register normally.
+
+        else
         {
-          out = out + "+"; //then add the Plus in front of the Base register
+
+          out += REG[ AddressSize ][ BaseExtend | SIB[2] ];
+
+          //If the Index Register is not Canceled out (Note this is only reachable if base register was decoded and not canceled out)
+
+          if (IndexReg != 4)
+          {
+            out = out + "+"; //Then add the Plus in front of the Base register to add the index register
+          }
         }
-        
-        //note the above is important it adds the plus between the base register and index register only if
-        //there is a base register and did not set Disp32
-        
-        //add in the Index register
-        
-        out = out + DecodeRegValue(SIB[1],//SIB Index register value
-        AddressRegSize,//The register size 32/64 Because of the RAM override Prefix
-        Rex[1] & Rex[4] //The Extend condition is the REX.X prefix
-        );
-        
-        out = out + scale[SIB[0]] //add what the scale bits decode to the Index register by the value of the scale bits which select the name from the scale array
-      }
-        
-    }
 
-    //-----------------------------else The ModR/M does not Go into a SIB address-----------------------------
+        //if Index Register is not Canceled out at the end then decode the Index with the possibility of the base register.
 
-    else if(ModRMArray[0] == 0 & ModRMArray[2] == 5) //check if the MODE bits are 0 and the R/M bits are 5 in value
-    {
-      out = out + DecodeImmediate(parseInt("0000100",2),2); //Then The Memory Address is a Relative Immediate Address 32 in size
-    }
+        if (IndexReg != 4)
+        {
 
-    else //else Decode The R/M bits Register value normally
-    {
-      out = out + DecodeRegValue(ModRMArray[2],//The R/M bit's Register value
-      AddressRegSize, //The register size 32/64 Because of the RAM override Prefix
-      Rex[0] & Rex[4] //the Extend condition is the REX.B prefix
-      );
-    }
-    
-    //read an Immediate for the Disp size
-      
-    if(Disp > 0)
-    {
-      var R64=Rex[3],RexActive=Rex[4]; //backup the REX prefix setting
-      Rex[3]=1;Rex[4]=1; //temporarily set 64 for the possible sing extend 64 address
-      out = out + DecodeImmediate(Disp,DispType); //add the decoded displacement
-      Rex[3]=R64;Rex[4]=RexActive; //set the rex setting back the way it was
-    }
-    
-  out = out + "]"; //put the right bracket on for the Address
+          out += REG[ AddressSize ][ IndexExtend | IndexReg ];
 
-  }
+          //add what the scale bits decode to the Index register by the value of the scale bits which select the name from the scale array.
 
-  //-----------------------------else if the ModR/M mode bits are 11 which is value 3 the R/M bits use register Mode-----------------------------
-  
-  else if(ModRMArray[0] == 3) //else if it is a Register mode ModR/M instead of Memory address
-  {
-    //if REG mode is Grater than 0 decode it 63+RegMode for the other Registers in the DecodeRegValue function
-    //used for stuff like STi/m32real,and xmm/m128,or mm/m64
-    //if the Reg Group is grater than equal to 1 and is less than equal to 3 allows use of registers ST,MM,and XMM
-    //take note that registers CR,and DR are not useable under register mode of the ModR/M address
-    
-    if(RegMode >= 1 & RegMode <= 3)
-    {
-       out = DecodeRegValue(ModRMArray[2],//The R/M bit's Register Value
-       127+RegMode,//The size settings higher up that select the other registers
-       Rex[0] & Rex[4] //the Extend condition is the REX.B prefix
-       );
-    }
-    
-    //else if RegMode is 0 decode it as a General use Register for stuff like R16/32/64 which goes by the size setting
-    
-    else if(RegMode == 0)
-    {
-       out = DecodeRegValue(ModRMArray[2],//The R/M bit's Register Value
-       SizeSetting,//The ModR/M size seetting
-       Rex[0] & Rex[4] //the Extend condition is the REX.B prefix
-       );
-    }
-    
-    else //else invalid Register selection for Register mode if so return from function with nothing
-    {
-       return("");
-    }
-    
-  }
-  
-  return ( out ); //return what the "Register mode address" is,or "Memory address"
+          out = out + scale[SIB[0]];
+        }
 
-}
+      } //END OF THE SIB BYTE ADDRESS DECODE.
 
-//------------------------------------------------------------------------------------------------------------------------
-//Decodes the new Operand type string format
-//------------------------------------------------------------------------------------------------------------------------
+      //else Base register is not 4 and does not go into the SIB ADDRESS
+      //Decode the Base register regularly plus it's Extended value if relative (RIP) disp32 is not used.
 
-function DecodeOprandStr(HexStr)
-{
-   var out = [
-        parseInt(HexStr.slice(-16,-14),16),parseInt(HexStr.slice(-14,-12),16),//operand one Type,SizeSetting
-        parseInt(HexStr.slice(-12,-10),16),parseInt(HexStr.slice(-10,-8),16),//operand two Type,SizeSetting
-        parseInt(HexStr.slice(-8,-6),16),parseInt(HexStr.slice(-6,-4),16),//operand three Type,SizeSetting
-        parseInt(HexStr.slice(-4,-2),16),parseInt(HexStr.slice(-2),16) //operand one four,SizeSetting
-        ];
-
-  //any value that is NaN is 0 because it does not exist.
-  //If a value is intentionally 0 and lands under a operand type it is used for opcode decode settings filter this out as if it is nan,But set the settings for the Disassembler
-
-  for( var i = 0; i < out.length; i++ )
-  {
-    if( isNaN( out[i] ) )
-    {
-      out[i] = 0;
-    }
-
-    //else if a operand type is Intentionally 0 which is nonexistent use the setting bits as decode settings for the opcode
-
-    else if (out[i] == 0 & i%2==0)
-    {
-      XRelease = out[i + 1] & 0x01; //opcode uses XRelease insted of REPNE prefix for Intel HLE Instructions
-      XAcquire = (out[i + 1] >> 1) & 0x01; //opcode uses XAcquire instead of the REP Prefix for Intel HLE Instructions
-      BND = (out[i + 1] >> 2) & 0x01; //opcode uses BND prefix instead of REPNE for MPX Instructions
-      HT = (out[i + 1] >> 3) & 0x01; //opcode uses HNT,and HT instead of prefixes REPNE,and REP BND for jump Instructions
-    }
-  }
-
-  //return the operands
-
-  return(out);
-}
-
-//------------------------------------------------------------------------------------------------------------------------
-//The Operands
-//------------------------------------------------------------------------------------------------------------------------
-
-var FOperands = function(T,S,OpNum)
-{
-  return(
-    {
-      Type:T, //The operand type
-      Size:S, //Size Attributes
-      OperandNum:OpNum //The operand number this operand actually goes under
-    }
-  );
-}
-
-//------------------------------------------------------------------------------------------------------------------------
-//Sorts out what operand must be decoded first
-//------------------------------------------------------------------------------------------------------------------------
-
-function FormatOperands(Operands)
-{
-
-  var out = new Array(); //stores the operands under there scheduled elements
-
-  var IMM = 3; //the Immediate inputs go under element three,But there is possibly two Immediate inputs,and the next must go under element four
-  
-  var Explicit = 5; //The explicit operands go last and do not decode using any encoding
-
-  var OpNum = 0; //added by one for the operand number
-
-  //The operands must go under the correct array elements for the X86-64 Instruction format
-
-  for ( var i = 0; i < Operands.length; i += 2 )
-  {
-    //if it is a opcode Reg Encoding it goes in the first element
-
-    if( Operands[i] == 1 )
-    {
-      //This operand can only be used once in the X86-64 format only set if element 0 has not been defined once already
-
-      if(typeof out[0] == "undefined")
+      else if(DispType != 2)
       {
-        out[0] = new FOperands(
-        Operands[i], //Type
-        Operands[i + 1], //Size
-        OpNum++ //Operand Iteration number for which operand it is
-        );
+        out += REG[ AddressSize ][ BaseExtend | ModRM[2] ];
       }
     }
 
-    //The ModR/M address,Moffs comes next 
+    //Finally the Immediate displacement is put into the Address last.
 
-    else if( Operands[i] > 1 & Operands[i] < 7 )
+    if(Disp >= 0 ) { out += DecodeImmediate(DispType, false, Disp); }
+
+    //If Broadcast round is active from an EVEX extension instruction
+
+    if(BRound)
     {
-        if (Operands[i] > 1 & Operands[i] < 6) { takesModRM = true; }
-      //This operand can only be used once in the X86-64 format only set if element 1 has not been defined once already
 
-      if(typeof out[1] == "undefined")
+      //If a vector size of B32 is given back put the Memory vector size as 1to16.
+
+      if(Setting == 4 & BySize)
       {
-        out[1] = new FOperands(
-        Operands[i], //Type
-        Operands[i + 1], //Size
-        OpNum++ //Operand Iteration number for which operand it is
-        );
+        out += "]{1to16}";
       }
-    }
 
-    //The ModR/M Reg bit's
+      //Else If a vector size of B64 is given back put the Memory vector size as 1to8.
 
-    else if( Operands[i] == 7 )
-    {
-      //This operand can only be used once in the X86-64 format only set if element 2 has not been defined once already
-
-      if(typeof out[2] == "undefined")
+      else if(Setting == 6 & BySize)
       {
-        out[2] = new FOperands(
-        Operands[i], //Type
-        Operands[i + 1], //Size
-        OpNum++ //Operand Iteration number for which operand it is
-        );
+        out += "]{1to8}";
       }
-    }
 
-    //The Immediate inputs come last there can only be a max of two
+      //Else Invalid Broadcast pointer size.
 
-    else if(Operands[i] > 7 & Operands[i] < 11)
+      else{ out = "]{Error}"; }
+
+    } //END of broadcast Round logic.
+
+    //else the pointer size is not effected by Broadcast round then add right bracket to the ModR/M address normally.
+
+    else
     {
-      if(IMM <= 4) //note elements 3 and 4 is where the Immediate input Operands are stored
-      {
-        out[IMM] = new FOperands(
-        Operands[i], //Type
-        Operands[i + 1], //Size
-        OpNum++ //Operand Iteration number for which operand it is
-        );
-
-        IMM+=1; //add one to the Immediate array element position.
-      }
+      out += "]";
     }
 
-    else if(Operands[i] > 10)
-    {
-      out[Explicit] = new FOperands(
-      Operands[i], //Type
-      Operands[i + 1], //Size
-      OpNum++ //Operand Iteration number for which operand it is
-      );
+  } //End of Memory address Modes 00, 01, 10 decode.
 
-      Explicit += 1;
-    }
+  //-----------------------------else the ModR/M mode bits are 11 register Mode-----------------------------
 
-  }
-
-  //return the operands in X86-64 format order for the Decode function.
-
-  return(out);
-
-}
-
-//------------------------------------------------------------------------------------------------------------------------
-//Decode function Decodes the X86-64 instruction format
-//------------------------------------------------------------------------------------------------------------------------
- 
-function DecodeInstruction()
-{
-
-  //if instruction position display is active and InstructionPos does not hold a position in case of recalling this function because of prefixes
-
-  if(ShowInstructionPos & InstructionPos == "")
+  else
   {
-    InstructionPos = GetPosition(); //get the start position of an instruction before the decoder position changes well decoding the operation
+    //If By size attributes is false the upper four bits is used for the selected Register 0 to 15.
+
+    if(!BySize)
+    {
+      Setting = Setting >> 8;
+    }
+
+    //Decode the select register though the register decode function.
+
+    out = DecodeRegValue(BaseExtend | ModRM[2], BySize, Setting);
   }
 
-  //get the byte value for the operation code from the binary code array
- 
-  var Opcode = BinCode[CodePos32];
+  //return what the "Register mode" is, or "Memory address"
 
-  //Add the byte as a hex byte to the current bytes read for decoding the instruction which will be shown next to the decoded instruction
+  return (out);
 
-  if(ShowInstructionHex)
+} //End of ModR/M address Base Register Effective Address decode, and mode bit's decode.
+
+/*-------------------------------------------------------------------------------------------------------------------------
+Decode Prefix Mnemonic codes. Note Some disable depending on the bit mode of the CPU.
+If a prefix is disabled and not read by this function it allows it to be decoded as an instruction in the Decode Opcode function.
+Some instructions can only be used in 32 bit mode such as instructions LDS and LES.
+LDS and LES where changed to Vector extension attribute adjustments to SSE instructions in 64 bit.
+At the end of this function "Opcode" should not hold any prefix code, so then Opcode contains an operation code.
+-------------------------------------------------------------------------------------------------------------------------*/
+
+function DecodePrefixAdjustments(){
+
+  //-------------------------------------------------------------------------------------------------------------------------
+  Opcode = ( Opcode & 0x300 ) | BinCode[CodePos32]; //Add 8 bit opcode while bits 9, and 10 are used for opcode map.
+  NextByte(); //Move to the next byte.
+  //-------------------------------------------------------------------------------------------------------------------------
+
+  //if 0F hex start at 256 for Opcode.
+
+  if(Opcode == 0x0F)
   {
-    var t = Opcode.toString(16); //convert the operation code to hex
-    if ( t.length == 1 ){t = "0" + t;} //pad it to tow hex digits as a byte
-    InstructionHex += t; //add it to the current bytes used for the decode instruction
-    t = null; //set the temporary string used for padding it to a hex byte null
+    Opcode = 0x100; //By starting at 0x100 with binary bit 9 set one then adding the 8 bit opcode then Opcode goes 256 to 511.
+    return(DecodePrefixAdjustments()); //restart function decode more prefix settings that can effect the decode instruction.
   }
-  
-  Opcode += OpBase;
 
-  //Move to next byte position
- 
-  IncreasePos();
- 
-  //******************************check overrides and prefixes*******************************
+  //if 38 hex while using two byte opcode.
+
+  else if(Opcode == 0x138)
+  {
+    Opcode = 0x200; //By starting at 0x200 with binary bit 10 set one then adding the 8 bit opcode then Opcode goes 512 to 767.
+    return(DecodePrefixAdjustments()); //restart function decode more prefix settings that can effect the decode instruction.
+  }
+
+  //if 3A hex while using two byte opcode go three byte opcodes.
+
+  else if(Opcode == 0x13A)
+  {
+    Opcode = 0x300; //By starting at 0x300 hex and adding the 8 bit opcode then Opcode goes 768 to 1023.
+    return(DecodePrefixAdjustments()); //restart function decode more prefix settings that can effect the decode instruction.
+  }
+
+  //Prefix codes that are only active well in 64 bit mode.
+
+  if( BitMode == 2 )
+  {
+    //The Rex prefix bit settings decoding
+
+    if( Opcode >= 0x40 & Opcode <= 0x4F)
+    {
+      BaseExtend = (Opcode & 0x01) << 3; //Base Register extend setting.
+      IndexExtend = ( ( Opcode & 0x02 ) ) << 2; //Index Register extend setting.
+      RegExtend = ( ( Opcode & 0x04 ) ) << 1; //Register Extend Setting.
+      SizeAttrSelect = ( ( Opcode & 0x08 ) >> 2 ); //The width Bit open all 64 bits.
+      WidthBit = SizeAttrSelect >> 1; //Set The Width Bit setting if active.
+      return(DecodePrefixAdjustments()); //restart function decode more prefix settings that can effect the decode instruction.
+    }
+
+    //The VEX2 Operation code Extension to SSE settings decoding.
+
+    if( Opcode == 0xC5 )
+    {
+      //-------------------------------------------------------------------------------------------------------------------------
+      Opcode = BinCode[CodePos32]; //read VEX2 byte settings.
+      NextByte(); //Move to the next byte.
+      //-------------------------------------------------------------------------------------------------------------------------
+
+      //some bits are inverted, so uninvert them arithmetically.
+
+      Opcode = ( 0xF8 - ( Opcode & 0xF8 ) ) | ( Opcode & 0x07 );
+
+      //Decode bit settings.
+
+      RegExtend = ( Opcode & 0x80 ) >> 4; //Register Extend.
+      VectorRegister = ( Opcode & 0x78 ) >> 3; //The added in Vector register to SSE.
+      SizeAttrSelect = ( Opcode & 0x04 ) >> 2; //The L bit for 256 vector size.
+      SIMD = Opcode & 0x03; //The SIMD mode.
+
+      //Automatically uses the two byte opcode map starts at 256 goes to 511.
+
+      Opcode = 0x100;
+
+      //-------------------------------------------------------------------------------------------------------------------------
+      Opcode = ( Opcode & 0x300 ) | BinCode[CodePos32]; //read the opcode.
+      NextByte(); //Move to the next byte.
+      //-------------------------------------------------------------------------------------------------------------------------
+
+      //Stop decoding prefixes send back code for VEX.
+
+      return(1);
+    }
+
+    //The VEX3 prefix settings decoding.
+
+    if( Opcode == 0xC4 )
+    {
+      //-------------------------------------------------------------------------------------------------------------------------
+      Opcode = BinCode[CodePos32]; //read VEX3 byte settings.
+      NextByte(); //Move to the next byte.
+      //-------------------------------------------------------------------------------------------------------------------------
+      Opcode |= ( BinCode[CodePos32] << 8 ); //Read next VEX3 byte settings.
+      NextByte(); //Move to the next byte.
+      //-------------------------------------------------------------------------------------------------------------------------
+
+      //Some bits are inverted, so uninvert them arithmetically.
+
+      Opcode = ( 0x78E0 - ( Opcode & 0x78E0 ) ) | ( Opcode & 0x871F );
+
+      //Decode bit settings.
+
+      RegExtend = ( Opcode & 0x0080 ) >> 4; //Extend Register Setting.
+      IndexExtend = ( Opcode & 0x0040 ) >> 3; //Extend Index register setting.
+      BaseExtend = ( Opcode & 0x0020 ) >> 2; //Extend base Register setting.
+      WidthBit = ( Opcode & 0x8000 ) >> 15; //The width bit works as a separator.
+      VectorRegister = ( Opcode & 0x7800 ) >> 11; //The added in Vector register to SSE.
+      SizeAttrSelect = ( Opcode & 0x0400 ) >> 10; //Vector length for 256 setting.
+      SIMD = ( Opcode & 0x0300 ) >> 8; //The SIMD mode.
+
+      Opcode = ( Opcode & 0x001F ) << 8; //Change Operation code map.
+
+      //-------------------------------------------------------------------------------------------------------------------------
+      Opcode = ( Opcode & 0x300 ) | BinCode[CodePos32]; //read the 8 bit opcode put them in the lower 8 bits away from opcode map bit's.
+      NextByte(); //Move to the next byte.
+      //-------------------------------------------------------------------------------------------------------------------------
+
+      //Stop decoding prefixes send back code for VEX.
+
+      return(1);
+    }
+
+    //The EVEX prefix settings decoding.
+
+    if( Opcode == 0x62 )
+    {
+      //-------------------------------------------------------------------------------------------------------------------------
+      Opcode = BinCode[CodePos32]; //read EVEX byte settings.
+      NextByte(); //Move to the next byte.
+      //-------------------------------------------------------------------------------------------------------------------------
+      Opcode |= ( BinCode[CodePos32] << 8 ); //read next EVEX byte settings.
+      NextByte(); //Move to the next byte.
+      //-------------------------------------------------------------------------------------------------------------------------
+      Opcode |= ( BinCode[CodePos32] << 16 ); //read next EVEX byte settings.
+      NextByte(); //Move to the next byte.
+      //-------------------------------------------------------------------------------------------------------------------------
+
+      //Some bits are inverted, so uninvert them arithmetically.
+
+      Opcode = ( 0x087CF0 - ( Opcode & 0x087CF0 ) ) | ( Opcode & 0xF7870F );
+
+      //Check if Reserved bits are 0 if they are not 0 the EVEX instruction is invalid.
+
+      if( ( Opcode & 0x00040C ) > 0 ) { InvalidOp = true; }
+
+      //Decode bit settings.
+
+      RegExtend = ( ( Opcode & 0x80 ) >> 4 ) | ( Opcode & 0x10 ); //The Double R'R bit decode for Register Extension 0 to 32.
+      BaseExtend = ( Opcode & 0x60 ) >> 2; //The X bit, and B Bit base register extend combination 0 to 32.
+      IndexExtend = ( Opcode & 0x40 ) >> 3; //The X extends the SIB Index by 8.
+      WidthBit = ( Opcode & 0x8000 ) >> 15; //The width bit separator for VEX, EVEX.
+      VectorRegister = ( Opcode & 0x7800 ) >> 11; //The Added in Vector Register for SSE under VEX, EVEX.
+      SIMD = ( Opcode & 0x0300 ) >> 8; //decode the SIMD mode setting.
+      ZeroMerg = ( Opcode & 0x800000 ) >> 23; //Zero Merge to destination control.
+      SizeAttrSelect = ( Opcode & 0x600000 ) >> 21; //The EVEX.L'L Size combination.
+      BRound = (Opcode & 0x100000 ) >> 20; //Broadcast Round Memory address system.
+      VectorRegister |= ( Opcode & 0x080000 ) >> 15; //The EVEX.V' vector extension adds 15 to EVEX.V3V2V1V0.
+      MaskRegister = ( Opcode & 0x070000 ) >> 16; //Mask to destination.
+
+      Opcode = ( Opcode & 0x03 ) << 8; //Change Operation code map.
+
+      //-------------------------------------------------------------------------------------------------------------------------
+      Opcode = ( Opcode & 0x300 ) | BinCode[CodePos32]; //read the 8 bit opcode put them in the lower 8 bits away from opcode extend bit's.
+      NextByte(); //Move to the next byte.
+      //-------------------------------------------------------------------------------------------------------------------------
+
+      //Stop decoding prefixes send back code for EVEX.
+
+      return(2);
+    }
+
+  }
 
   //Segment overrides
 
   if (Opcode == 0x2E | Opcode == 0x36 | Opcode == 0x3E | Opcode == 0x64 | Opcode == 0x65)
   {
-    SegOverride = Mnemonics[Opcode];
-    return(DecodeInstruction());
+    SegOverride = Mnemonics[ Opcode ]; //Set the Left Bracket for the ModR/M memory address.
+    return(DecodePrefixAdjustments()); //restart function decode more prefix settings that can effect the decode instruction.
   }
 
   //Operand override Prefix
- 
+
   if(Opcode == 0x66)
   {
-    OvOperands = true;
-    return(DecodeInstruction());
+    SIMD = 1; //sets SIMD mode 1 in case of SSE instruction opcode.
+    SizeAttrSelect = 0; //Adjust the size attribute setting for the size adjustment to the next instruction.
+    return(DecodePrefixAdjustments());  //restart function decode more prefix settings that can effect the decode instruction.
   }
- 
-  //Ram address size override 32
- 
+
+  //Ram address size override.
+
   if(Opcode == 0x67)
   {
-    OvRam = true;
-    return(DecodeInstruction());
-  }
- 
-  //The Rex prefix bit decode
- 
-  if( Opcode >= 0x40 & Opcode <= 0x4F)
-  {
-    Rex = [ Opcode & 0x01,( Opcode & 0x02 ) >> 1,( Opcode & 0x04 ) >> 2,( Opcode & 0x08 ) >> 3,1 ];
-    return(DecodeInstruction());
+    AddressOverride = true; //Set the setting active for the ModR/M address size.
+    return(DecodePrefixAdjustments()); //restart function decode more prefix settings that can effect the decode instruction.
   }
 
   //if repeat Prefixes F2 hex REP,or F3 hex RENP
 
   if (Opcode == 0xF2 | Opcode == 0xF3)
   {
-    PrefixG1 = Mnemonics[Opcode]; //set the Prefix string
+    SIMD = Opcode & 0x03 ; //F2, and F3 change the SIMD mode during SSE instructions.
+    PrefixG1 = Mnemonics[ Opcode ]; //set the Prefix string
     HLEFlipG1G2 = true; //set Filp HLE in case this is the last prefix read, and LOCK was set in string G2 first for HLE.
-    return(DecodeInstruction());
+    return(DecodePrefixAdjustments()); //restart function decode more prefix settings that can effect the decode instruction.
   }
 
   //if the lock prefix note the lock prefix is separate
 
   if (Opcode == 0xF0)
   {
-    PrefixG2 = Mnemonics[Opcode]; //set the Prefix string
+    PrefixG2 = Mnemonics[ Opcode ]; //set the Prefix string
     HLEFlipG1G2 = false; //set Flip HLE false in case this is the last prefix read, and REP, or REPNE was set in string G2 first for HLE.
-    return(DecodeInstruction());
+    return(DecodePrefixAdjustments()); //restart function decode more prefix settings that can effect the decode instruction.
   }
 
-  //if 0F hex start at 256 for Opcode allowing two byte operation codes
+  return(0); //regular opcode no extension active like VEX, or EVEX.
 
-  if(Opcode == 0x0F & OpBase == 0)
-  {
-    OpBase = 0x100;
-    return(DecodeInstruction());
-  }
-  
-  //if 38 hex while using two byte opcodes go three byte opcodes
+}
 
-  else if(Opcode == 0x138 & OpBase == 0x100)
-  {
-    OpBase = 0x200;
-    return(DecodeInstruction());
-  }
+/*-------------------------------------------------------------------------------------------------------------------------
+The Decode opcode function gives back the operation name, and what it uses for input.
+The input types are for example which registers it uses with the ModR/M, or which Immediate type is used.
+The input types are stored into an operand string. This function gives back the instruction name, And what the operands use.
+---------------------------------------------------------------------------------------------------------------------------
+This function is designed to be used after the Decode prefix adjustments function because the Opcode should contain an real instruction code.
+This is because the Decode prefix adjustments function will only end if the Opcode value is not a prefix adjustment code to the ModR/M etc.
+However DecodePrefixAdjustments can also prevent this function from being called next if the prefix settings are bad or an invalid instruction is
+used for the bit mode the CPU is in as it will set InvalidOp true.
+-------------------------------------------------------------------------------------------------------------------------*/
 
-  //if 3A hex while using two byte opcodes go three byte opcodes
+function DecodeOpcode(){
 
-  else if(Opcode == 0x13A & OpBase == 0x100)
-  {
-    OpBase = 0x300;
-    return(DecodeInstruction());
-  }
- 
-  //*******************************instruction Decode*****************************
-  //The output array will hold the operand decoded strings under the elements the operands go under
- 
-  var out=new Array();
- 
-  //If the ModR/M address is decoded the ModRMValues can be used again to decode the Reg/Opcode if it is used as a Reg
- 
-  var ModRMValues=new Array();
- 
-  //get the Operation name by the operations byte value
- 
+  //get the Operation name by the operations opcode.
+
   var Name = Mnemonics[Opcode];
- 
+
   //get the Operands for this opcode it follows the same array structure as Mnemonics array
- 
+
   var Type = Operands[Opcode];
- 
-  //if the current Mnemonic is an array two in size then Register Mode and memory more are separate from each other
- 
+
+  //Some Opcodes use the next byte automatically for extended opcode selection. Or current SIMD mode.
+
+  var ModRMByte = BinCode[CodePos32]; //Read the byte but do not move to the next byte.
+
+  //If the current Mnemonic is an array two in size then Register Mode, and memory mode are separate from each other.
+
   if(Name instanceof Array && Name.length == 2)
   {
-     //decode the ModR/M byte
-      
-     ModRMValues = Decode_ModRM_SIB_Value();
 
-     //if Mode is Memory Address mode use the first element
+     //if Register mode
 
-     if(ModRMValues[0]<3)
-     {
-       Name = Name[0];
-       Type = Type[0];
-     }
-       
-     //else register mode
-      
-     else
+     if( ( ModRMByte & 0xC0 ) == 0xC0 )
      {
        Name = Name[1];
        Type = Type[1];
+     }
+
+     //else Address mode
+
+     else
+     {
+       Name = Name[0];
+       Type = Type[0];
      }
   }
 
@@ -2619,410 +2839,633 @@ function DecodeInstruction()
   if(Name instanceof Array && Name.length == 8)
   {
 
-    //digit opcode selection
+    //Group opcode.
 
-    //Decode the ModR/M byte value store if ModR/M was not previously used as a Selection between Register Operation codes and Memory operation codes
- 
-    if(ModRMValues == "")
-    {
-      ModRMValues = Decode_ModRM_SIB_Value();
-    }
+    Name = Name[ ( ModRMByte & 0x38 ) >> 3 ];
+    Type = Type[ ( ModRMByte & 0x38 ) >> 3 ];
 
-    Name = Name[ModRMValues[1]];
-    Type = Type[ModRMValues[1]];
-
-    //if The select digit opcode is another array 8 in size it is a static opcode selection
+    //if The select Group opcode is another array 8 in size it is a static opcode selection
 
     if(Name instanceof Array && Name.length == 8)
     {
-      Name = Name[ModRMValues[2]];
-      Type = Type[ModRMValues[2]];
+      Name = Name[ ( ModRMByte & 0x07 ) ];
+      Type = Type[ ( ModRMByte & 0x07 ) ];
     }
 
   }
 
-    //if the Mnemonic is an array 3 in size it is an instruction Mnemonic that goes by the tow Size override prefixes and the middle element is default size Mnemonic name
+  //if the Mnemonic is an array 3 in size the instruction name goes by size.
 
   if(Name instanceof Array && Name.length == 3)
   {
-    //If REX.W
-
-    if (Rex[3] & Rex[4] & Name[2] != "")
+    if (Name[SizeAttrSelect] !== "")
     {
-      Name = Name[2]; //set it to the 64 Mnemonic
-      Type = Type[2]; //Operand array always matches the Mnemonic structure
-    }
-
-    //else If Operand override 16
-
-    else if (OvOperands & Name[0] != "")
-    {
-      Name = Name[0]; //set it to the 16 Mnemonic
-      Type = Type[0]; //Operand array always matches the Mnemonic structure
+      Name = Name[SizeAttrSelect]; //set it to the Mnemonic
+      Type = Type[SizeAttrSelect]; //Operand array always matches the Mnemonic structure
     }
 
     //else no size prefix use default size Mnemonic name
 
     else
     {
-      Name = Name[1]; //set it to the 16 Mnemonic
+      Name = Name[1]; //set it to the Mid default Mnemonic
       Type = Type[1]; //Operand array always matches the Mnemonic structure
     }
   }
 
-  //if the current Mnemonic is an array 4 in size it is an SSE instruction
+  //if the current Mnemonic is an array 4 in size it is an SSE, or MMX instruction
 
   if(Name instanceof Array && Name.length == 4)
   {
 
-    //SSE1 Scalar Single (F3 hex Prefix)
+    //Reset the prefix string G1 because prefix codes F2, and F3 are used with SSE which forum the repeat prefix.
+    //Some SSE instructions can use the REP, RENP prefix thus the SSE mode uses Packed Single format.
 
-    if(PrefixG1 == Mnemonics[0xF3] & Name[1] != "")
+    if(Name[SIMD] !== "")
     {
       PrefixG1 = "";
-      Name = Name[1];
-      Type = Type[1];
+      Name = Name[SIMD];
+      Type = Type[SIMD];
     }
-    //if SSE2 Scalar Double (F2 hex Prefix)
-
-    else if(PrefixG1 == Mnemonics[0xF2] & Name[3] != "")
-    {
-      PrefixG1 = "";
-      Name = Name[3];
-      Type = Type[3];
-    }
-
-    //SSE2 Packed Double (66 hex Prefix)
-
-    else if(OvOperands)
-    {
-      Name = Name[2];
-      Type = Type[2];
-    }
-
-    //else no prefix use default Packed Single
-
-    else
-    {
-      Name = Name[0];
-      Type = Type[0];
-    }
+    else{Name = Name[0];Type = Type[0];}
 
   }
- 
-  //******************************************************************************************************************************
-  //decode the operand string and sort it for the X86-64 instruction format decode order
-  //******************************************************************************************************************************
-  //The function DecodeOprandStr decodes the Operands hex string into operand type,and settings which are two hex values 2 in length per operand
-  //*The function DecodeOprandStr also decodes if the operation is a HLE,or MPX,or Jump instuctions which use HT,and HNT prefix
-  //******************************************************************************************************************************
-  //*The function FormatOperands puts the operands in the order the CPU always reads them in however
-  //The CPU may preform the Operation in a different order than the order the CPU reads the inputs/operands
-  //*The Oprand string format has the operands in the order the operation is completed
-  //*The function FormatOperands puts the operands in the order the CPU reads them in,but stores a new number for
-  //which operand it was originally under in the operand string format
-  //******************************************************************************************************************************
- 
-  var X86Format = FormatOperands(DecodeOprandStr(Type));
- 
-  //The X86Format array decodes the available operands in order and sets them under the correct array element for which order they must be decoded in however the OperandNum which is
-  //added by the SortOperands function is a value that specifies which operand element it really goes under in the output array for which order the operands ware originally in.
- 
-  //note X86-64 Instruction format order for the X86Format array
-  //Array Element zero = "Reg opcode" uses the function DecodeRegValue if available in the operand string format
-  //Array Element one = "ModR/M address,or Moffs" uses the function Decode_ModRM_SIB_Address if available in the operand string format
-  //Array Element two = "ModR/M Reg" uses the function DecodeRegValue if available in the operand string format
-  //Array Element three = "Immediate" uses function DecodeImmediate if available in the operand string format
-  //Array Element four = "Immediate" uses function DecodeImmediate if available in the operand string format
 
-  //The Explicit operand are not exactly part of the Instruction binary encoding,But still have to be Identified to be decoded
+  //If Extension is not 0 then add the vector extend "V" to the instruction.
+  //During the decoding of the operands the instruction can be returned as invalid if it is an Arithmetic, or MM, ST instruction.
 
-  //Array Element five = "Explicit operand" if available in the operand string format
-  //Array Element six = "Explicit operand" if available in the operand string format
-  //Array Element seven = "Explicit operand" if available in the operand string format
-  //Array Element eight = "Explicit operand" if available in the operand string format
-  
-  //**The operation type is now identified for if it is a HLE,or MPX,or HT,HNT.
-  //if REP prefix, and LOCK prefix are used together, and the curent decoded operation allows HLE XRELEASE
+  if(Extension > 0){ Name = "V" + Name; }
 
-  if(PrefixG1 == Mnemonics[0xF3] & PrefixG2 == Mnemonics[0xF0] & XRelease)
-  {
-    PrefixG1 = "XRELEASE "; //Then change REP to XRELEASE
-  }
+  //return the instruction and encoding type.
 
-  //if REPNE prefix, and LOCK prefix are used together, and the current decoded operation allows HLE XACQUIRE
+  return( [ Name, Type ] );
 
-  if(PrefixG1 == Mnemonics[0xF2] & PrefixG2 == Mnemonics[0xF0] & XAcquire)
-  {
-    PrefixG1 = "XACQUIRE "; //Then change REP to XACQUIRE
-  }
-
-  //else if Prefix is REPNE switch it to BND if operation is a MPX instruction
-
-  else if(PrefixG1 == Mnemonics[0xF2] & BND)
-  {
-    PrefixG1 = "BND ";
-  }
-  
-  //if HT is active then it is a jump instruction check and adjust for the HT,and HNT prefix
-
-  if(HT)
-  {
-    if (SegOverride == Mnemonics[0x2E])
-    {
-      PrefixG1 = "HNT ";
-    }
-
-    else if (SegOverride == Mnemonics[0x3E])
-    {
-      PrefixG1 = "HT ";
-    }
-  }
-
-  //if PrefixG1 ends up being one of the HLE instructions Flip G1 with G2 if HLEFlipG1G2 it is true.
-
-  if((PrefixG1 == "XRELEASE " | PrefixG1 == "XACQUIRE ") & HLEFlipG1G2)
-  {
-    var t = PrefixG1; PrefixG1 = PrefixG2; PrefixG2 = t; t = null;
-  }
- 
-  //element 0 which is the Reg opcode binary encoding which is the first thing to decode if used
- 
-  if(typeof X86Format[0] != "undefined")
-  {
-    out[X86Format[0].OperandNum] = DecodeRegValue(
-      Opcode & 0x07, //selected register is last three bits of the opcode
-      X86Format[0].Size, //Size setting attribute
-      Rex[0] & Rex[4] //extends under the REX.B prefix
-      );
-  }
- 
-  //element 1 which is the ModR/M address,or Moffs address binary encoding if used
- 
-  if(typeof X86Format[1] != "undefined")
-  {
-    //check if type is the Moffs Address
-    
-    if( X86Format[1].Type == 6 )
-    {
-      var s = GetOperandSize( X86Format[1].Size ); //get the size setting based on prefix size adjusts,and allowed size attribute
- 
-      if( s != 5 & s != 7 ) //the pointer selection by size is different under 5 and 7 because of both the MM and XMM pointers
-      {
-        out[X86Format[1].OperandNum] = PTRS[s]; //select pointer as by size normally as long as it is not 5,or 7
-      }
- 
-      else //else it is in the Array of the double pointers with the MM,or XMM pointers mixed with the normal pointers
-      {
-        out[ X86Format[1].OperandNum ] = PTRS[s][0]; //use the first pointer of the selected size
-      }
-      
-      out[ X86Format[1].OperandNum ] += SegOverride + DecodeImmediate(parseInt("0010000",2),0) + "]"; //64 bits for the address location
-    }
-    
-    //else it is a Regular ModR/M address
-    
-    else
-    {
-      //Decode the ModR/M byte value store it into the ModRMValues if ModR/M was not previously used as a Secondary Digit/Opcode
- 
-      if(ModRMValues == "")
-      {
-        ModRMValues = Decode_ModRM_SIB_Value();
-      }
- 
-      //Decode the ModR/M address Mod bit's,and R/M bits Except for Reg/Opcode Including all ModR/M address settings
-      //Note the ModR/M RegMode goes in order by the Real reg mode For the ModR/M type only have to subtract by two because of the Reg Opcode operand starting at type 01
- 
-      out[X86Format[1].OperandNum] = Decode_ModRM_SIB_Address(
-        ModRMValues, //ModR/M byte values
-        X86Format[1].Type - 2, //type by value
-        X86Format[1].Size //size atrrubutes
-        );
-    }
-    
-  }
- 
-  //element 2 which is the ModR/M,REG section is used which uses the ModRMValues previously read by the ModR/M,or Moffs address
- 
-  if(typeof X86Format[2] != "undefined")
-  {
-    out[X86Format[2].OperandNum] = DecodeRegValue(
-      ModRMValues[1], //The Reg/Opcode bits of the ModR/M
-      X86Format[2].Size, //Size setting attribute
-      Rex[2] & Rex[4] //extends under the REX.R prefix
-      );
-  }
- 
-  //element 3 which is the first Immediate input
- 
-  if(typeof X86Format[3] != "undefined")
-  {
-    out[X86Format[3].OperandNum] = DecodeImmediate(
-      X86Format[3].Size, //Size setting attribute
-      X86Format[3].Type - 8 //The type of Immediate by value
-      );
-  }
- 
-  //element 4 which is the second possible Immediate input Note rarely used
- 
-  if(typeof X86Format[4] != "undefined")
-  {
-    out[X86Format[4].OperandNum] = DecodeImmediate(
-      X86Format[4].Size, //Size setting attribute
-      X86Format[4].Type - 8 //The type of Immediate by value
-      );
-  }
- 
-  //Decode the Possible Explicit Operands only if they exist in the array length if so iterate them till length end
- 
-  for(var i = 5; i < X86Format.length; i++)
-  {
-    //General use registers value 0 though 4 there size can change by size setting but can not be extended or changed
- 
-    if(X86Format[i].Type >= 11 & X86Format[i].Type <= 14)
-    {
-      out[X86Format[i].OperandNum] = DecodeRegValue(
-        X86Format[i].Type - 11, //register by value for Explicit Registers A,C,D,B
-        X86Format[i].Size, //Size attribute
-        false //No Boolean logic extend condition this time just false
-        );
-    }
-    
-    //source and destination address Explicit Operands prefixes can extend the registers and change pointer size uses RegMode 0
-    
-    else if(X86Format[i].Type == 15 | X86Format[i].Type == 16)
-    {
-        out[X86Format[i].OperandNum] = Decode_ModRM_SIB_Address(
-            [0,0,X86Format[i].Type - 9], //source and destination pointer register by type value
-            0, //general use register mode
-            X86Format[i].Size //size attributes
-            );
-    }
- 
-    //RBX address Explicit Operands prefixes can extend the registers and change pointer size RegMode 0
-    
-    else if(X86Format[i].Type == 17)
-    {
-        out[X86Format[i].OperandNum] = Decode_ModRM_SIB_Address(
-          [0,0,3],// the RBX register only for the pointer
-          0, //general use
-          X86Format[i].Size //size attributes
-          );
-    }
- 
-    //The ST only Operand
-    
-    else if(X86Format[i].Type == 18)
-    {
-      out[ X86Format[i].OperandNum ] = "ST";
-    }
- 
-    //The Explicit Operand is always a forward input of a static number value
-    
-    else if(X86Format[i].Type == 19)
-    {
-      out[ X86Format[i].OperandNum ] = X86Format[i].Size+"";
-    }
-    
-    //The Static FS,and GS registers
-    
-    else if(X86Format[i].Type == 20 | X86Format[i].Type == 21)
-    {
-      out[ X86Format[i].OperandNum ] = REG[0][X86Format[i].Type - 16]; //register by type value
-    }
-    
-    //The XMM0 only register
-    
-    else if(X86Format[i].Type == 22)
-    {
-      out[ X86Format[i].OperandNum ] = "XMM0";
-    }
-    
-  }
-
-  //add the Prefix string before the operation code
-
-  Name = PrefixG1 + PrefixG2 + Name;
-
-  //add hex codes of the decoded operation if ShowInstructionHex decoding is active
-
-  if(ShowInstructionHex)
-  {
-    InstructionHex = InstructionHex.toUpperCase(); //make it uppercase
-    for(; InstructionHex.length < 17;InstructionHex = InstructionHex + " ");
-    Name = InstructionHex + "\x09" + Name; //add it behind the operation Name and optional Prefix string
-    InstructionHex = ""; //reset the hex decode string for the next operation code
-  }
-
-  //add the 64 bit address of the instruction if ShowInstructionPos decoding is active
-
-  if(ShowInstructionPos)
-  {
-    Name = InstructionPos + "\x09" + Name; //add it behind the operation Name,and optional Perfix,and Operation hex code if the hex code display setting is active
-    InstructionPos = ""; //set the position black to load the position in again for the next instruction
-  }
-  
-  //reset all the Prefix settings because the full instruction has decoded
-  
-  OvOperands = false;
-  OvRam = false;
-  Rex[4] = false;
-  XRelease = false;
-  XAcquire = false;
-  BND = false;
-  HT = false;
-  PrefixG1 = "";
-  PrefixG2 = "";
-  SegOverride = "[";
-  OpBase = 0;
- 
-  //return the instruction
- 
-  return(Name+"\x09"+out+"\r\n");
- 
 }
 
-//********************************do an linear disassemble********************************
+/*-------------------------------------------------------------------------------------------------------------------------
+Read each operand in the Operand String then set the correct operand in the X86 decoder array.
+And also OpNum is the order the operands are read in the operand string this number (OpNum) is set to the
+operand in the decoder array as each operand is read. Each set operand will be decoded by the function
+^DecodeOperands()^. The OpNum is the order the decoded operands will be positioned after they are decoded
+in order along the X86 decoder. The order the operands display is different than the order they decode in sequence.
+---------------------------------------------------------------------------------------------------------------------------
+This function is used after the function ^DecodeOpcode()^ because the function ^DecodeOpcode()^ gives back the
+operand string for what the instruction takes as input plus they are in order.
+-------------------------------------------------------------------------------------------------------------------------*/
 
-function Disassemble(Code)
-{
-  Out=""; //The Disassemble output
+function DecodeOperandString( OperandString ){
 
-  BinCode = Code; //set the Publicaly avaible binary code array that will be used by all functions
+  //Variables that are used for decoding one operands across the operand string.
 
-  //Disassemble binary code using an linear pass
+  var OperandValue = 0, Code = 0, BySize = 0, Setting = 0;
 
-  while(CodePos32<BinCode.length)
+  //It does not matter which order the explicit operands decode as they do not require reading another byte.
+  //They start at 7 and are set in order, but the order they are displayed is the order they are read in the operand string because of OpNum.
+
+  var ExplicitOp = 7, ImmOp = 3;
+
+  //Each operand is 4 hex digits, and OpNum is added by one for each operand that is read per Iteration.
+
+  for( var i = 0, OpNum = 0; i < OperandString.length; i+=4 ) //Iterate though operand string.
   {
-    try
+    OperandValue = parseInt( OperandString.substring(i, (i + 4) ), 16 ); //Convert the four hex digits to a 16 bit number value.
+
+    Code = ( OperandValue & 0xFE00 ) >> 9; //Get the operand Code.
+    BySize = ( OperandValue & 0x0100 ) >> 8; //Get it's by size attributes setting for if Setting is used as size attributes.
+    Setting = ( OperandValue & 0x00FF ); //Get the 8 bit Size setting.
+
+    //If code is 0 the next 8 bit value specifies which type of of prefix settings are active.
+
+    if( Code == 0 )
     {
-      Out += DecodeInstruction(); //Decode One Instruction at a time
+      XRelease = Setting & 0x01;
+      XAcquire = ( Setting & 0x02 ) >> 1;
+      HT = ( Setting & 0x04 ) >> 2;
+      BND = ( Setting & 0x08 ) >> 3;
+
     }
-    catch(e) //Binary code Array index out of bounds
+
+    //if it is a opcode Reg Encoding then first element along the decoder is set as this has to be decode first, before moving to the
+    //byte for modR/M.
+
+    else if( Code == 1 )
     {
-      if(ShowInstructionHex)
+      X86Decoder[0].set( 0, BySize, Setting, OpNum++ );
+    }
+
+    //if it is a ModR/M, or Far pointer ModR/M, or Moffs address then second decoder element is set.
+
+    else if( Code >= 2 & Code <= 4 )
+    {
+
+      X86Decoder[1].set( ( Code - 2 ), BySize, Setting, OpNum++ );
+
+      if( Code == 4 ){ FarPointer = 1; } //If code is 4 it is a far pointer.
+
+    }
+
+    //The ModR/M Reg bit's are separated from the address system above. The ModR/M register can be used as a different register with a
+    //different address pointer. The Reg bits of the ModR/M decode next as it would be inefficient to read the register value if the
+    //decoder moves to the immediate.
+
+    else if( Code == 5 )
+    {
+      X86Decoder[2].set( 0, BySize, Setting, OpNum++ );
+    }
+
+    //Immediate input one. The immediate input is just a number input it is decoded last unless the instruction does not use a
+    //ModR/M encoding, or Reg Opcode.
+
+    else if( Code >= 6 & Code <= 8 & ImmOp <= 4 )
+    {
+      X86Decoder[ImmOp++].set( ( Code - 6 ), BySize, Setting, OpNum++ );
+    }
+
+    //Vector register. If the instruction uses this register it will not be decoded or displayed unless one of the vector extension codes are
+    //decoded by the function ^DecodePrefixAdjustments()^. The Vector extension codes also have a Vector register value that is stored into
+    //the variable VectorRegister. The variable VectorRegister is given to the function ^DecodeRegValue()^.
+
+    else if( Code == 9 & Extension > 0 )
+    {
+      X86Decoder[5].set( 0, BySize, Setting, OpNum++ );
+    }
+
+    //The upper four bits of the Immediate is used as an register. The variable IMM stores the last immediate byte that is read by ^DecodeImmediate()^.
+    //The upper four bits of the IMM is given to the function ^DecodeRegValue()^.
+
+    else if( Code == 10 )
+    {
+      X86Decoder[6].set( 0, BySize, Setting, OpNum++ );
+    }
+
+    //Else any other encoding type higher than 13 is an explicit operand selection.
+    //And also there can only be an max of four explicit operands.
+
+    else if( Code >= 11 & ExplicitOp <= 10)
+    {
+      X86Decoder[ExplicitOp].set( ( Code - 11 ), BySize, Setting, OpNum++ );
+      ExplicitOp++; //move to the next Explicit operand.
+    }
+
+  }
+
+}
+
+/*-------------------------------------------------------------------------------------------------------------------------
+Decode each of the operands along the X86Decoder and detective them.
+This function is used after ^DecodeOperandString()^ which sets up the X86 Decoder for the instructions operands.
+-------------------------------------------------------------------------------------------------------------------------*/
+
+function DecodeOperands(){
+
+  //The Operands array is a string array in which the operand number is the element the decoded operand is positioned.
+
+  var out = [];
+
+  //This holds the decoded ModR/M byte from the "Decode_ModRM_SIB_Value()" function because the Register, and Address can decode differently.
+
+  var ModRMByte = [ -1, //Mode is set negative one used to check if the ModR/M has been decoded.
+    0, //The register value is decoded separately if used.
+    0 //the base register for the address location.
+  ];
+
+  //If no Immediate operand is used then the Immediate register encoding forces an IMM8 for the register even if the immediate is not used.
+
+  var IMM_Used = false; //This is set true for if any Immediate is read because the last Immediate byte is used as the register on the upper four bits.
+
+  //If reg opcode is active.
+
+  if( X86Decoder[0].Active )
+  {
+
+    out[ X86Decoder[0].OpNum ] = DecodeRegValue(
+      ( RegExtend | ( Opcode & 0x07 ) ), //Register value.
+      X86Decoder[0].BySizeAttrubute, //By size attribute or not.
+      X86Decoder[0].Size //Size settings.
+    );
+
+    X86Decoder[0].Deactivate(); //Deactivate the operand along the Decoder.
+
+  }
+
+  //If ModR/M Address is active.
+
+  if( X86Decoder[1].Active )
+  {
+
+    //Decode the ModR/M byte Address which can end up read another byte for SIB address, and including displacements.
+    
+    if(X86Decoder[1].Type != 0)
+    {
+      ModRMByte = Decode_ModRM_SIB_Value(); //Decode the ModR/M byte.
+
+      out[ X86Decoder[1].OpNum ] = Decode_ModRM_SIB_Address(
+        ModRMByte, //The ModR/M byte.
+        X86Decoder[1].BySizeAttrubute, //By size attribute or not.
+        X86Decoder[1].Size //Size settings.
+        );
+    }
+
+    //Else If ModR/M type is 0 then it is a moffs address.
+
+    else
+    { 
+      var s=0, AddrsSize = 0;
+
+      if( X86Decoder[1].BySizeAttrubute )
       {
-        InstructionHex = InstructionHex.toUpperCase();
-        for(; InstructionHex.length < 17;InstructionHex = InstructionHex + " ");
+        AddrsSize = ( Math.pow( 2, BitMode ) << 1 );
+        s = GetOperandSize( X86Decoder[1].Size ) << 1;
       }
       else
       {
-        InstructionHex = "";
+        AddrsSize =  BitMode + 1;
+        s = X86Decoder[1].Size;
+      }
+      out[ X86Decoder[1].OpNum ] = PTR[ s ];
+      out[ X86Decoder[1].OpNum ] += SegOverride + DecodeImmediate( 0, X86Decoder[1].BySizeAttrubute, AddrsSize ) + "]";
+    }
+
+    X86Decoder[1].Deactivate(); //Deactivate the operand along the Decoder.
+
+  }
+
+  //Decode the Register value of the ModR/M byte.
+
+  if( X86Decoder[2].Active )
+  {
+
+    //If the ModR/M address is not used, and ModR/M byte was not previously decoded then decode it.
+
+    if( ModRMByte[0] == -1 ){ ModRMByte = Decode_ModRM_SIB_Value(); }
+
+    //Decode only the Register Section of the ModR/M byte values.
+
+    out[ X86Decoder[2].OpNum ] = DecodeRegValue(
+      ( RegExtend | ( ModRMByte[1] & 0x07 ) ), //Register value.
+      X86Decoder[2].BySizeAttrubute, //By size attribute or not.
+      X86Decoder[2].Size //Size settings.
+    );
+
+    X86Decoder[2].Deactivate(); //Deactivate the operand along the Decoder.
+
+  }
+
+  //First Immediate if used.
+
+  if( X86Decoder[3].Active )
+  {
+
+    out[ X86Decoder[3].OpNum ] = DecodeImmediate(
+      X86Decoder[3].Type, //Immediate input type.
+      X86Decoder[3].BySizeAttrubute, //By size attribute or not.
+      X86Decoder[3].Size //Size settings.
+    );
+
+    IMM_Used = true; //Immediate byte is read.
+
+    X86Decoder[3].Deactivate(); //Deactivate the operand along the Decoder.
+
+  }
+
+  //Second Immediate if used.
+
+  if( X86Decoder[4].Active )
+  {
+
+    out[ X86Decoder[4].OpNum ] = DecodeImmediate(
+      X86Decoder[4].Type, //Immediate input type.
+      X86Decoder[4].BySizeAttrubute, //By size attribute or not.
+      X86Decoder[4].Size //Size settings.
+    );
+
+    X86Decoder[4].Deactivate(); //Deactivate the operand along the Decoder.
+
+  }
+
+  //Vector register if used from an SIMD vector extended instruction.
+
+  if( X86Decoder[5].Active )
+  {
+      out[ X86Decoder[5].OpNum ] = DecodeRegValue(
+      VectorRegister, //Register value.
+      X86Decoder[5].BySizeAttrubute, //By size attribute or not.
+      X86Decoder[5].Size //Size settings.
+    );
+
+    X86Decoder[5].Deactivate(); //Deactivate the operand along the Decoder.
+  }
+
+  //Immediate register encoding.
+
+  if( X86Decoder[6].Active )
+  {
+
+    if( !IMM_Used ) { DecodeImmediate(0, false, 0); } //forces IMM8 if no Immediate has been used.
+
+    out[ X86Decoder[6].OpNum ] = DecodeRegValue(
+      ( IMMValue & 0xF0 ) >> 4 , //Register value.
+      X86Decoder[6].BySizeAttrubute, //By size attribute or not.
+      X86Decoder[6].Size //Size settings.
+    );
+
+    X86Decoder[6].Deactivate(); //Deactivate the operand along the Decoder.
+
+  }
+
+  //-------------------------------------------------------------------------------------------------------------------------
+  //Iterate though the 4 possible Explicit operands The first operands that is not active ends the Iteration.
+  //-------------------------------------------------------------------------------------------------------------------------
+
+  for( var i = 7; i < 10; i++ )
+  {
+
+    //-------------------------------------------------------------------------------------------------------------------------
+    //if Active Type is used as which Explicit operand.
+    //-------------------------------------------------------------------------------------------------------------------------
+
+    if( X86Decoder[i].Active )
+    {
+      //General use registers value 0 though 4 there size can change by size setting but can not be extended or changed.
+
+      if( X86Decoder[i].Type <= 3 )
+      {
+        out[ X86Decoder[i].OpNum ] = DecodeRegValue(
+          X86Decoder[i].Type, //register by value for Explicit Registers A, C, D, B.
+          X86Decoder[i].BySizeAttrubute, //By size attribute or not.
+          X86Decoder[i].Size //Size attribute.
+        );
       }
 
-      //add the 64 bit address of the instruction if ShowInstructionPos decoding is active
-      
-      if(!ShowInstructionPos)
+      //RBX address Explicit Operands prefixes can extend the registers and change pointer size RegMode 0.
+
+      else if( X86Decoder[i].Type == 4 )
       {
-        InstructionPos = "";
+        out[ X86Decoder[i].OpNum ] = Decode_ModRM_SIB_Address(
+          [ 0, 0, 3 ], //the RBX register only for the pointer.
+          X86Decoder[i].BySizeAttrubute, //By size attribute or not.
+          X86Decoder[i].Size //size attributes.
+        );
       }
-      
-      Out +=  InstructionPos+"\x09"+InstructionHex+"\x09"+"Incomplete Instruction Code\r\n";
-      
-      InstructionPos = "";
-      InstructionHex = "";
+
+      //source and destination address Explicit Operands prefixes can extend the registers and change pointer size.
+
+      else if( X86Decoder[i].Type == 5 | X86Decoder[i].Type == 6 )
+      {
+        out[ X86Decoder[i].OpNum ] = Decode_ModRM_SIB_Address(
+            [ 0, 0, ( X86Decoder[i].Type + 1 ) ], //source and destination pointer register by type value.
+            X86Decoder[i].BySizeAttrubute, //By size attribute or not.
+            X86Decoder[i].Size //size attributes.
+          );
+      }
+
+      //The ST only Operand, and FS, GS.
+
+      else if( X86Decoder[i].Type >= 7 )
+      {
+        out[ X86Decoder[i].OpNum ] = ["ST", "FS", "GS"][ ( X86Decoder[i].Type - 7 ) ];
+      }
+
+      X86Decoder[i].Deactivate(); //Deactivate the operand along the Decoder.
     }
+
+    //-------------------------------------------------------------------------------------------------------------------------
+    //else inactive end iteration.
+    //-------------------------------------------------------------------------------------------------------------------------
+
+    else { break; }
+  }
+
+  /*-------------------------------------------------------------------------------------------------------------------------
+  Check if the EVEX vector extension is active if so the Mask, and Zero merge control are inserted into operand 0.
+  The destination operand.
+  -------------------------------------------------------------------------------------------------------------------------*/
+
+  if( Extension == 2 )
+  {
+
+    //Mask Register is first if it is not 0 in value.
+
+    if( MaskRegister !== 0 ){ out[0] += "{K" + MaskRegister + "}"; }
+
+    //If Zero Merge control is active it is added next.
+
+    if( ZeroMerg ) { out[0] += "{Z}"; }
+
+  }
+
+  //convert the operand array to a string and return it.
+
+  return ( out.toString() );
+
+}
+
+/*-------------------------------------------------------------------------------------------------------------------------
+The main Instruction decode function plugs everything in together for the steps required to decode a full X86 instruction.
+-------------------------------------------------------------------------------------------------------------------------*/
+
+function DecodeInstruction()
+{
+  //Setup and internalize the variables.
+
+  var Instruction = ["", //Stores instruction name.
+  "" //Stores the Operands.
+  ];
+
+  var Operands = ""; //Stores the Decoded operands.
+
+  var out = ""; //The instruction code that will be returned back from this function.
+
+  //First read any opcodes (prefix) that act as adjustments to the main three operand decode functions ^DecodeRegValue()^,
+  //^Decode_ModRM_SIB_Address()^, and ^DecodeImmediate()^. And vector extensions can also change the opcode map in the Opcode.
+
+  Extension = DecodePrefixAdjustments();
+
+  //Decode the opcode byte and get what the instruction uses as input.
+  //Only continue if an invalid prefix opcode is not used.
+
+  if( !InvalidOp )
+  {
+
+    //Decode the instruction.
+
+    Instruction = DecodeOpcode();
+
+    //Setup the 86 Decoder for which operands the instruction uses.
+
+    DecodeOperandString( Instruction[1] );
+
+    //Decode each operand along the Decoder array in order, and deactivate them.
+
+    Operands = DecodeOperands();
+
+    //Now only some instructions can vector extend, and that is only if the instruction is an SSE instruction.
+    //The SSE vector unit is detected as the operands are decoded if SSE is not active, and a vector extension is used the instruction is invalid.
+
+    if( !SSE & Extension > 0 ) { InvalidOp = true; }
+  }
+
+  //If the instruction is invalid then set the instruction to "???"
+
+  if( InvalidOp )
+  {
+    out = "???" //set the returned instruction to invalid
+  }
+
+  //Else finish decoding the valid instruction.
+
+  else
+  {
+
+    //**Depending on the operation different prefixes replace others for  HLE,or MPX, and branch prediction.
+    //if REP prefix, and LOCK prefix are used together, and the current decoded operation allows HLE XRELEASE.
+
+    if(PrefixG1 == Mnemonics[0xF3] & PrefixG2 == Mnemonics[0xF0] & XRelease)
+    {
+      PrefixG1 = "XRELEASE"; //Then change REP to XRELEASE.
+    }
+
+    //if REPNE prefix, and LOCK prefix are used together, and the current decoded operation allows HLE XACQUIRE.
+
+    if(PrefixG1 == Mnemonics[0xF2] & PrefixG2 == Mnemonics[0xF0] & XAcquire)
+    {
+      PrefixG1 = "XACQUIRE"; //Then change REP to XACQUIRE
+    }
+
+    //Depending on the order that the Repeat prefix, and Lock prefix is used flip Prefix G1, and G2 if HLEFlipG1G2 it is true.
+
+    if((PrefixG1 == "XRELEASE" | PrefixG1 == "XACQUIRE") & HLEFlipG1G2)
+    {
+      var t = PrefixG1; PrefixG1 = PrefixG2; PrefixG2 = t; t = null;
+    }
+
+    //if HT is active then it is a jump instruction check and adjust for the HT,and HNT prefix.
+
+    if(HT)
+    {
+      if (SegOverride == Mnemonics[0x2E])
+      {
+        PrefixG1 = "HNT";
+      }
+
+      else if (SegOverride == Mnemonics[0x3E])
+      {
+        PrefixG1 = "HT";
+      }
+    }
+
+    //else if Prefix is REPNE switch it to BND if operation is a MPX instruction.
+
+    else if(PrefixG1 == Mnemonics[0xF2] & BND)
+    {
+      PrefixG1 = "BND";
+    }
+
+    //Before the Instruction is put together check the length of the instruction if it is longer than 15 bytes the instruction is undefined.
+    
+    if ( InstructionHex.length > 30 )
+    {
+      //Calculate how many bytes over.
+      var Dif32 = ( ( InstructionHex.length - 30 ) / 2 );
+      //Limit the instruction hex output to 15 bytes.
+      InstructionHex = InstructionHex.substring( 0, 30 );
+      //Calculate the Difference between the Disassembler current position.
+      Dif32 = Pos32 - Dif32;
+      //Convert Dif to unsignified numbers.
+      if( Dif32 < 0 ) { Dif32 += Math.pow( 2, 32 ); }
+      //Convert to strings.
+      for (var S32 = Dif32.toString(16) ; S32.length < 8; S32 = "0" + S32);
+      for (var S64 = Pos64.toString(16) ; S64.length < 8; S64 = "0" + S64);
+      Dif32 = null;
+      //Go to the Calculated address right after the Instruction UD.
+      GotoPosition(  S64 + S32 );
+      //Set prefixes, and operands to empty strings, and set Instruction to UD.
+      PrefixG1 = "";PrefixG2 = ""; Instruction[0] = "UD"; Operands = "";
+    }
+
+    //Put the Instruction sequence together.
+
+    out = PrefixG1 + " " + PrefixG2 + " " + Instruction[0]+ " " + Operands;
+  }
+
+  //The instruction has now been decoded, or is invalid, or is UD, however all of the Prefix settings and adjustments must be reset to defaults in order
+  //for the next instruction to decode properly.
+
+  Opcode = 0; SizeAttrSelect = 1;
+
+  RexActive = false; RegExtend = 0; BaseExtend = 0; IndexExtend = 0;
+
+  SegOverride = "["; AddressOverride = false; FarPointer = 0;
+
+  Extension = 0; SIMD = 0; SSE = false; BRound = false; WidthBit = false;
+
+  VectorRegister = 0; MaskRegister = 0; ZeroMerg = false;
+
+  IMMValue = 0;
+
+  PrefixG1 = "", PrefixG2 = "";
+
+  XRelease = false; XAcquire = false; HLEFlipG1G2 = false;
+
+  HT = false;
+
+  BND = false;
+
+  InvalidOp = false;
+
+  //Return the instruction.
+
+  return( out );
+}
+
+/*-------------------------------------------------------------------------------------------------------------------------
+do an linear disassemble.
+-------------------------------------------------------------------------------------------------------------------------*/
+
+function Disassemble( Code )
+{
+
+  var Instruction = ""; //Stores the Decoded instruction.
+
+  var Out = "";  //The Disassemble output
+
+  BinCode = Code; //set the binary code array.
+
+  //Disassemble binary code using an linear pass.
+
+  while( CodePos32 < BinCode.length )
+  {
+    try
+    {
+      Instruction = DecodeInstruction();
+    }
+    catch(e) //Binary code Array index out of bounds
+    {
+      Instruction = "End Of Data."; //End of Data.
+    }
+    //Add the 64 bit address of the output if ShowInstructionPos decoding is active.
+      
+    if(ShowInstructionPos)
+    {
+      Out += InstructionPos + "\x09";
+    }
+      
+    //Show Each byte that was read to decode the instruction if ShowInstructionHex decoding is active.
+      
+    if(ShowInstructionHex)
+    {
+      InstructionHex = InstructionHex.toUpperCase();
+      for(; InstructionHex.length < 30; InstructionHex = InstructionHex + " " );
+      Out += InstructionHex + "\x09";
+    }
+      
+    //Put the decoded instruction into the output and make a new line.
+
+    Out += Instruction + "\r\n";
+
+    //Reset instruction Pos and Hex.
+      
+    InstructionPos = ""; InstructionHex = "";
   }
 
   CodePos32 = 0; //reset the Code position
