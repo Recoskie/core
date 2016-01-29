@@ -2905,11 +2905,11 @@ function DecodeOperandString( OperandString ){
   //It does not matter which order the explicit operands decode as they do not require reading another byte.
   //They start at 7 and are set in order, but the order they are displayed is the order they are read in the operand string because of OpNum.
 
-  var ExplicitOp = 7;
+  var ExplicitOp = 7, ImmOp = 3;
 
   //Each operand is 4 hex digits, and OpNum is added by one for each operand that is read per Iteration.
 
-  for( var i = 0, OpNum = 0; i < OperandString.length; i+=4, OpNum++ ) //Iterate though operand string.
+  for( var i = 0, OpNum = 0; i < OperandString.length; i+=4 ) //Iterate though operand string.
   {
     OperandValue = parseInt( OperandString.substring(i, (i + 4) ), 16 ); //Convert the four hex digits to a 16 bit number value.
 
@@ -2925,7 +2925,7 @@ function DecodeOperandString( OperandString ){
       XAcquire = ( Setting & 0x02 ) >> 1;
       HT = ( Setting & 0x04 ) >> 2;
       BND = ( Setting & 0x08 ) >> 3;
-      OpNum--;
+
     }
 
     //if it is a opcode Reg Encoding then first element along the decoder is set as this has to be decode first, before moving to the
@@ -2933,7 +2933,7 @@ function DecodeOperandString( OperandString ){
 
     else if( Code == 1 )
     {
-      X86Decoder[0].set( 0, BySize, Setting, OpNum );
+      X86Decoder[0].set( 0, BySize, Setting, OpNum++ );
     }
 
     //if it is a ModR/M, or Far pointer ModR/M, or Moffs address then second decoder element is set.
@@ -2941,9 +2941,10 @@ function DecodeOperandString( OperandString ){
     else if( Code >= 2 & Code <= 4 )
     {
 
-      if( Code == 3 ){ FarPointer = 1; } //if code is 3 it is a far pointer.
+      X86Decoder[1].set( ( Code - 2 ), BySize, Setting, OpNum++ );
 
-      X86Decoder[1].set( ( Code - 2 ), BySize, Setting, OpNum );
+      if( Code == 4 ){ FarPointer = 1; } //If code is 4 it is a far pointer.
+
     }
 
     //The ModR/M Reg bit's are separated from the address system above. The ModR/M register can be used as a different register with a
@@ -2952,47 +2953,40 @@ function DecodeOperandString( OperandString ){
 
     else if( Code == 5 )
     {
-      X86Decoder[2].set( 0, BySize, Setting, OpNum );
+      X86Decoder[2].set( 0, BySize, Setting, OpNum++ );
     }
 
     //Immediate input one. The immediate input is just a number input it is decoded last unless the instruction does not use a
     //ModR/M encoding, or Reg Opcode.
 
-    else if( Code >= 6 & Code <= 8 )
+    else if( Code >= 6 & Code <= 8 & ImmOp <= 4 )
     {
-      X86Decoder[3].set( ( Code - 6 ), BySize, Setting, OpNum );
-    }
-
-    //Immediate Input two. Very few instructions take a second immediate input the X86 instruction "ENTER" takes two immediate inputs.
-
-    else if( Code >= 9 & Code <= 11 )
-    {
-      X86Decoder[4].set( ( Code - 9 ), BySize, Setting, OpNum );
+      X86Decoder[ImmOp++].set( ( Code - 6 ), BySize, Setting, OpNum++ );
     }
 
     //Vector register. If the instruction uses this register it will not be decoded or displayed unless one of the vector extension codes are
     //decoded by the function ^DecodePrefixAdjustments()^. The Vector extension codes also have a Vector register value that is stored into
     //the variable VectorRegister. The variable VectorRegister is given to the function ^DecodeRegValue()^.
 
-    else if( Code == 12 & Extension > 0 )
+    else if( Code == 9 & Extension > 0 )
     {
-      X86Decoder[5].set( 0, BySize, Setting, OpNum );
+      X86Decoder[5].set( 0, BySize, Setting, OpNum++ );
     }
 
     //The upper four bits of the Immediate is used as an register. The variable IMM stores the last immediate byte that is read by ^DecodeImmediate()^.
     //The upper four bits of the IMM is given to the function ^DecodeRegValue()^.
 
-    else if( Code == 13 )
+    else if( Code == 10 )
     {
-      X86Decoder[6].set( 0, BySize, Setting, OpNum );
+      X86Decoder[6].set( 0, BySize, Setting, OpNum++ );
     }
 
     //Else any other encoding type higher than 13 is an explicit operand selection.
     //And also there can only be an max of four explicit operands.
 
-    else if( Code >= 14 & ExplicitOp <= 10)
+    else if( Code >= 11 & ExplicitOp <= 10)
     {
-      X86Decoder[ExplicitOp].set( ( Code - 14 ), BySize, Setting, OpNum );
+      X86Decoder[ExplicitOp].set( ( Code - 14 ), BySize, Setting, OpNum++ );
       ExplicitOp++; //move to the next Explicit operand.
     }
 
@@ -3359,29 +3353,26 @@ function DecodeInstruction()
   //The instruction has now been decoded, or is invalid, or is UD, however all of the Prefix settings and adjustments must be reset to defaults in order
   //for the next instruction to decode properly.
 
-  Opcode = 0;
-  SizeAttrSelect = 1;
-  SSE = false;
-  Extension = 0;
-  FarPointer = 0;
-  AddressOverride = false;
-  RegExtend = 0;
-  BaseExtend = 0;
-  IndexExtend = 0;
-  VectorRegister = 0;
-  MaskRegister = 0;
-  ZeroMerg = false;
-  SegOverride = "[";
-  BRound = false;
-  WidthBit = 0;
-  RexActive = false;
-  SIMD = 0;
+  Opcode = 0; SizeAttrSelect = 1;
+
+  RexActive = false; RegExtend = 0; BaseExtend = 0; IndexExtend = 0;
+
+  SegOverride = "["; AddressOverride = false; FarPointer = 0;
+
+  Extension = 0; SIMD = 0; SSE = false; BRound = false; WidthBit = false;
+
+  VectorRegister = 0; MaskRegister = 0; ZeroMerg = false;
+
   IMMValue = 0;
+
   PrefixG1 = "", PrefixG2 = "";
-  XRelease = false; XAcquire = false;
-  HLEFlipG1G2 = false;
+
+  XRelease = false; XAcquire = false; HLEFlipG1G2 = false;
+
   HT = false;
+
   BND = false;
+
   InvalidOp = false;
 
   //Return the instruction.
@@ -3426,7 +3417,7 @@ function Disassemble( Code )
     if(ShowInstructionHex)
     {
       InstructionHex = InstructionHex.toUpperCase();
-      for(; InstructionHex.length < 17;InstructionHex = InstructionHex + " ");
+      for(; InstructionHex.length < 30; InstructionHex = InstructionHex + " " );
       Out += InstructionHex + "\x09";
     }
       
