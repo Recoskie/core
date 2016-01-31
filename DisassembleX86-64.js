@@ -2837,6 +2837,7 @@ function DecodeOpcode(){
     {
       Name = Name[ ( ModRMByte & 0x07 ) ];
       Type = Type[ ( ModRMByte & 0x07 ) ];
+      NextByte(); //Progress one byte across.
     }
 
   }
