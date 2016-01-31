@@ -139,8 +139,8 @@ var Mnemonics = [
   ["ROL","ROR","RCL","RCR","SHL","SHR","SAL","SAR"],
   ["ROL","ROR","RCL","RCR","SHL","SHR","SAL","SAR"],
   "RET","RET",
-  "VEX not supported yet!",
-  "VEX not supported yet!",
+  "", //VEX Instructions.
+  "", //VEX Instructions.
   ["MOV","???","???","???","???","???","???","XABORT"],
   ["MOV","???","???","???","???","???","???","XBEGIN"],
   "ENTER","LEAVE","RETF","RETF","INT","INT","INTO",
@@ -2755,8 +2755,8 @@ function DecodePrefixAdjustments(){
 
   if (Opcode == 0xF2 | Opcode == 0xF3)
   {
-    SIMD = Opcode & 0x03 ; //F2, and F3 change the SIMD mode during SSE instructions.
-    PrefixG1 = Mnemonics[ Opcode ]; //set the Prefix string
+    SIMD = (Opcode & 0x02 )  |  ( 1 - Opcode & 0x01 ); //F2, and F3 change the SIMD mode during SSE instructions.
+    PrefixG1 = Mnemonics[ Opcode ]; //set the Prefix string.
     HLEFlipG1G2 = true; //set Filp HLE in case this is the last prefix read, and LOCK was set in string G2 first for HLE.
     return(DecodePrefixAdjustments()); //restart function decode more prefix settings that can effect the decode instruction.
   }
