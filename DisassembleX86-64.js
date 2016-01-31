@@ -3378,31 +3378,52 @@ function DecodeInstruction()
   //The instruction has now been decoded, or is invalid, or is UD, however all of the Prefix settings and adjustments must be reset to defaults in order
   //for the next instruction to decode properly.
 
-  Opcode = 0; SizeAttrSelect = 1;
-
-  RexActive = false; RegExtend = 0; BaseExtend = 0; IndexExtend = 0;
-
-  SegOverride = "["; AddressOverride = false; FarPointer = 0;
-
-  Extension = 0; SIMD = 0; SSE = false; BRound = false; WidthBit = false;
-
-  VectorRegister = 0; MaskRegister = 0; ZeroMerg = false;
-
-  IMMValue = 0;
-
-  PrefixG1 = "", PrefixG2 = "";
-
-  XRelease = false; XAcquire = false; HLEFlipG1G2 = false;
-
-  HT = false;
-
-  BND = false;
-
-  InvalidOp = false;
+  Reset();
 
   //Return the instruction.
 
   return( out );
+}
+
+/*-------------------------------------------------------------------------------------------------------------------------
+This function Resets the Decoder in case of error, or an full instruction has been decoded.
+-------------------------------------------------------------------------------------------------------------------------*/
+
+function Reset()
+{
+  //Reset Opcode, and Size attribute selector.
+  
+  Opcode = 0; SizeAttrSelect = 1;
+
+  //Reset ModR/M.
+
+  RexActive = false; RegExtend = 0; BaseExtend = 0; IndexExtend = 0;
+  SegOverride = "["; AddressOverride = false; FarPointer = 0;
+
+  //Reset ModR/M Vector extensions.
+
+  Extension = 0; SIMD = 0; SSE = false; BRound = false; WidthBit = false;
+  VectorRegister = 0; MaskRegister = 0; ZeroMerg = false;
+
+  //Reset IMMValue used for Imm register encoding, and Predicates.
+
+  IMMValue = 0;
+
+  //Reset instruction Prefixes.
+
+  PrefixG1 = "", PrefixG2 = "";
+  XRelease = false; XAcquire = false; HLEFlipG1G2 = false;
+  HT = false;
+  BND = false;
+
+  //Reset Invalid operation code.
+
+  InvalidOp = false;
+
+  //Deactivate all operands along the X86Decoder.
+
+  for( var i = 0; i < X86Decoder.length; X86Decoder[i++].Deactivate() );
+
 }
 
 /*-------------------------------------------------------------------------------------------------------------------------
@@ -3429,7 +3450,9 @@ function Disassemble( Code )
     catch(e) //Binary code Array index out of bounds
     {
       Instruction = "End Of Data."; //End of Data.
+      Reset(); //Reset Disassembler.
     }
+
     //Add the 64 bit address of the output if ShowInstructionPos decoding is active.
 
     if(ShowInstructionPos)
