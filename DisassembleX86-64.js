@@ -703,15 +703,15 @@ var Operands = [
   //X87 FPU
   //------------------------------------------------------------------------------------------------------------------------
   [
-    ["0603","0603","0603","0603","0603","0603","0603","0603"],
-    ["24080603","24080603","0603","0603","24080603","24080603","24080603","24080603"]
+    ["0609","0609","0609","0609","0609","0609","0609","0609"],
+    ["24080609","24080609","0609","0609","24080609","24080609","24080609","24080609"]
   ],
   [
-    ["0603","","0603","0603","0600","0602","0600","0602"],
+    ["0609","","0609","0609","0609","0609","0609","0609"],
     [
-      "0600","0600",
+      "0609","0609",
       ["","","","","","","",""],
-      "0600",
+      "0609",
       ["","","","","","","",""],
       ["","","","","","","",""],
       ["","","","","","","",""],
@@ -719,42 +719,42 @@ var Operands = [
     ]
   ],
   [
-    ["0603","0603","0603","0603","0603","0603","0603","0603"],
+    ["0609","0609","0609","0609","0609","0609","0609","0609"],
     [
-      "24080603","24080603","24080603","24080603","",
+      "24080609","24080609","24080609","24080609","",
       ["","","","","","","",""],"",""
     ]
   ],
   [
-    ["0603","0603","0603","0603","","0606","","0606",""],
+    ["0609","0609","0609","0609","","0609","","0609",""],
     [
-      "24080603","24080603","24080603","24080603",
+      "24080609","24080609","24080609","24080609",
       ["","","","","","","",""],
-      "24080603","24080603",""
+      "24080609","24080609",""
     ]
   ],
   [
-    ["0605","0605","0605","0605","0605","0605","0605","0605"],
-    ["06052408","06052408","0605","0605","06052408","06052408","06052408","06052408"]
+    ["0609","0609","0609","0609","0609","0609","0609","0609"],
+    ["06092408","06092408","0609","0609","06092408","06092408","06092408","06092408"]
   ],
   [
-    ["0605","0605","0605","0605","0605","","0600","0602"],
-    ["0605","0605","0605","0605","0605","0605","",""]
+    ["0609","0609","0609","0609","0609","","0609","0609"],
+    ["0609","0609","0609","0609","0609","0609","",""]
   ],
   [
-    ["0602","0602","0602","0602","0602","0602","0602","0602"],
+    ["0609","0609","0609","0609","0609","0609","0609","0609"],
     [
-      "06022408","06022408","0602",
+      "06092408","06092408","0609",
       ["","","","","","","",""],
-      "06022408","06022408","06022408","06022408"
+      "06092408","06092408","06092408","06092408"
     ]
   ],
   [
-    ["0602","0602","0602","0602","0606","0605","0606","0605"],
+    ["0609","0609","0609","0609","0609","0609","0609","0609"],
     [
-      "0602","0602","0602","0602",
+      "0609","0609","0609","0609",
       ["1601","","","","","","",""],
-      "24080602","24080602",
+      "24080609","24080609",
       ""
     ]
   ],
@@ -1808,7 +1808,7 @@ function is used to progress the disassembler as it is decoding a sequence of by
 function NextByte(){
 
   //record the starting position.
-  
+
   if( InstructionPos == "" ){ InstructionPos = GetPosition(); }
 
   //Add the current byte as hex to InstructionHex which will be displayed beside the decoded instruction.
@@ -2312,10 +2312,10 @@ function Decode_ModRM_SIB_Address( ModRM, BySize, Setting ){
     if( ( Setting >= 8 & Setting <= 14 ) & ( Setting % 2 <= 0 ) )
     {
       SSE = true;
-      
-      //If no Vector extension is active Make sure Size attribute uses the default vector size. 
-      
-      if( Extension == 0 ) 
+
+      //If no Vector extension is active Make sure Size attribute uses the default vector size.
+
+      if( Extension == 0 )
       {
          Setting = 8;
       }
@@ -2536,12 +2536,6 @@ function Decode_ModRM_SIB_Address( ModRM, BySize, Setting ){
 
   else
   {
-    //If By size attributes is false the upper four bits is used for the selected Register 0 to 15.
-
-    if(!BySize)
-    {
-      Setting = Setting >> 8;
-    }
 
     //Decode the select register though the register decode function.
 
@@ -3047,7 +3041,7 @@ function DecodeOperands(){
   {
 
     //Decode the ModR/M byte Address which can end up read another byte for SIB address, and including displacements.
-    
+
     if(X86Decoder[1].Type != 0)
     {
       ModRMByte = Decode_ModRM_SIB_Value(); //Decode the ModR/M byte.
@@ -3062,7 +3056,7 @@ function DecodeOperands(){
     //Else If ModR/M type is 0 then it is a moffs address.
 
     else
-    { 
+    {
       var s=0, AddrsSize = 0;
 
       if( X86Decoder[1].BySizeAttrubute )
@@ -3355,7 +3349,7 @@ function DecodeInstruction()
     }
 
     //Before the Instruction is put together check the length of the instruction if it is longer than 15 bytes the instruction is undefined.
-    
+
     if ( InstructionHex.length > 30 )
     {
       //Calculate how many bytes over.
@@ -3437,27 +3431,27 @@ function Disassemble( Code )
       Instruction = "End Of Data."; //End of Data.
     }
     //Add the 64 bit address of the output if ShowInstructionPos decoding is active.
-      
+
     if(ShowInstructionPos)
     {
       Out += InstructionPos + "\x09";
     }
-      
+
     //Show Each byte that was read to decode the instruction if ShowInstructionHex decoding is active.
-      
+
     if(ShowInstructionHex)
     {
       InstructionHex = InstructionHex.toUpperCase();
       for(; InstructionHex.length < 30; InstructionHex = InstructionHex + " " );
       Out += InstructionHex + "\x09";
     }
-      
+
     //Put the decoded instruction into the output and make a new line.
 
     Out += Instruction + "\r\n";
 
     //Reset instruction Pos and Hex.
-      
+
     InstructionPos = ""; InstructionHex = "";
   }
 
