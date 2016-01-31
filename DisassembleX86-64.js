@@ -651,7 +651,7 @@ var Operands = [
   "030A","030A","030A","030A","030A","030A","030A","030A",
   "030A","030A","030A","030A","030A","030A","030A","030A",
   "","","",
-  "0B0E0603",
+  "0B0E0704",
   "","","","",
   "0D06","0B0E070E0D06",
   "0C00","0B0E070E0C00",
@@ -2930,7 +2930,6 @@ function DecodeOperandString( OperandString ){
       XAcquire = ( Setting & 0x02 ) >> 1;
       HT = ( Setting & 0x04 ) >> 2;
       BND = ( Setting & 0x08 ) >> 3;
-
     }
 
     //if it is a opcode Reg Encoding then first element along the decoder is set as this has to be decode first, before moving to the
@@ -3344,7 +3343,7 @@ function DecodeInstruction()
 
     //else if Prefix is REPNE switch it to BND if operation is a MPX instruction.
 
-    else if(PrefixG1 == Mnemonics[0xF2] & BND)
+    if(PrefixG1 == Mnemonics[0xF2] & BND)
     {
       PrefixG1 = "BND";
     }
