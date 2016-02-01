@@ -2421,7 +2421,7 @@ function Decode_ModRM_SIB_Address( ModRM, BySize, Setting ){
 
       if(ModRM[0] === 0 & ModRM[2] === 5)
       {
-        Disp = 3;
+        Disp = 2;
         DispType = 2;
       }
 
