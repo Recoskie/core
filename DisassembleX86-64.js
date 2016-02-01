@@ -258,7 +258,7 @@ var Mnemonics = [
   "UD2","???",
   [["PREFETCH","PREFETCHW","???","???","???","???","???","???"],"???"],
   "FEMMS","???",
-  ["MOVUPS","MOVUPD","MOVSS","MOVSD"],
+  ["MOVUPS","MOVUPD","MOVSS", ["MOVSD","MOVSD"] ],
   ["MOVUPS","MOVUPD","MOVSS","MOVSD"],
   [["MOVLPS","MOVLPD","MOVSLDUP","MOVDDUP"],["MOVHLPS","???","MOVSLDUP","MOVDDUP"]],
   [["MOVLPS","MOVLPD","???","???"],["???","???","???","???"]],
@@ -801,7 +801,7 @@ var Operands = [
   "","","","",
   [["0601","0601","","","","","",""],""],
   "","",
-  ["0A040710","0A040710","0A040603","0A04060A"],
+  ["0A040710","0A040710","0A040603", ["0A040609","0A0412040604"] ], 
   ["07100A04","07100A04","06030A04","060A0A04"],
   [["0A040606","0A040606","0A040710","0A04060A"],["0A040710","","0A040710","0A04060A"]],
   [["06060A04","06060A04","",""],["","","",""]],
@@ -1770,7 +1770,7 @@ PTR = [
 
   //Pointer array index 8 when GetOperandSize returns size 4 then multiply by 2 gives index 8 for the 128 bit Vector pointer.
   //In far pointer shift the MMX vector pointer is used.
-  //MM is desinged to be used when the by size system is false using index 9 for Pointer, and index 10 for Reg.
+  //MM is designed to be used when the by size system is false using index 9 for Pointer, and index 10 for Reg.
   "XMMWORD PTR ",  "MMWORD PTR ",
 
   //Pointer array index 10 when GetOperandSize returns size 5 then multiply by 2 gives index 10 for the 256 bit SIMD pointer.
@@ -2321,6 +2321,10 @@ function Decode_ModRM_SIB_Address( ModRM, BySize, Setting ){
       }
     }
 
+    //If Vector extended then MM is changed to QWORD.
+
+    if( Extension != 0 & Setting == 9 ){ Setting = 6; }
+
     //-------------------------------------------------------------------------------------------------------------------------
     //Get the pointer size by Size setting.
     //-------------------------------------------------------------------------------------------------------------------------
@@ -2536,7 +2540,6 @@ function Decode_ModRM_SIB_Address( ModRM, BySize, Setting ){
 
   else
   {
-
     //Decode the select register though the register decode function.
 
     out = DecodeRegValue(BaseExtend | ModRM[2], BySize, Setting);
@@ -2692,11 +2695,11 @@ function DecodePrefixAdjustments(){
 
       //Some bits are inverted, so uninvert them arithmetically.
 
-      Opcode = ( 0x087CF0 - ( Opcode & 0x087CF0 ) ) | ( Opcode & 0xF7870F );
+      Opcode = ( 0x087CF0 - ( Opcode & 0x087CF0 ) ) | ( Opcode & 0xF7830F );
 
       //Check if Reserved bits are 0 if they are not 0 the EVEX instruction is invalid.
 
-      if( ( Opcode & 0x00040C ) > 0 ) { InvalidOp = true; }
+      if( ( Opcode & 0x000406 ) > 0 ) { InvalidOp = true; }
 
       //Decode bit settings.
 
@@ -2798,6 +2801,24 @@ function DecodeOpcode(){
   //Some Opcodes use the next byte automatically for extended opcode selection. Or current SIMD mode.
 
   var ModRMByte = BinCode[CodePos32]; //Read the byte but do not move to the next byte.
+
+  //if the current Mnemonic is an array 4 in size it is an SSE, or MMX instruction
+
+  if(Name instanceof Array && Name.length == 4)
+  {
+
+    //Reset the prefix string G1 because prefix codes F2, and F3 are used with SSE which forum the repeat prefix.
+    //Some SSE instructions can use the REP, RENP prefix thus the SSE mode uses Packed Single format.
+
+    if(Name[SIMD] !== "")
+    {
+      PrefixG1 = "";
+      Name = Name[SIMD];
+      Type = Type[SIMD];
+    }
+    else{Name = Name[0];Type = Type[0];}
+
+  }
 
   //If the current Mnemonic is an array two in size then Register Mode, and memory mode are separate from each other.
 
