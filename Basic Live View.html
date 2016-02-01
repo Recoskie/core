@@ -1,0 +1,69 @@
+<html>
+<body onload="(function(){Decode(document.getElementById('T').value);})()">
+
+<script type="text/javascript" src="X86Decoder.js"></script>
+
+<script type="text/javascript">
+
+BitMode = 2; //Bit mode 64.
+SetBasePosition("7777777777777777"); //Set the base address.
+
+function Decode(e)
+{
+
+   var BinaryHex = e;
+
+    var ByteArray = new Array();
+
+    for(var i = 0, el = 0;i < BinaryHex.length;i += 2, el++) { ByteArray[el] = parseInt(BinaryHex.substring(i, i + 2), 16); }
+
+    out = Disassemble( ByteArray );
+
+    //used the byte code array with the Disassemble function
+
+    if( out != "" ) { document.getElementById("DisAsm").value = out; }
+
+    //else no output try again.
+
+    else
+   {
+      out = Disassemble( ByteArray );
+      if( out != "" ) { document.getElementById("DisAsm").value = out; }
+
+       //else not output try once more.
+
+      else
+      {
+        out = Disassemble( ByteArray );
+        if( out != "" ) { document.getElementById("DisAsm").value = out; }
+      }
+   }
+
+    GotoPosition("7777777777777777"); //Goto the start base address.
+  }
+</script>
+
+<center>
+<h1>
+Full X86 Disassembler by Damian Recoskie.
+</h1>
+<h4>Version 2.0 Beta.</h4>
+</center>
+
+<table border="1px" width = "100%">
+<tr><td><center>X86 Code Hex.</center></td><td><center>Disassembly</center></td></tr>
+<tr><td><center>You can type in numbers here which it will update the Disassembly output.<hr />Only numbers 0 though 9, and alphabetical letters A to F are allowed. Any formating, or even an enter, or space will result in invalid instructions.</center></td><td><center>As you change the X86 code the Result is displayed Here.</center></td></tr>
+<tr>
+<td width = "50%">
+<textarea id="T"  style="font-family:monospace;width:100%;" rows='30'
+onkeydown="var e=this; setTimeout(function(){Decode(e.value);}, 4);"
+onkeyup="var e=this; setTimeout(function(){Decode(e.value);}, 4);"
+onpaste="var e=this; setTimeout(function(){Decode(e.value);}, 100);">CCEB004883C438C3CCCCCCCCCCCCCCCC488BC448895810488970184889782055488DA8E8FDFFFF4881EC10030000488B05930A0A004833C4488985000200004C8B05AAD8090033C0488944244233F6C74424582A002C00488D05B23F05004889442460488D45F04889442448488BF9C744244000000802</textarea>
+</td>
+<td width = "50%">
+<textarea id="DisAsm" style="font-family:monospace;width:100%;" wrap="off" rows='30' readonly></textarea>
+</td>
+</tr>
+</table>
+</body>
+</html>
