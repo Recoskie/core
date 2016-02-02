@@ -258,7 +258,10 @@ var Mnemonics = [
   "UD2","???",
   [["PREFETCH","PREFETCHW","???","???","???","???","???","???"],"???"],
   "FEMMS","???",
-  ["MOVUPS","MOVUPD","MOVSS", ["MOVSD","MOVSD"] ],
+  [
+    "MOVUPS","MOVUPD",
+    ["MOVSS","MOVSS"], ["MOVSD","MOVSD"]
+  ],
   ["MOVUPS","MOVUPD","MOVSS","MOVSD"],
   [["MOVLPS","MOVLPD","MOVSLDUP","MOVDDUP"],["MOVHLPS","???","MOVSLDUP","MOVDDUP"]],
   [["MOVLPS","MOVLPD","???","???"],["???","???","???","???"]],
@@ -801,7 +804,10 @@ var Operands = [
   "","","","",
   [["0601","0601","","","","","",""],""],
   "","",
-  ["0A040710","0A040710","0A040603", ["0A040609","0A0412040604"] ], 
+  [
+    "0B700770","0B700770",
+    ["0A040603","0A0412040604"], ["0A040609","0A0412040604"]
+  ],
   ["07100A04","07100A04","06030A04","060A0A04"],
   [["0A040606","0A040606","0A040710","0A04060A"],["0A040710","","0A040710","0A04060A"]],
   [["06060A04","06060A04","",""],["","","",""]],
@@ -2249,7 +2255,17 @@ function DecodeRegValue( RValue, BySize, Setting ) {
 
   //check if Register is a XMM register which allows SIMD vector extension.
 
-  if(Setting >= 4 & Setting <= 7){ SSE = true; }
+  if(Setting >= 4 & Setting <= 7)
+{ 
+    SSE = true; 
+
+    //If no Vector extension is active Make sure Size attribute uses the default vector size.
+
+    if( Extension == 0 )
+    {
+       Setting = 4;
+    }
+  }
 
   //if 8 bit Registers
 
