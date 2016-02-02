@@ -260,10 +260,19 @@ var Mnemonics = [
   "FEMMS","???",
   [
     "MOVUPS","MOVUPD",
-    ["MOVSS","MOVSS"], ["MOVSD","MOVSD"]
+    ["MOVSS","MOVSS"],["MOVSD","MOVSD"]
   ],
-  ["MOVUPS","MOVUPD","MOVSS","MOVSD"],
-  [["MOVLPS","MOVLPD","MOVSLDUP","MOVDDUP"],["MOVHLPS","???","MOVSLDUP","MOVDDUP"]],
+  [
+    "MOVUPS","MOVUPD",
+    ["MOVSS","MOVSS"],["MOVSD","MOVSD"]
+  ],
+  [
+    [
+      "MOVLPS","MOVLPD","MOVSLDUP",
+      ["MOVDDUP","MOVDDUP","MOVDDUP"]
+    ],
+    ["MOVHLPS","???","MOVSLDUP","MOVDDUP"]
+  ],
   [["MOVLPS","MOVLPD","???","???"],["???","???","???","???"]],
   ["UNPCKLPS","UNPCKLPD","???","???"],
   ["UNPCKHPS","UNPCKHPD","???","???"],
@@ -806,15 +815,25 @@ var Operands = [
   "","",
   [
     "0B700770","0B700770",
-    ["0A040603","0A0412040604"], ["0A040609","0A0412040604"]
+    ["0A040603","0A0412040604"],["0A040609","0A0412040604"]
   ],
-  ["07100A04","07100A04","06030A04","060A0A04"],
-  [["0A040606","0A040606","0A040710","0A04060A"],["0A040710","","0A040710","0A04060A"]],
+  [
+    "07700B70","07700B70",
+    ["06030A04","060412040A04"],["06090A04","060412040A04"]
+  ],
+  [
+    [
+      "0A0412040606","0A0412040606","0B700770",
+      ["0B700606","0B700770","0B700770"]
+    ],
+    ["0A0412040604","","0B700770","0B700770"]
+  ],
   [["06060A04","06060A04","",""],["","","",""]],
-  ["0A040710","0A040710","",""],
-  ["0A040710","0A040710","",""],
-  [["0A040606","0A040606","0A040710",""],["0A040710","","0A040710",""]],
+  ["0B7013700774","0B7013700778","",""],
+  ["0B7013700774","0B7013700778","",""],
+  [["0A0412040606","0A0412040606","0B700770",""],["0A0412040604","","0B700770",""]],
   [["06060A04","06060A04","",""],["","","",""]],
+
   [["0601","0601","0601","0601","","","",""],""],
   "",
   [["0A0B0606","0A0B060B","0A0B0606","0A0B0606"],["","0A0B060B","0A0B0603","0A0B0603"]],
@@ -1907,7 +1926,7 @@ function GotoPosition( Address64 ){
 Finds bit positions to the Size attribute indexes in REG array, and Pointer Array. For the Size Attribute variations.
 -------------------------------------------------------------------------------------------------------------------------*/
 
-function GetOperandSize( SizeAttribute ){
+function GetOperandSize( SizeAttribute, Mem ){
 
   //Log 2
 
@@ -1926,7 +1945,7 @@ function GetOperandSize( SizeAttribute ){
   //If Max size is 128 or bigger Vectors use the smaller 64, and 32 Attribute to Broadcast round.
   //----------------------------------------------------------------------------------------------------------------------------------------
 
-  if(S1 >= 4)
+  if( S1 >= 4 & Mem )
   {
     var BRoundAttr = SizeAttribute & 0x0F; //bit attributes 64 and lower.
 
@@ -2066,13 +2085,13 @@ function DecodeImmediate( type, BySize, SizeSetting ){
   if(BySize)
   {
 
-      S = GetOperandSize(S); //holds the decoded size setting value.
+      S = GetOperandSize( S, false ); //holds the decoded size setting value.
 
       PAD = S; //PAD is current size unless the Size Setting has Size settings for pad sizes.
 
       if (SizeSetting > 0x0F) //if higher 4 bits is used then go by size attribute for Immediate Sizes that have to be padded to.
       {
-          PAD = GetOperandSize(PAD); //PAD is size unless the Size Setting has Size settings it can pad till.
+          PAD = GetOperandSize( PAD, flase ); //PAD is size unless the Size Setting has Size settings it can pad till.
       }
 
   }
@@ -2250,14 +2269,14 @@ function DecodeRegValue( RValue, BySize, Setting ) {
 
   if (BySize)
   {
-    Setting = GetOperandSize(Setting); //get decoded size value.
+    Setting = GetOperandSize( Setting, false ); //get decoded size value.
   }
 
   //check if Register is a XMM register which allows SIMD vector extension.
 
   if(Setting >= 4 & Setting <= 7)
-{ 
-    SSE = true; 
+ {
+    SSE = true;
 
     //If no Vector extension is active Make sure Size attribute uses the default vector size.
 
@@ -2313,7 +2332,7 @@ function Decode_ModRM_SIB_Address( ModRM, BySize, Setting ){
 
     if (BySize)
     {
-      Setting = (GetOperandSize(Setting) << 1) | FarPointer;
+      Setting = ( GetOperandSize( Setting, true ) << 1 ) | FarPointer;
     }
 
     //-------------------------------------------------------------------------------------------------------------------------
@@ -2818,6 +2837,28 @@ function DecodeOpcode(){
 
   var ModRMByte = BinCode[CodePos32]; //Read the byte but do not move to the next byte.
 
+  //If the current Mnemonic is an array two in size then Register Mode, and memory mode are separate from each other.
+
+  if(Name instanceof Array && Name.length == 2)
+  {
+
+     //if Register mode
+
+     if( ( ModRMByte & 0xC0 ) == 0xC0 )
+     {
+       Name = Name[1];
+       Type = Type[1];
+     }
+
+     //else Address mode
+
+     else
+     {
+       Name = Name[0];
+       Type = Type[0];
+     }
+  }
+
   //if the current Mnemonic is an array 4 in size it is an SSE, or MMX instruction
 
   if(Name instanceof Array && Name.length == 4)
@@ -2831,6 +2872,7 @@ function DecodeOpcode(){
       PrefixG1 = "";
       Name = Name[SIMD];
       Type = Type[SIMD];
+
     }
     else{Name = Name[0];Type = Type[0];}
 
@@ -2887,6 +2929,7 @@ function DecodeOpcode(){
     {
       Name = Name[SizeAttrSelect]; //set it to the Mnemonic
       Type = Type[SizeAttrSelect]; //Operand array always matches the Mnemonic structure
+
     }
 
     //else no size prefix use default size Mnemonic name
@@ -3099,7 +3142,7 @@ function DecodeOperands(){
       if( X86Decoder[1].BySizeAttrubute )
       {
         AddrsSize = ( Math.pow( 2, BitMode ) << 1 );
-        s = GetOperandSize( X86Decoder[1].Size ) << 1;
+        s = GetOperandSize( X86Decoder[1].Size, true ) << 1;
       }
       else
       {
@@ -3429,7 +3472,7 @@ This function Resets the Decoder in case of error, or an full instruction has be
 function Reset()
 {
   //Reset Opcode, and Size attribute selector.
-  
+
   Opcode = 0; SizeAttrSelect = 1;
 
   //Reset ModR/M.
