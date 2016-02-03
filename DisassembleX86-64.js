@@ -294,15 +294,21 @@ var Mnemonics = [
     ["CVTPI2PS","","",""],["CVTPI2PD","","",""], //Is not allowed to be Vector encoded.
     "CVTSI2SS","CVTSI2SD"
   ],
-  [["MOVNTPS","MOVNTPD","MOVNTSS","MOVNTSD"],["???","???","???","???"]],
+  [
+    "MOVNTPS","MOVNTPD",
+    ["MOVNTSS","","",""],["MOVNTSD","","",""] //SSE4a can not be vector encoded.
+  ],
   [
     ["CVTTPS2PI","","",""],["CVTTPD2PI","","",""], //Is not allowed to be Vector encoded.
     ["CVTTSS2SI","CVTTSS2SI"],["CVTTSD2SI","CVTTSD2SI"]
   ],
+  [
+    ["CVTPS2PI","","",""],["CVTPD2PI","","",""], //Is not allowed to be Vector encoded.
+    ["CVTSS2SI","CVTSS2SI"],["CVTSD2SI","CVTSD2SI"]
+  ],
+  [["UCOMISS","UCOMISS"],["UCOMISD","UCOMISD"],"???","???"],
+  [["COMISS","COMISS"],["COMISD","COMISD"],"???","???"],
 
-  ["CVTPS2PI","CVTPD2PI","CVTSS2SI","CVTSD2SI"],
-  ["UCOMISS","UCOMISD","???","???"],
-  ["COMISS","COMISD","???","???"],
   "WRMSR","RDTSC","RDMSR","RDPMC",
   "SYSENTER","SYSEXIT","???",
   "GETSEC",
@@ -856,15 +862,23 @@ var Operands = [
     ["0A04060A","","",""],["0A04060A","","",""], //Not Allowed to be Vector encoded.
     "0A041204070C","0A041204070C"
   ],
-  [["07700B70","07700B70","06030A04","06060A04"],["","","",""]],
+  [
+    "07700B70","07700B70",
+    ["06030A04","","",""],["06060A04","","",""] //SSE4a can not be vector encoded.
+  ],
   [
     ["0A0A060A","","",""],["0A0A0710","","",""], //Not allowed to be Vector encoded.
     ["0B0C0604","0B0C0604"],["0B0C0609","0B0C0604"]
   ],
+  [
+    ["0A0A0609","","",""],["0A0A0710","","",""], //Not allowed to be vector encoded.
+    ["0B0C0603","0B0C0604"],["0B0C0609","0B0C0604"]
+  ],
 
-  ["0A0A060A","0A0A0710","0B0C0603","0B0C060A"],
-  ["0A040603","0A04060A","",""],
-  ["0A040603","0A04060A","",""],
+  [["0A040603","0A040604"],["0A040609","0A040604"],"",""],
+
+  [["0A040603","0A040604"],["0A040609","0A040604"],"",""],
+
   "","","","",
   "","","",
   "",
