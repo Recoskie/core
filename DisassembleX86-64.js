@@ -290,9 +290,16 @@ var Mnemonics = [
   ["???","MOV"],"???",//TR (TASK REGISTER) register Move
   ["MOVAPS","MOVAPD","???","???"],
   ["MOVAPS","MOVAPD","???","???"],
-  ["CVTPI2PS","CVTPI2PD","CVTSI2SS","CVTSI2SD"],
+  [
+    ["CVTPI2PS","","",""],["CVTPI2PD","","",""], //Is not allowed to be Vector encoded.
+    "CVTSI2SS","CVTSI2SD"
+  ],
   [["MOVNTPS","MOVNTPD","MOVNTSS","MOVNTSD"],["???","???","???","???"]],
-  ["CVTTPS2PI","CVTTPD2PI","CVTTSS2SI","CVTTSD2SI"],
+  [
+    ["CVTTPS2PI","","",""],["CVTTPD2PI","","",""], //Is not allowed to be Vector encoded.
+    ["CVTTSS2SI","CVTTSS2SI"],["CVTTSD2SI","CVTTSD2SI"]
+  ],
+
   ["CVTPS2PI","CVTPD2PI","CVTSS2SI","CVTSD2SI"],
   ["UCOMISS","UCOMISD","???","???"],
   ["COMISS","COMISD","???","???"],
@@ -833,7 +840,6 @@ var Operands = [
   ["0B7013700774","0B7013700778","",""],
   [["0A0412040606","0A0412040606","0B700770",""],["0A0412040604","","0B700770",""]],
   [["06060A04","06060A04","",""],["","","",""]],
-
   [["0601","0601","0601","0601","","","",""],""],
   "",
   [["0A0B0606","0A0B060B","0A0B0606","0A0B0606"],["","0A0B060B","0A0B0603","0A0B0603"]],
@@ -844,11 +850,18 @@ var Operands = [
   ["","0A0C06030001"],["","0A0D06030001"],
   ["","06030A0E0001"],"",
   ["","0A0E06030001"],"",
-  ["0A040710","0A040710","",""],
-  ["07100A04","07100A04","",""],
-  ["0A04060A","0A04060A","0A04070C","0A04070C"],
-  [["07100A04","07100A04","06030A04","06060A04"],["","","",""]],
-  ["0A0A060A","0A0A0710","0B0C0603","0B0C060A"],
+  ["0B700770","0B700770","",""],
+  ["07700B70","07700B70","",""],
+  [
+    ["0A04060A","","",""],["0A04060A","","",""], //Not Allowed to be Vector encoded.
+    "0A041204070C","0A041204070C"
+  ],
+  [["07700B70","07700B70","06030A04","06060A04"],["","","",""]],
+  [
+    ["0A0A060A","","",""],["0A0A0710","","",""], //Not allowed to be Vector encoded.
+    ["0B0C0604","0B0C0604"],["0B0C0609","0B0C0604"]
+  ],
+
   ["0A0A060A","0A0A0710","0B0C0603","0B0C060A"],
   ["0A040603","0A04060A","",""],
   ["0A040603","0A04060A","",""],
@@ -1482,9 +1495,10 @@ Used by the function ^GetOperandSize()^, and the function ^Decode_ModRM_SIB_Addr
 var BRound = false;
 
 /*-------------------------------------------------------------------------------------------------------------------------
-The Width Bit is used differently in vector extended instructions as a separator in the opcode map for more operations.
+The Width Bit is used differently in vector extended instructions as a separator in the opcode map for operations.
+The Width bit also operates on the lower size attributes 8/16/32/64 during vector instructions.
 --------------------------------------------------------------------------------------------------------------------------
-Used by function ^DecodeOpcode()^.
+Used by function ^DecodeOpcode()^. and ^GetOperandSize()^.
 -------------------------------------------------------------------------------------------------------------------------*/
 
 var WidthBit = 0;
@@ -1992,19 +2006,25 @@ function GetOperandSize( SizeAttribute, Mem ){
   if (S2 == Number.NEGATIVE_INFINITY) { S2 = S1; }
 
   //----------------------------------------------------------------------------------------------------------------------------------------
-  //If there is no Third size attribute then Size attributes shift down. This is so the smaller size is the lower size attribute.
+  //If there is no Third size attribute then Size attributes shift down.
+  //This is so the smaller size is the lower size attribute.
+  //Only if S2 is not default 32, and S1 is higher in size then the shift down is wrong.
   //----------------------------------------------------------------------------------------------------------------------------------------
 
-  if (S3 == Number.NEGATIVE_INFINITY) { S3 = S2; S2 = S1; }
+  if ( S3 == Number.NEGATIVE_INFINITY & S2 != 2 ) { S3 = S2; S2 = S1; }
 
   //In 32/16 bit mode the operand size must never exceed 32.
 
-  if (BitMode <= 1 & S2 == 3){ S2 = 2; }
+  if (BitMode <= 1 & S2 >= 3 ){ S2 = 2; }
 
   //In 16 bit mode The operand override is always active until used. This makes all operands 16 bit size.
   //When Operand override is used it is the default 32 size. Flip S3 with S2.
 
   if(BitMode === 0) { var t = S3; S3 = S2; S2 = t; t = null; }
+
+  //If an Vector Extensions is active, and arithmetic attribute was decoded then the EVEX.W, VEX.W bit acts as 32/64.
+
+  if( Extension > 0 & ( ( S1 | S2 | S3 ) <= 3 ) ) { return( ( [S3, S2, S1, -1] )[ WidthBit + 1 ] ); }
 
   //note the fourth size that is -1 in the returned size attribute is Vector length 11=3 which is invalid unless Intel decides to add 1024 bit vectors.
 
@@ -2358,7 +2378,7 @@ function Decode_ModRM_SIB_Address( ModRM, BySize, Setting ){
 
     //If Vector extended then MM is changed to QWORD.
 
-    if( Extension != 0 & Setting == 9 ){ Setting = 6; }
+    if( Extension != 0 & Setting == 9 ){ Setting = 6; SSE = true; }
 
     //-------------------------------------------------------------------------------------------------------------------------
     //Get the pointer size by Size setting.
@@ -2838,6 +2858,7 @@ function DecodeOpcode(){
   var ModRMByte = BinCode[CodePos32]; //Read the byte but do not move to the next byte.
 
   //If the current Mnemonic is an array two in size then Register Mode, and memory mode are separate from each other.
+  //Used in combination with vector instructions.
 
   if(Name instanceof Array && Name.length == 2)
   {
@@ -2859,26 +2880,46 @@ function DecodeOpcode(){
      }
   }
 
-  //if the current Mnemonic is an array 4 in size it is an SSE, or MMX instruction
+  //Vector unit 4x4 combinational array logic.
+  //if the current Mnemonic is an array 4 in size it is an SIMD instruction with four possible modes N/A, 66, F3, F2.
+  //The mode is set to SIMD, it could have been set by the EVEX.pp, VEX.pp bit combination, or by prefixes N/A, 66, F3, F2.
 
   if(Name instanceof Array && Name.length == 4)
   {
 
     //Reset the prefix string G1 because prefix codes F2, and F3 are used with SSE which forum the repeat prefix.
-    //Some SSE instructions can use the REP, RENP prefix thus the SSE mode uses Packed Single format.
+    //Some SSE instructions can use the REP, RENP prefixes.
+    //The Vectors that do support the repeat prefix uses Packed Single format.
 
     if(Name[SIMD] !== "")
     {
       PrefixG1 = "";
       Name = Name[SIMD];
       Type = Type[SIMD];
-
     }
-    else{Name = Name[0];Type = Type[0];}
+    else{Name = Name[0];Type = Type[0];} //pack single.
+
+    //If the SIMD instruction uses another array 4 in length in the Selected SIMD vector Instruction.
+    //Then each vector Extension is separate. The first extension is used if no extension is active for Regular instructions, and vector instruction septation.
+    //0=None. 1=VEX only. 2=EVEX only. 3=??? unused.
+
+    if(Name instanceof Array && Name.length == 4)
+    {
+
+      //Get the correct Instruction for the Active Extension type.
+
+       if(Name[Extension] !== "")
+       {
+         Name = Name[Extension];
+         Type = Type[Extension];
+       }
+       else{Name = "???"; Type = "";}
+    }
 
   }
 
   //If the current Mnemonic is an array two in size then Register Mode, and memory mode are separate from each other.
+  //Used in combination of the ModR/M with Group opcode, and Static opcode.
 
   if(Name instanceof Array && Name.length == 2)
   {
@@ -2898,9 +2939,11 @@ function DecodeOpcode(){
        Name = Name[0];
        Type = Type[0];
      }
+
   }
 
-  //if the current Mnemonic is an array 8 in length
+  //Arithmetic unit 8x8 combinational logic array combinations.
+  //If the current Mnemonic is an array 8 in length It is a group opcode instruction may repeat previous instructions in different forums.
 
   if(Name instanceof Array && Name.length == 8)
   {
@@ -2910,18 +2953,18 @@ function DecodeOpcode(){
     Name = Name[ ( ModRMByte & 0x38 ) >> 3 ];
     Type = Type[ ( ModRMByte & 0x38 ) >> 3 ];
 
-    //if The select Group opcode is another array 8 in size it is a static opcode selection
+    //if The select Group opcode is another array 8 in size it is a static opcode selection which makes the last three bits of the ModR/M byte combination.
 
     if(Name instanceof Array && Name.length == 8)
     {
       Name = Name[ ( ModRMByte & 0x07 ) ];
       Type = Type[ ( ModRMByte & 0x07 ) ];
-      NextByte(); //Progress one byte across.
+      NextByte(); //Progress one byte across, because the full ModR/M is used as an static Opcode.
     }
 
   }
 
-  //if the Mnemonic is an array 3 in size the instruction name goes by size.
+  //if Any Mnemonic is an array 3 in size the instruction name goes by size.
 
   if(Name instanceof Array && Name.length == 3)
   {
@@ -2932,31 +2975,13 @@ function DecodeOpcode(){
 
     }
 
-    //else no size prefix use default size Mnemonic name
+    //else no size prefix name then use the default size Mnemonic name
 
     else
     {
       Name = Name[1]; //set it to the Mid default Mnemonic
       Type = Type[1]; //Operand array always matches the Mnemonic structure
     }
-  }
-
-  //if the current Mnemonic is an array 4 in size it is an SSE, or MMX instruction
-
-  if(Name instanceof Array && Name.length == 4)
-  {
-
-    //Reset the prefix string G1 because prefix codes F2, and F3 are used with SSE which forum the repeat prefix.
-    //Some SSE instructions can use the REP, RENP prefix thus the SSE mode uses Packed Single format.
-
-    if(Name[SIMD] !== "")
-    {
-      PrefixG1 = "";
-      Name = Name[SIMD];
-      Type = Type[SIMD];
-    }
-    else{Name = Name[0];Type = Type[0];}
-
   }
 
   //If Extension is not 0 then add the vector extend "V" to the instruction.
@@ -3333,6 +3358,11 @@ The main Instruction decode function plugs everything in together for the steps 
 
 function DecodeInstruction()
 {
+
+  //Reset Prefixes, and vector settings.
+
+  Reset();
+
   //Setup and internalize the variables.
 
   var Instruction = ["", //Stores instruction name.
@@ -3455,11 +3485,6 @@ function DecodeInstruction()
     out = PrefixG1 + " " + PrefixG2 + " " + Instruction[0]+ " " + Operands;
   }
 
-  //The instruction has now been decoded, or is invalid, or is UD, however all of the Prefix settings and adjustments must be reset to defaults in order
-  //for the next instruction to decode properly.
-
-  Reset();
-
   //Return the instruction.
 
   return( out );
@@ -3500,6 +3525,10 @@ function Reset()
 
   InvalidOp = false;
 
+  //Reset instruction hex because it is used to check if the instruction is longer than 15 bytes which is impossible for the X86 Decoder Circuit.
+
+  InstructionHex = "";
+
   //Deactivate all operands along the X86Decoder.
 
   for( var i = 0; i < X86Decoder.length; X86Decoder[i++].Deactivate() );
@@ -3529,8 +3558,8 @@ function Disassemble( Code )
     }
     catch(e) //Binary code Array index out of bounds
     {
-      Instruction = "End Of Data."; //End of Data.
-      Reset(); //Reset Disassembler.
+      if( CodePos32 >= BinCode.length ) { Instruction = "End Of Data."; } //End of Data.
+      else{ Instruction = e+""; } //If an error occurred set it as the instruction that caused it.
     }
 
     //Add the 64 bit address of the output if ShowInstructionPos decoding is active.
