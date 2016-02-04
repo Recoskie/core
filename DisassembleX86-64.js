@@ -308,7 +308,6 @@ var Mnemonics = [
   ],
   [["UCOMISS","UCOMISS"],["UCOMISD","UCOMISD"],"???","???"],
   [["COMISS","COMISS"],["COMISD","COMISD"],"???","???"],
-
   "WRMSR","RDTSC","RDMSR","RDPMC",
   "SYSENTER","SYSEXIT","???",
   "GETSEC",
@@ -318,39 +317,133 @@ var Mnemonics = [
   "???","???","???","???","???",
   "CMOVO","CMOVNO","CMOVB","CMOVAE","CMOVE","CMOVNE","CMOVBE","CMOVA",
   "CMOVS","CMOVNS","CMOVP","CMOVNP","CMOVL","CMOVGE","CMOVLE","CMOVG",
-  [["???","???","???","???"],["MOVMSKPS","MOVMSKPD","???","???"]],
-  ["SQRTPS","SQRTPD","SQRTSS","SQRTSD"],
-  ["RSQRTPS","???","RSQRTSS","???"],
-  ["RCPPS","???","RCPSS","???"],
+  [
+    "???",
+    [
+      ["MOVMSKPS","","",""],["MOVMSKPD","","",""],
+      "???","???"
+    ]
+  ],
+  [
+    "SQRTPS","SQRTPD",
+    ["SQRTSS","SQRTSS"],["SQRTSD","SQRTSD"]
+  ],
+
+  [
+    ["RSQRTPS","","",""],"???",
+    ["RSQRTSS","","",""],"???"
+  ],
+  [
+    ["RCPPS","","",""],"???",
+    ["RCPSS","","",""],"???"
+  ],
   ["ANDPS","ANDPD","???","???"],
   ["ANDNPS","ANDNPD","???","???"],
   ["ORPS","ORPD","???","???"],
   ["XORPS","XORPD","???","???"],
-  ["ADDPS","ADDPD","ADDSS","ADDSD"],
-  ["MULPS","MULPD","MULSS","MULSD"],
-  ["CVTPS2PD","CVTPD2PS","CVTSS2SD","CVTSD2SS"],
+  [
+    "ADDPS","ADDPD",
+    ["ADDSS","ADDSS"],["ADDSD","ADDSD"]
+  ],
+  [
+    "MULPS","MULPD",
+    ["MULSS","MULSS"],["MULSD","MULSD"]
+  ],
+  [
+    "CVTPS2PD","CVTPD2PS",
+    ["CVTSS2SD","CVTSS2SD"],["CVTSD2SS","CVTSD2SS"]
+  ],
   ["CVTDQ2PS","CVTPS2DQ","CVTTPS2DQ","???"],
-  ["SUBPS","SUBPD","SUBSS","SUBSD"],
-  ["MINPS","MINPD","MINSS","MINSD"],
-  ["DIVPS","DIVPD","DIVSS","DIVSD"],
-  ["MAXPS","MAXPD","MAXSS","MAXSD"],
-  ["PUNPCKLBW","PUNPCKLBW","",""],
-  ["PUNPCKLWD","PUNPCKLWD","",""],
-  ["PUNPCKLDQ","PUNPCKLDQ","",""],
-  ["PACKSSWB","PACKSSWB","",""],
-  ["PCMPGTB","PCMPGTB","",""],
-  ["PCMPGTW","PCMPGTW","",""],
-  ["PCMPGTD","PCMPGTD","",""],
-  ["PACKUSWB","PACKUSWB","",""],
-  ["PUNPCKHBW","PUNPCKHBW","",""],
-  ["PUNPCKHWD","PUNPCKHWD","",""],
-  ["PUNPCKHDQ","PUNPCKHDQ","",""],
-  ["PACKSSDW","PACKSSDW","",""],
-  ["???","PUNPCKLQDQ","???","???"],
-  ["???","PUNPCKHQDQ","???","???"],
-  ["MOVD","MOVD","",""],
-  ["MOVQ","MOVDQA","MOVDQU","???"],
+  [
+    "SUBPS","SUBPD",
+    ["SUBSS","SUBSS"],["SUBSD","SUBSD"]
+  ],
+  [
+    "MINPS","MINPD",
+    ["MINSS","MINSS"],["MINSD","MINSD"]
+  ],
+  [
+    "DIVPS","DIVPD",
+    ["DIVSS","DIVSS"],["DIVSD","DIVSD"]
+  ],
+  [
+    "MAXPS","MAXPD",
+    ["MAXSS","MAXSS"],["MAXSD","MAXSD"]
+  ],
+
+  [
+    [["PUNPCKLBW","PUNPCKLBW"],"","",""],
+    "PUNPCKLBW","",""
+  ],
+  [
+    [["PUNPCKLWD","PUNPCKLWD"],"","",""],
+    "PUNPCKLWD","",""
+  ],
+  [
+    [["PUNPCKLDQ","PUNPCKLDQ"],"","",""],
+    "PUNPCKLDQ","",""
+  ],
+  [
+    [["PACKSSWB","PACKSSWB"],"","",""],
+    "PACKSSWB","",""
+  ],
+  [
+    [["PCMPGTB","PCMPGTB"],"","",""],
+    ["PCMPGTB","PCMPGTB","PCMPGTB",""],
+    "",""
+  ],
+  [
+    [["PCMPGTW","PCMPGTW"],"","",""],
+    ["PCMPGTW","PCMPGTW","PCMPGTW",""],
+    "",""
+  ],
+  [
+    [["PCMPGTD","PCMPGTD"],"","",""],
+    ["PCMPGTD","PCMPGTD","PCMPGTD",""],
+    "",""
+  ],
+  [
+    [["PACKUSWB","PACKUSWB"],"","",""],
+    "PACKUSWB","",""
+  ],
+
+  [
+    [["PUNPCKHBW","PUNPCKHBW"],"","",""],
+    "PUNPCKHBW","",""
+  ],
+  [
+    [["PUNPCKHWD","PUNPCKHWD"],"","",""],
+    "PUNPCKHWD","",""
+  ],
+  [
+    [["PUNPCKHDQ","PUNPCKHDQ"],"","",""],
+    "PUNPCKHDQ","",""
+  ],
+  [
+    [["PACKSSDW","PACKSSDW"],"","",""],
+    "PACKSSDW","",""
+  ],
+  [
+    "???","PUNPCKLQDQ",
+    "???","???"
+  ],
+  [
+    "???","PUNPCKHQDQ",
+    "???","???"
+  ],
+  [
+    [["MOVD","MOVD"],"","",""],
+    "MOVD","",""
+  ],
+  [
+    [["MOVQ","MOVQ"],["","MOVDQA32","MOVDQA64"],["","MOVDQA32","MOVDQA64"],""],
+    ["MOVDQA",["","MOVDQU32","MOVDQU64"],["","MOVDQU32","MOVDQU64"],""],
+    ["MOVDQU",["","MOVDQU8","MOVDQU16"],["","MOVDQU8","MOVDQU16"],""],
+    "???"
+  ],
+
   ["PSHUFW","PSHUFD","PSHUFHW","PSHUFLW"],
+  
   [
     "???",
     [
@@ -842,8 +935,8 @@ var Operands = [
     ["0A0412040604","","0B700770","0B700770"]
   ],
   [["06060A04","06060A04","",""],["","","",""]],
-  ["0B7013700774","0B7013700778","",""],
-  ["0B7013700774","0B7013700778","",""],
+  ["0B7013700775","0B7013700779","",""],
+  ["0B7013700775","0B7013700779","",""],
   [["0A0412040606","0A0412040606","0B700770",""],["0A0412040604","","0B700770",""]],
   [["06060A04","06060A04","",""],["","","",""]],
   [["0601","0601","0601","0601","","","",""],""],
@@ -874,11 +967,8 @@ var Operands = [
     ["0A0A0609","","",""],["0A0A0710","","",""], //Not allowed to be vector encoded.
     ["0B0C0603","0B0C0604"],["0B0C0609","0B0C0604"]
   ],
-
   [["0A040603","0A040604"],["0A040609","0A040604"],"",""],
-
   [["0A040603","0A040604"],["0A040609","0A040604"],"",""],
-
   "","","","",
   "","","",
   "",
@@ -888,39 +978,123 @@ var Operands = [
   "","","","","",
   "0B0E070E","0B0E070E","0B0E070E","0B0E070E","0B0E070E","0B0E070E","0B0E070E","0B0E070E",
   "0B0E070E","0B0E070E","0B0E070E","0B0E070E","0B0E070E","0B0E070E","0B0E070E","0B0E070E",
-  [["","","",""],["0A020710","0A020710","",""]],
-  ["0A040710","0A040710","0A040603","0A04060A"],
-  ["0A040710","","0A040603",""],
-  ["0A040710","","0A040603",""],
-  ["0A040710","0A040710","",""],
-  ["0A040710","0A040710","",""],
-  ["0A040710","0A040710","",""],
-  ["0A040710","0A040710","",""],
-  ["0A040710","0A040710","0A040603","0A04060A"],
-  ["0A040710","0A040710","0A040603","0A04060A"],
-  ["0A04060A","0A040710","0A040603","0A04060A"],
-  ["0A040710","0A040710","0A040710",""],
-  ["0A040710","0A040710","0A040603","0A04060A"],
-  ["0A040710","0A040710","0A040603","0A04060A"],
-  ["0A040710","0A040710","0A040603","0A04060A"],
-  ["0A040710","0A040710","0A040603","0A04060A"],
-  ["0A0A0603","0A040710","",""],
-  ["0A0A0603","0A040710","",""],
-  ["0A0A0603","0A040710","",""],
-  ["0A0A060A","0A040710","",""],
-  ["0A0A060A","0A040710","",""],
-  ["0A0A060A","0A040710","",""],
-  ["0A0A060A","0A040710","",""],
-  ["0A0A060A","0A040710","",""],
-  ["0A0A060A","0A040710","",""],
-  ["0A0A060A","0A040710","",""],
-  ["0A0A060A","0A040710","",""],
-  ["0A0A060A","0A040710","",""],
-  ["","0A040710","",""],
-  ["","0A040710","",""],
-  ["0A0A070C","0A04070C","",""],
-  ["0A0A060A","0A040710","0A040710",""],
+  [["","","",""],[["0A020710","","",""],["0A020710","","",""],"",""]],
+  ["0B700774","0B700778",["0A0412040603","0A0412040604"],["0A0412040609","0A0412040604"]],
+  [
+    ["0A040710","","",""],"",
+    ["0A040603","","",""],""
+  ],
+  [
+    ["0A040710","","",""],"",
+    ["0A040603","","",""],""
+  ],
+  ["0B7013700775","0B7013700779","",""],
+  ["0B7013700775","0B7013700779","",""],
+  ["0B7013700775","0B7013700779","",""],
+  ["0B7013700775","0B7013700779","",""],
+  [
+    "0B7013700775","0B7013700779",
+    ["0A0412040603","0A0412040604"],["0A0412040606","0A0412040604"]
+  ],
+  [
+    "0B7013700775","0B7013700779",
+    ["0A0412040603","0A0412040604"],["0A0412040606","0A0412040604"]
+  ],
+  [
+    "0B7013700775","0B7013700779",
+    ["0A0412040603","0A0412040604"],["0A0412040606","0A0412040604"]
+  ],
+  ["0B70077C","0B700774","0B700774",""],
+  [
+    "0B7013700774","0B7013700778",
+    ["0A0412040603","0A0412040604"],["0A0412040606","0A0412040604"]
+  ],
+  [
+    "0B7013700774","0B7013700778",
+    ["0A040603","0A0412040604"],["0A0412040606","0A0412040604"]
+  ],
+  [
+    "0B7013700774","0B7013700778",
+    ["0A0412040603","0A0412040603"],["0A0412040606","0A0412040604"]
+  ],
+  [
+    "0B7013700774","0B7013700778",
+    ["0A0412040603","0A0412040603"],["0A0412040606","0A0412040604"]
+  ],
+
+  [
+    [["0A0A0603","0A0A060A"],"","",""],
+    "0B7013700770","",""
+  ],
+  [
+    [["0A0A0603","0A0A060A"],"","",""],
+    "0B7013700770","",""
+  ],
+  [
+    [["0A0A0603","0A0A060A"],"","",""],
+    "0B7013700774","",""
+  ],
+  [
+    [["0A0A0609","0A0A060A"],"","",""],
+    "0B7013700770","",""
+  ],
+  [
+    [["0A0A0609","0A0A060A"],"","",""],
+    ["0A040710","0B3013030730","0A0F13700770",""],
+    "",""
+  ],
+  [
+    [["0A0A0609","0A0A060A"],"","",""],
+    ["0A040710","0B3013030730","0A0F13700770",""],
+    "",""
+  ],
+  [
+    [["0A0A0609","0A0A060A"],"","",""],
+    ["0A040710","0B3013030730","0A0F13700774",""],
+    "",""
+  ],
+  [
+    [["0A0A0609","0A0A060A"],"","",""],
+    "0B7013700770","",""
+  ],
+
+  [
+    [["0A0A0609","0A0A060A"],"","",""],
+    "0B7013700770","",""
+  ],
+  [
+    [["0A0A0609","0A0A060A"],"","",""],
+    "0B7013700770","",""
+  ],
+  [
+    [["0A0A0609","0A0A060A"],"","",""],
+    "0B7013700774","",""
+  ],
+  [
+    [["0A0A0609","0A0A060A"],"","",""],
+    "0B7013700774","",""
+  ],
+  [
+    "","0B7013700778",
+    "",""
+  ],
+  [
+    "","0B7013700778",
+    "",""
+  ],
+  [
+    [["0A0A070C","0A0A070C"],"","",""],
+    "0A04070C","",""
+  ],
+  [
+    [["0A0A0609","0A0A060A"],["","0B700770","0B700770"],["","0B700770","0B700770"],""],
+    ["0A040710",["","0B700770","0B700770"],["","0B700770","0B700770"],""],
+    ["0A040710",["","0B700770","0B700770"],["","0B700770","0B700770"],""],
+    ""
+  ],
+
   ["0A0A060A0C00","0A0407100C00","0A0407100C00","0A0407100C00"],
+
   [
     "",
     [
@@ -1355,10 +1529,11 @@ In the case of fewer size settings the size system aligns in order to the correc
 If in 16 bit mode the 16 bit operand size trades places with 32, so when operand override is used goes from 16 to 32.
 Also in 32 bit mode any size that is 64 changes to 32, but except for operands that do not use the BySize system.
 ---------------------------------------------------------------------------------------------------------------------------
-During Vector length size settings "128/256/512" the SizeAttrSelect uses the vector length bits as a 0 to 3 value from
+During Vector length size settings "128/256/512" the SizeAttrSelect uses the vector length setting as a 0 to 3 value from
 smallest to largest Note 1024 is Reserved the same system used for General arithmetic sizes "8/16/32/64" that go in order.
-With one difference if any size attribute lower in size like 64, or 32 is active these are used as the Broadcast round size
-for memory vector in the EVEX prefix.
+With a few differences if any size attribute lower in size like 64, or 32 is active in a address pointer
+then sizes 32, and 64 are used if BRound is active from an EVEX prefix. The selected Broadcast round size is controlled by
+the Width bit. If an register is used during a Vector instruction the Width bit allows to move between register Sizes 32/64.
 ---------------------------------------------------------------------------------------------------------------------------
 Used by the function ^GetOperandSize()^ which uses a fast base 2 logarithm system,
 and the function ^DecodeOpcode()^ which uses the current size setting for operation names that change by size.
@@ -1501,7 +1676,7 @@ The EVEX Extension has an broadcast rounding system in which some operations sup
 During Vector length size settings "128/256/512" the SizeAttrSelect uses the vector length bits as a 0 to 3 value from
 smallest to largest Note 1024 is Reserved the same system used for General arithmetic sizes "8/16/32/64" that go in order.
 With one difference if any size attribute lower in size like 64, or 32 is active these are used as the Broadcast round size
-for memory vector in the EVEX prefix.
+for memory vector in the EVEX prefix. The Width Bit is used in combination with size selection 32/64.
 ---------------------------------------------------------------------------------------------------------------------------
 Used by the function ^GetOperandSize()^, and the function ^Decode_ModRM_SIB_Address()^.
 -------------------------------------------------------------------------------------------------------------------------*/
@@ -1509,7 +1684,8 @@ Used by the function ^GetOperandSize()^, and the function ^Decode_ModRM_SIB_Addr
 var BRound = false;
 
 /*-------------------------------------------------------------------------------------------------------------------------
-The Width Bit is used differently in vector extended instructions as a separator in the opcode map for operations.
+The Width Bit controls The memory vector size for Bround B32{1to16}, B64{1to8}.
+And also changes between register size 32/64 during vector instructions. 
 The Width bit also operates on the lower size attributes 8/16/32/64 during vector instructions.
 --------------------------------------------------------------------------------------------------------------------------
 Used by function ^DecodeOpcode()^. and ^GetOperandSize()^.
@@ -1977,19 +2153,20 @@ function GetOperandSize( SizeAttribute, Mem ){
   {
     var BRoundAttr = SizeAttribute & 0x0F; //bit attributes 64 and lower.
 
-    //If Broadcast round is active return the Attribute bit position only if BRoundAttr has an bit setting and is not 0.
-
+    //Check if Broadcast round is active.
+ 
     if(BRound)
     {
-      if(BRoundAttr !== 0)
-      {
-        return(Math.floor((Math.log(BRoundAttr) / p2))); //return Bit position.
-      }
+      //Get the two possible round size attributes.
 
-      //else Broadcast round is invalid for the pointer address return -1.
+      var B1 = Math.floor((Math.log(BRoundAttr) / p2));
+      BRoundAttr -= Math.pow(2, B1);
+      var B2 = Math.floor((Math.log(BRoundAttr) / p2));
+      if( B1 == 2 ){ B2 = 2; B1 = 1; }
 
-      else { return(-1); }
+      //Width bit controls the size between 32/64.
 
+      return( ([B2, B1]) [WidthBit] );
     }
 
     SizeAttribute -= BRoundAttr; //If Broadcast round is not active remove it from the Size Attributes.
@@ -2022,10 +2199,9 @@ function GetOperandSize( SizeAttribute, Mem ){
   //----------------------------------------------------------------------------------------------------------------------------------------
   //If there is no Third size attribute then Size attributes shift down.
   //This is so the smaller size is the lower size attribute.
-  //Only if S2 is not default 32, and S1 is higher in size then the shift down is wrong.
   //----------------------------------------------------------------------------------------------------------------------------------------
 
-  if ( S3 == Number.NEGATIVE_INFINITY & S2 != 2 ) { S3 = S2; S2 = S1; }
+  if ( S3 == Number.NEGATIVE_INFINITY ) { S3 = S2; S2 = S1; }
 
   //In 32/16 bit mode the operand size must never exceed 32.
 
@@ -2038,7 +2214,7 @@ function GetOperandSize( SizeAttribute, Mem ){
 
   //If an Vector Extensions is active, and arithmetic attribute was decoded then the EVEX.W, VEX.W bit acts as 32/64.
 
-  if( Extension > 0 & ( ( S1 | S2 | S3 ) <= 3 ) ) { return( ( [S3, S2, S1, -1] )[ WidthBit + 1 ] ); }
+  if( Extension > 0 & ( ( S1 | S2 | S3 ) <= 3 ) ) { return( ( [ S3, S2 ] )[ WidthBit & 1 ] ); }
 
   //note the fourth size that is -1 in the returned size attribute is Vector length 11=3 which is invalid unless Intel decides to add 1024 bit vectors.
 
@@ -2573,26 +2749,26 @@ function Decode_ModRM_SIB_Address( ModRM, BySize, Setting ){
 
     //If Broadcast round is active from an EVEX extension instruction
 
-    if(BRound)
+    if(BRound & BySize)
     {
 
       //If a vector size of B32 is given back put the Memory vector size as 1to16.
 
-      if(Setting == 4 & BySize)
+      if(Setting == 4 )
       {
         out += "]{1to16}";
       }
 
       //Else If a vector size of B64 is given back put the Memory vector size as 1to8.
 
-      else if(Setting == 6 & BySize)
+      else if( Setting == 6 )
       {
         out += "]{1to8}";
       }
 
       //Else Invalid Broadcast pointer size.
 
-      else{ out = "]{Error}"; }
+      else{ out = "{Error}"; }
 
     } //END of broadcast Round logic.
 
@@ -2876,7 +3052,6 @@ function DecodeOpcode(){
 
   if(Name instanceof Array && Name.length == 2)
   {
-
      //if Register mode
 
      if( ( ModRMByte & 0xC0 ) == 0xC0 )
@@ -2937,7 +3112,6 @@ function DecodeOpcode(){
 
   if(Name instanceof Array && Name.length == 2)
   {
-
      //if Register mode
 
      if( ( ModRMByte & 0xC0 ) == 0xC0 )
@@ -2961,7 +3135,6 @@ function DecodeOpcode(){
 
   if(Name instanceof Array && Name.length == 8)
   {
-
     //Group opcode.
 
     Name = Name[ ( ModRMByte & 0x38 ) >> 3 ];
@@ -2982,11 +3155,13 @@ function DecodeOpcode(){
 
   if(Name instanceof Array && Name.length == 3)
   {
-    if (Name[SizeAttrSelect] !== "")
-    {
-      Name = Name[SizeAttrSelect]; //set it to the Mnemonic
-      Type = Type[SizeAttrSelect]; //Operand array always matches the Mnemonic structure
+    var s = SizeAttrSelect & 1;
+    if( WidthBit ){ s=2; }
 
+    if (Name[ s ] !== "")
+    {
+      Name = Name[ s ]; //set it to the Mnemonic
+      Type = Type[ s ]; //Operand array always matches the Mnemonic structure
     }
 
     //else no size prefix name then use the default size Mnemonic name
