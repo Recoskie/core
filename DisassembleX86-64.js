@@ -436,41 +436,47 @@ var Mnemonics = [
     "MOVD","",""
   ],
   [
-    [["MOVQ","MOVQ"],["","MOVDQA32","MOVDQA64"],["","MOVDQA32","MOVDQA64"],""],
-    ["MOVDQA",["","MOVDQU32","MOVDQU64"],["","MOVDQU32","MOVDQU64"],""],
-    ["MOVDQU",["","MOVDQU8","MOVDQU16"],["","MOVDQU8","MOVDQU16"],""],
-    "???"
+    [["MOVQ","MOVQ"],"", "",""],
+    ["MOVDQA","MOVDQA",["","MOVDQA32","MOVDQA64"],""],
+    ["MOVDQU","MOVDQU",["","MOVDQU32","MOVDQU64"],""],
+    ["","",["","MOVDQU8","MOVDQU16"],""]
+  ],
+  [
+    [["PSHUFW","PSHUFW"],"","",""],
+    "PSHUFD","PSHUFHW","PSHUFLW"
+  ],
+  [
+    "???",
+    [
+      "???","???",
+      [["PSRLW","","",""],"PSRLW","",""],"???",
+      [["PSRAW","","",""],"PSRAW","",""],"???",
+      [["PSLLW","","",""],"PSLLW","",""],"???"
+    ]
+  ],
+  [
+    "???",
+    [
+      ["",["","",["","PRORD","PRORQ"],""],"",""],
+      ["",["","",["","PROLD","PROLQ"],""],"",""],
+      [["PSRLD","","",""],"PSRLD","",""],
+      "",
+      [["PSRAD","","",""],["PSRAD","PSRAD",["","PSRAD","PSRAQ"],""],"",""],
+      "",
+      [["PSLLD","","",""],"PSLLD","",""],
+      ""
+    ]
+  ],
+  [
+    "???",
+    [
+      "???","???",
+      [["PSRLQ","PSRLQ","",""],"PSRLQ","",""],["???","PSRLDQ","???","???"],
+      "???","???",
+      [["PSLLQ","PSLLQ","",""],"PSLLQ","",""],["???","PSLLDQ","???","???"]
+    ]
   ],
 
-  ["PSHUFW","PSHUFD","PSHUFHW","PSHUFLW"],
-  
-  [
-    "???",
-    [
-      "???","???",
-      ["PSRLW","PSRLW","",""],"???",
-      ["PSRAW","PSRAW","",""],"???",
-      ["PSLLW","PSLLW","",""],"???"
-    ]
-  ],
-  [
-    "???",
-    [
-      "???","???",
-      ["PSRLD","PSRLD","",""],"???",
-      ["PSRAD","PSRAD","",""],"???",
-      ["PSLLD","PSLLD","",""],"???"
-    ]
-  ],
-  [
-    "???",
-    [
-      "???","???",
-      ["PSRLQ","PSRLQ","",""],["???","PSRLDQ","???","???"],
-      "???","???",
-      ["PSLLQ","PSLLQ","",""],["???","PSLLDQ","???","???"]
-    ]
-  ],
   ["PCMPEQB","PCMPEQB","",""],
   ["PCMPEQW","PCMPEQW","",""],
   ["PCMPEQD","PCMPEQD","",""],
@@ -1087,45 +1093,51 @@ var Operands = [
     "0A04070C","",""
   ],
   [
-    [["0A0A0609","0A0A060A"],["","0B700770","0B700770"],["","0B700770","0B700770"],""],
-    ["0A040710",["","0B700770","0B700770"],["","0B700770","0B700770"],""],
-    ["0A040710",["","0B700770","0B700770"],["","0B700770","0B700770"],""],
-    ""
+    [["0A0A0609","0A0A060A"],"", "",""],
+    ["0B700770","0B700770",["","0B700770","0B700770"],""],
+    ["0A040710","0B700770",["","0B700770","0B700770"],""],
+    ["","",["","0B700770","0B700770"],""]
+  ],
+  [
+    [["0A0A06090C00","0A0A060A0C00"],"","",""],
+    "0B7007740C00","0B7007740C00","0B7007700C00"
+  ],
+  [
+    "",
+    [
+      "","",
+      [["060A0C00","","",""],"137007700C00","",""],"",
+      [["060A0C00","","",""],"137007700C00","",""],"",
+      [["060A0C00","","",""],"137007700C00","",""],""
+    ]
+  ],
+  [
+    "",
+    [
+      ["",["","",["","137007700C00","137007700C00"],""],"",""],
+      ["",["","",["","137007700C00","137007700C00"],""],"",""],
+      [["060A0C00","","",""],"1370077C0C00","",""],
+      "",
+      [["060A0C00","","",""],["137007700C00","137007700C00",["","137007700C00","137007740C00"],""],"",""],
+      "",
+      [["060A0C00","","",""],"1370077C0C00","",""],
+      ""
+    ]
+  ],
+  [
+    "",
+    [
+      "","",
+      [["137007700C00","137007700C00","",""],"137007700C00","",""],["","07100C00","",""],
+      "","",
+      [["137007700C00","137007700C00","",""],"137007100C00","",""],["","07100C00","",""]
+    ]
   ],
 
-  ["0A0A060A0C00","0A0407100C00","0A0407100C00","0A0407100C00"],
-
-  [
-    "",
-    [
-      "","",
-      ["060A0C00","07100C00","",""],"",
-      ["060A0C00","07100C00","",""],"",
-      ["060A0C00","07100C00","",""],""
-    ]
-  ],
-  [
-    "",
-    [
-      "","",
-      ["060A0C00","07100C00","",""],"",
-      ["060A0C00","07100C00","",""],"",
-      ["060A0C00","07100C00","",""],""
-    ]
-  ],
-  [
-    "",
-    [
-      "","",
-      ["060A0C00","07100C00","",""],["","07100C00","",""],
-      "","",
-      ["060A0C00","07100C00","",""],["","07100C00","",""]
-    ]
-  ],
-    ["0A0A060A","0A040710","",""],
-    ["0A0A060A","0A040710","",""],
-    ["0A0A060A","0A040710","",""],
-    "",
+  ["0A0A060A","0A040710","",""],
+  ["0A0A060A","0A040710","",""],
+  ["0A0A060A","0A040710","",""],
+  "",
   [
     ["06060A03","","",""],
     ["06030A03","0A040C000C00","","0A0407100C000C00"]
@@ -2201,7 +2213,7 @@ function GetOperandSize( SizeAttribute, Mem ){
   //This is so the smaller size is the lower size attribute.
   //----------------------------------------------------------------------------------------------------------------------------------------
 
-  if ( S3 == Number.NEGATIVE_INFINITY ) { S3 = S2; S2 = S1; }
+  if ( S3 == Number.NEGATIVE_INFINITY ) { S3 = S2; if( S2 != 2 ){ S2 = S1;} }
 
   //In 32/16 bit mode the operand size must never exceed 32.
 
@@ -2214,7 +2226,7 @@ function GetOperandSize( SizeAttribute, Mem ){
 
   //If an Vector Extensions is active, and arithmetic attribute was decoded then the EVEX.W, VEX.W bit acts as 32/64.
 
-  if( Extension > 0 & ( ( S1 | S2 | S3 ) <= 3 ) ) { return( ( [ S3, S2 ] )[ WidthBit & 1 ] ); }
+  if( Extension > 0 & ( ( S1 | S2 | S3 ) <= 3 ) ) { return( ( [ S2, S1 ] )[ WidthBit & 1 ] ); }
 
   //note the fourth size that is -1 in the returned size attribute is Vector length 11=3 which is invalid unless Intel decides to add 1024 bit vectors.
 
@@ -3069,6 +3081,27 @@ function DecodeOpcode(){
      }
   }
 
+  //Arithmetic unit 8x8 combinational logic array combinations.
+  //If the current Mnemonic is an array 8 in length It is a group opcode instruction may repeat previous instructions in different forums.
+
+  if(Name instanceof Array && Name.length == 8)
+  {
+    //Group opcode.
+
+    Name = Name[ ( ModRMByte & 0x38 ) >> 3 ];
+    Type = Type[ ( ModRMByte & 0x38 ) >> 3 ];
+
+    //if The select Group opcode is another array 8 in size it is a static opcode selection which makes the last three bits of the ModR/M byte combination.
+
+    if(Name instanceof Array && Name.length == 8)
+    {
+      Name = Name[ ( ModRMByte & 0x07 ) ];
+      Type = Type[ ( ModRMByte & 0x07 ) ];
+      NextByte(); //Progress one byte across, because the full ModR/M is used as an static Opcode.
+    }
+
+  }
+
   //Vector unit 4x4 combinational array logic.
   //if the current Mnemonic is an array 4 in size it is an SIMD instruction with four possible modes N/A, 66, F3, F2.
   //The mode is set to SIMD, it could have been set by the EVEX.pp, VEX.pp bit combination, or by prefixes N/A, 66, F3, F2.
@@ -3127,27 +3160,6 @@ function DecodeOpcode(){
        Name = Name[0];
        Type = Type[0];
      }
-
-  }
-
-  //Arithmetic unit 8x8 combinational logic array combinations.
-  //If the current Mnemonic is an array 8 in length It is a group opcode instruction may repeat previous instructions in different forums.
-
-  if(Name instanceof Array && Name.length == 8)
-  {
-    //Group opcode.
-
-    Name = Name[ ( ModRMByte & 0x38 ) >> 3 ];
-    Type = Type[ ( ModRMByte & 0x38 ) >> 3 ];
-
-    //if The select Group opcode is another array 8 in size it is a static opcode selection which makes the last three bits of the ModR/M byte combination.
-
-    if(Name instanceof Array && Name.length == 8)
-    {
-      Name = Name[ ( ModRMByte & 0x07 ) ];
-      Type = Type[ ( ModRMByte & 0x07 ) ];
-      NextByte(); //Progress one byte across, because the full ModR/M is used as an static Opcode.
-    }
 
   }
 
