@@ -120,12 +120,12 @@ var Mnemonics = [
   "MOV",
   ["POP","???","???","???","???","???","???","???"],
   ["NOP","NOP","PAUSE","NOP"],"XCHG","XCHG","XCHG","XCHG","XCHG","XCHG","XCHG",
-  ["CBW","CWDE","CDQE"],
-  ["CWD","CDQ","CQO"],
+  ["CWDE","CBW","CDQE"],
+  ["CDQ","CWD","CQO"],
   "???",
   "WAIT",
-  ["PUSHF","PUSHFQ","PUSHFQ"],
-  ["POPF","POPFQ","POPFQ"],
+  ["PUSHFQ","PUSHF","PUSHFQ"],
+  ["POPFQ","POPF","POPFQ"],
   "SAHF","LAHF",
   "MOV","MOV","MOV","MOV",
   "MOVS","MOVS",
@@ -143,8 +143,8 @@ var Mnemonics = [
   "", //VEX Instructions.
   ["MOV","???","???","???","???","???","???","XABORT"],
   ["MOV","???","???","???","???","???","???","XBEGIN"],
-  "ENTER","LEAVE","RETF","RETF","INT 3","INT","INTO",
-  ["IRET","IRETD","IRETQ"],
+  "ENTER","LEAVE","RETF","RETF","INT","INT","INTO",
+  ["IRETD","IRET","IRETQ"],
   ["ROL","ROR","RCL","RCR","SHL","SHR","SAL","SAR"],
   ["ROL","ROR","RCL","RCR","SHL","SHR","SAL","SAR"],
   ["ROL","ROR","RCL","RCR","SHL","SHR","SAL","SAR"],
@@ -269,7 +269,7 @@ var Mnemonics = [
   [
     [
       "MOVLPS","MOVLPD","MOVSLDUP",
-      ["MOVDDUP","MOVDDUP","MOVDDUP"]
+      ["MOVDDUP","MOVDDUP",""]
     ],
     ["MOVHLPS","???","MOVSLDUP","MOVDDUP"]
   ],
@@ -295,19 +295,21 @@ var Mnemonics = [
     "CVTSI2SS","CVTSI2SD"
   ],
   [
-    "MOVNTPS","MOVNTPD",
-    ["MOVNTSS","","",""],["MOVNTSD","","",""] //SSE4a can not be vector encoded.
+    [
+      "MOVNTPS","MOVNTPD",
+      ["MOVNTSS","","",""],["MOVNTSD","","",""] //SSE4a can not be vector encoded.
+    ],"???"
   ],
   [
     ["CVTTPS2PI","","",""],["CVTTPD2PI","","",""], //Is not allowed to be Vector encoded.
-    ["CVTTSS2SI","CVTTSS2SI"],["CVTTSD2SI","CVTTSD2SI"]
+    "CVTTSS2SI","CVTTSD2SI"
   ],
   [
     ["CVTPS2PI","","",""],["CVTPD2PI","","",""], //Is not allowed to be Vector encoded.
-    ["CVTSS2SI","CVTSS2SI"],["CVTSD2SI","CVTSD2SI"]
+    "CVTSS2SI","CVTSD2SI"
   ],
-  [["UCOMISS","UCOMISS"],["UCOMISD","UCOMISD"],"???","???"],
-  [["COMISS","COMISS"],["COMISD","COMISD"],"???","???"],
+  ["UCOMISS","UCOMISD","???","???"],
+  ["COMISS","COMISD","???","???"],
   "WRMSR","RDTSC","RDMSR","RDPMC",
   "SYSENTER","SYSEXIT","???",
   "GETSEC",
@@ -320,131 +322,54 @@ var Mnemonics = [
   [
     "???",
     [
-      ["MOVMSKPS","","",""],["MOVMSKPD","","",""],
+      ["MOVMSKPS","MOVMSKPS","",""],["MOVMSKPD","MOVMSKPD","",""],
       "???","???"
     ]
   ],
-  [
-    "SQRTPS","SQRTPD",
-    ["SQRTSS","SQRTSS"],["SQRTSD","SQRTSD"]
-  ],
+  ["SQRTPS","SQRTPD","SQRTSS","SQRTSD"],
 
   [
-    ["RSQRTPS","","",""],"???",
-    ["RSQRTSS","","",""],"???"
+    ["RSQRTPS","RSQRTPS","",""],"???",
+    ["RSQRTSS","RSQRTSS","",""],"???"
   ],
   [
-    ["RCPPS","","",""],"???",
-    ["RCPSS","","",""],"???"
+    ["RCPPS","RCPPS","",""],"???",
+    ["RCPSS","RCPSS","",""],"???"
   ],
   ["ANDPS","ANDPD","???","???"],
   ["ANDNPS","ANDNPD","???","???"],
   ["ORPS","ORPD","???","???"],
   ["XORPS","XORPD","???","???"],
-  [
-    "ADDPS","ADDPD",
-    ["ADDSS","ADDSS"],["ADDSD","ADDSD"]
-  ],
-  [
-    "MULPS","MULPD",
-    ["MULSS","MULSS"],["MULSD","MULSD"]
-  ],
-  [
-    "CVTPS2PD","CVTPD2PS",
-    ["CVTSS2SD","CVTSS2SD"],["CVTSD2SS","CVTSD2SS"]
-  ],
+  ["ADDPS","ADDPD","ADDSS","ADDSD"],
+  ["MULPS","MULPD","MULSS","MULSD"],
+  ["CVTPS2PD","CVTPD2PS","CVTSS2SD","CVTSD2SS"],
   ["CVTDQ2PS","CVTPS2DQ","CVTTPS2DQ","???"],
+  ["SUBPS","SUBPD","SUBSS","SUBSD"],
+  ["MINPS","MINPD","MINSS","MINSD"],
+  ["DIVPS","DIVPD","DIVSS","DIVSD"],
+  ["MAXPS","MAXPD","MAXSS","MAXSD"],
+  [["PUNPCKLBW","","",""],"PUNPCKLBW","",""],
+  [["PUNPCKLWD","","",""],"PUNPCKLWD","",""],
+  [["PUNPCKLDQ","","",""],"PUNPCKLDQ","",""],
+  [["PACKSSWB","","",""],"PACKSSWB","",""],
+  [["PCMPGTB","","",""],["PCMPGTB","PCMPGTB","PCMPGTB",""],"",""],
+  [["PCMPGTW","","",""],["PCMPGTW","PCMPGTW","PCMPGTW",""],"",""],
+  [["PCMPGTD","","",""],["PCMPGTD","PCMPGTD","PCMPGTD",""],"",""],
+  [["PACKUSWB","","",""],"PACKUSWB","",""],
+  [["PUNPCKHBW","","",""],"PUNPCKHBW","",""],
+  [["PUNPCKHWD","","",""],"PUNPCKHWD","",""],
+  [["PUNPCKHDQ","","",""],"PUNPCKHDQ","",""],
+  [["PACKSSDW","","",""],"PACKSSDW","",""],
+  ["???","PUNPCKLQDQ","???","???"],
+  ["???","PUNPCKHQDQ","???","???"],
+  [["MOVD",,"","",""],"MOVD","",""],
   [
-    "SUBPS","SUBPD",
-    ["SUBSS","SUBSS"],["SUBSD","SUBSD"]
+    ["MOVQ","", "",""],
+    ["MOVDQA","MOVDQA",["MOVDQA32","","MOVDQA64"],""],
+    ["MOVDQU","MOVDQU",["MOVDQU32","","MOVDQU64"],""],
+    ["","",["MOVDQU8","","MOVDQU16"],""]
   ],
-  [
-    "MINPS","MINPD",
-    ["MINSS","MINSS"],["MINSD","MINSD"]
-  ],
-  [
-    "DIVPS","DIVPD",
-    ["DIVSS","DIVSS"],["DIVSD","DIVSD"]
-  ],
-  [
-    "MAXPS","MAXPD",
-    ["MAXSS","MAXSS"],["MAXSD","MAXSD"]
-  ],
-
-  [
-    [["PUNPCKLBW","PUNPCKLBW"],"","",""],
-    "PUNPCKLBW","",""
-  ],
-  [
-    [["PUNPCKLWD","PUNPCKLWD"],"","",""],
-    "PUNPCKLWD","",""
-  ],
-  [
-    [["PUNPCKLDQ","PUNPCKLDQ"],"","",""],
-    "PUNPCKLDQ","",""
-  ],
-  [
-    [["PACKSSWB","PACKSSWB"],"","",""],
-    "PACKSSWB","",""
-  ],
-  [
-    [["PCMPGTB","PCMPGTB"],"","",""],
-    ["PCMPGTB","PCMPGTB","PCMPGTB",""],
-    "",""
-  ],
-  [
-    [["PCMPGTW","PCMPGTW"],"","",""],
-    ["PCMPGTW","PCMPGTW","PCMPGTW",""],
-    "",""
-  ],
-  [
-    [["PCMPGTD","PCMPGTD"],"","",""],
-    ["PCMPGTD","PCMPGTD","PCMPGTD",""],
-    "",""
-  ],
-  [
-    [["PACKUSWB","PACKUSWB"],"","",""],
-    "PACKUSWB","",""
-  ],
-
-  [
-    [["PUNPCKHBW","PUNPCKHBW"],"","",""],
-    "PUNPCKHBW","",""
-  ],
-  [
-    [["PUNPCKHWD","PUNPCKHWD"],"","",""],
-    "PUNPCKHWD","",""
-  ],
-  [
-    [["PUNPCKHDQ","PUNPCKHDQ"],"","",""],
-    "PUNPCKHDQ","",""
-  ],
-  [
-    [["PACKSSDW","PACKSSDW"],"","",""],
-    "PACKSSDW","",""
-  ],
-  [
-    "???","PUNPCKLQDQ",
-    "???","???"
-  ],
-  [
-    "???","PUNPCKHQDQ",
-    "???","???"
-  ],
-  [
-    [["MOVD","MOVD"],"","",""],
-    "MOVD","",""
-  ],
-  [
-    [["MOVQ","MOVQ"],"", "",""],
-    ["MOVDQA","MOVDQA",["","MOVDQA32","MOVDQA64"],""],
-    ["MOVDQU","MOVDQU",["","MOVDQU32","MOVDQU64"],""],
-    ["","",["","MOVDQU8","MOVDQU16"],""]
-  ],
-  [
-    [["PSHUFW","PSHUFW"],"","",""],
-    "PSHUFD","PSHUFHW","PSHUFLW"
-  ],
+  [["PSHUFW","","",""],"PSHUFD","PSHUFHW","PSHUFLW"],
   [
     "???",
     [
@@ -457,11 +382,11 @@ var Mnemonics = [
   [
     "???",
     [
-      ["",["","",["","PRORD","PRORQ"],""],"",""],
-      ["",["","",["","PROLD","PROLQ"],""],"",""],
+      ["",["","",["PRORD","","PRORQ"],""],"",""],
+      ["",["","",["PROLD","","PROLQ"],""],"",""],
       [["PSRLD","","",""],"PSRLD","",""],
       "",
-      [["PSRAD","","",""],["PSRAD","PSRAD",["","PSRAD","PSRAQ"],""],"",""],
+      [["PSRAD","","",""],["PSRAD","PSRAD",["PSRAD","","PSRAQ"],""],"",""],
       "",
       [["PSLLD","","",""],"PSLLD","",""],
       ""
@@ -476,24 +401,48 @@ var Mnemonics = [
       [["PSLLQ","PSLLQ","",""],"PSLLQ","",""],["???","PSLLDQ","???","???"]
     ]
   ],
+  [["PCMPEQB","","",""],["PCMPEQB","PCMPEQB","PCMPEQB",""],"",""],
+  [["PCMPEQW","","",""],["PCMPEQW","PCMPEQW","PCMPEQW",""],"",""],
+  [["PCMPEQD","","",""],["PCMPEQD","PCMPEQD","PCMPEQD",""],"",""],
+  [["EMMS",["ZEROUPPER","ZEROALL",""],"",""],"???","???","???"],
+  [
+    ["VMREAD","",["CVTTPS2UDQ","","CVTTPD2UDQ"], ""],
+    [["???","EXTRQ"],"",["CVTTPS2UQQ","","CVTTPD2UQQ"],""],
+    ["???","","CVTTSS2USI",""],
+    [["???","INSERTQ"],"","CVTTSD2USI",""]
+  ],
+  [
+    ["VMWRITE","",["CVTPS2UDQ","","CVTPD2UDQ"], ""],
+    [["???","EXTRQ"],"",["CVTPS2UQQ","","CVTPD2UQQ"],""],
+    ["???","","CVTSS2USI",""],
+    [["???","INSERTQ"],"","CVTSD2USI",""]
+  ],
+  [
+    "???",
+    ["","",["CVTTPS2QQ","","CVTTPD2QQ"],""],
+    ["","",["CVTUDQ2PD","","CVTUQQ2PD"],""],
+    ["","",["CVTUDQ2PS","","CVTUQQ2PS"],""]
+  ],
+  [
+    "???",
+    ["","",["CVTPS2QQ","","CVTPD2QQ"],""],
+    ["","","CVTUSI2SS",""],
+    ["","","CVTUSI2SD",""]
+  ],
 
-  ["PCMPEQB","PCMPEQB","",""],
-  ["PCMPEQW","PCMPEQW","",""],
-  ["PCMPEQD","PCMPEQD","",""],
-  "EMMS",
   [
-    ["VMREAD","???","???","???"],
-    ["VMREAD","EXTRQ","???","INSERTQ"]
+    "???",["HADDPD","HADDPD","",""],
+    "???",["HADDPS","HADDPS","",""]
   ],
   [
-    ["VMWRITE","???","???","???"],
-    ["VMWRITE","EXTRQ","???","INSERTQ"]
+    "???",["HSUBPD","HSUBPD","",""],
+    "???",["HSUBPS","HSUBPS","",""]
   ],
-  "???","???",
-  ["???","HADDPD","???","HADDPS"],
-  ["???","HSUBPD","???","HSUBPS"],
+
   ["MOVD","MOVD","MOVQ","???"],
+
   ["MOVQ","MOVDQA","MOVDQU","???"],
+
   "JO","JNO","JB","JAE","JE","JNE","JBE","JA",
   "JS","JNS","JP","JNP","JL","JGE","JLE","JG",
   "SETO","SETNO","SETB","SETAE","SETE","SETNE","SETBE","SETA",
@@ -814,7 +763,7 @@ var Operands = [
   ["06000C000001","","","","","","","0C00"],
   ["070E0D060001","","","","","","","1002"],
   "0C010C00","",
-  "0C01","","",
+  "0C01","","2C00",
   "0C00","",
   ["","",""],
   ["06002A00","06002A00","06002A00","06002A00","06002A00","06002A00","06002A00","06002A00"],
@@ -936,7 +885,7 @@ var Operands = [
   [
     [
       "0A0412040606","0A0412040606","0B700770",
-      ["0B700606","0B700770","0B700770"]
+      ["0B700708","0B700770",""]
     ],
     ["0A0412040604","","0B700770","0B700770"]
   ],
@@ -958,23 +907,25 @@ var Operands = [
   ["0B700770","0B700770","",""],
   ["07700B70","07700B70","",""],
   [
-    ["0A04060A","","",""],["0A04060A","","",""], //Not Allowed to be Vector encoded.
+    ["0A0406A9","","",""],["0A0406A9","","",""], //Not Allowed to be Vector encoded.
     "0A041204070C","0A041204070C"
   ],
   [
-    "07700B70","07700B70",
-    ["06030A04","","",""],["06060A04","","",""] //SSE4a can not be vector encoded.
+    [
+      "07700B70","07700B70",
+      ["06030A04","","",""],["06060A04","","",""] //SSE4a can not be vector encoded.
+    ],""
   ],
   [
-    ["0A0A060A","","",""],["0A0A0710","","",""], //Not allowed to be Vector encoded.
-    ["0B0C0604","0B0C0604"],["0B0C0609","0B0C0604"]
+    ["0A0A0649","","",""],["0A0A0648","","",""], //Not allowed to be Vector encoded.
+    "0B0C0644","0B0C0649"
   ],
   [
-    ["0A0A0609","","",""],["0A0A0710","","",""], //Not allowed to be vector encoded.
-    ["0B0C0603","0B0C0604"],["0B0C0609","0B0C0604"]
+    ["0A0A0649","","",""],["0A0A0648","","",""], //Not allowed to be vector encoded.
+    "0B0C0643","0B0C0649"
   ],
-  [["0A040603","0A040604"],["0A040609","0A040604"],"",""],
-  [["0A040603","0A040604"],["0A040609","0A040604"],"",""],
+  ["0A040643","0A040649","",""],
+  ["0A040643","0A040649","",""],
   "","","","",
   "","","",
   "",
@@ -984,124 +935,52 @@ var Operands = [
   "","","","","",
   "0B0E070E","0B0E070E","0B0E070E","0B0E070E","0B0E070E","0B0E070E","0B0E070E","0B0E070E",
   "0B0E070E","0B0E070E","0B0E070E","0B0E070E","0B0E070E","0B0E070E","0B0E070E","0B0E070E",
-  [["","","",""],[["0A020710","","",""],["0A020710","","",""],"",""]],
-  ["0B700774","0B700778",["0A0412040603","0A0412040604"],["0A0412040609","0A0412040604"]],
+  ["",[["0A020648","0A020648","",""],["0A020648","0A020648","",""],"",""]],
+  ["0B700774","0B700778","0A0412040643","0A0412040649"],
   [
-    ["0A040710","","",""],"",
-    ["0A040603","","",""],""
+    ["0A040648","0A040648","",""],"",
+    ["0A040643","0A0412040643","",""],""
   ],
   [
-    ["0A040710","","",""],"",
-    ["0A040603","","",""],""
+    ["0A040648","0A040648","",""],"",
+    ["0A040643","0A0412040643","",""],""
   ],
-  ["0B7013700775","0B7013700779","",""],
-  ["0B7013700775","0B7013700779","",""],
-  ["0B7013700775","0B7013700779","",""],
-  ["0B7013700775","0B7013700779","",""],
-  [
-    "0B7013700775","0B7013700779",
-    ["0A0412040603","0A0412040604"],["0A0412040606","0A0412040604"]
-  ],
-  [
-    "0B7013700775","0B7013700779",
-    ["0A0412040603","0A0412040604"],["0A0412040606","0A0412040604"]
-  ],
-  [
-    "0B7013700775","0B7013700779",
-    ["0A0412040603","0A0412040604"],["0A0412040606","0A0412040604"]
-  ],
+  ["0B7013700774","0B7013700778","",""],
+  ["0B7013700774","0B7013700778","",""],
+  ["0B7013700774","0B7013700778","",""],
+  ["0B7013700774","0B7013700778","",""],
+  ["0B7013700774","0B7013700778","0A0412040643","0A0412040646"],
+  ["0B7013700774","0B7013700778","0A0412040643","0A0412040646"],
+  ["0B7013700774","0B7013700778","0A0412040643","0A0412040646"],
   ["0B70077C","0B700774","0B700774",""],
+  ["0B7013700774","0B7013700778","0A0412040643","0A0412040646"],
+  ["0B7013700774","0B7013700778","0A0412040643","0A0412040646"],
+  ["0B7013700774","0B7013700778","0A0412040643","0A0412040646"],
+  ["0B7013700774","0B7013700778","0A0412040643","0A0412040646"],
+  [["0A0A06A3","","",""],"0B7013700770","",""],
+  [["0A0A06A3","","",""],"0B7013700770","",""],
+  [["0A0A06A3","","",""],"0B7013700774","",""],
+  [["0A0A06A9","","",""],"0B7013700770","",""],
+  [["0A0A06A9","","",""],["0A040648","0B3013300730","0A0F13700770",""],"",""],
+  [["0A0A06A9","","",""],["0A040648","0B3013300730","0A0F13700770",""],"",""],
+  [["0A0A06A9","","",""],["0A040648","0B3013300730","0A0F13700774",""],"",""],
+  [["0A0A06A9","","",""],"0B7013700770","",""],
+  [["0A0A06A9","","",""],"0B7013700770","",""],
+  [["0A0A06A9","","",""],"0B7013700770","",""],
+  [["0A0A06A9","","",""],"0B7013700774","",""],
+  [["0A0A06A9","","",""],"0B7013700774","",""],
+  ["","0B7013700778","",""],
+  ["","0B7013700778","",""],
+  [["0A0A070C","","",""],"0A04070C","",""],
   [
-    "0B7013700774","0B7013700778",
-    ["0A0412040603","0A0412040604"],["0A0412040606","0A0412040604"]
-  ],
-  [
-    "0B7013700774","0B7013700778",
-    ["0A040603","0A0412040604"],["0A0412040606","0A0412040604"]
-  ],
-  [
-    "0B7013700774","0B7013700778",
-    ["0A0412040603","0A0412040603"],["0A0412040606","0A0412040604"]
-  ],
-  [
-    "0B7013700774","0B7013700778",
-    ["0A0412040603","0A0412040603"],["0A0412040606","0A0412040604"]
-  ],
-
-  [
-    [["0A0A0603","0A0A060A"],"","",""],
-    "0B7013700770","",""
-  ],
-  [
-    [["0A0A0603","0A0A060A"],"","",""],
-    "0B7013700770","",""
-  ],
-  [
-    [["0A0A0603","0A0A060A"],"","",""],
-    "0B7013700774","",""
-  ],
-  [
-    [["0A0A0609","0A0A060A"],"","",""],
-    "0B7013700770","",""
-  ],
-  [
-    [["0A0A0609","0A0A060A"],"","",""],
-    ["0A040710","0B3013030730","0A0F13700770",""],
-    "",""
-  ],
-  [
-    [["0A0A0609","0A0A060A"],"","",""],
-    ["0A040710","0B3013030730","0A0F13700770",""],
-    "",""
-  ],
-  [
-    [["0A0A0609","0A0A060A"],"","",""],
-    ["0A040710","0B3013030730","0A0F13700774",""],
-    "",""
-  ],
-  [
-    [["0A0A0609","0A0A060A"],"","",""],
-    "0B7013700770","",""
+    ["0A0A06A9","", "",""],
+    ["0B700770","0B700770",["0B700770","","0B700770"],""],
+    ["0A040710","0B700770",["0B700770","","0B700770"],""],
+    ["","",["0B700770","","0B700770"],""]
   ],
 
-  [
-    [["0A0A0609","0A0A060A"],"","",""],
-    "0B7013700770","",""
-  ],
-  [
-    [["0A0A0609","0A0A060A"],"","",""],
-    "0B7013700770","",""
-  ],
-  [
-    [["0A0A0609","0A0A060A"],"","",""],
-    "0B7013700774","",""
-  ],
-  [
-    [["0A0A0609","0A0A060A"],"","",""],
-    "0B7013700774","",""
-  ],
-  [
-    "","0B7013700778",
-    "",""
-  ],
-  [
-    "","0B7013700778",
-    "",""
-  ],
-  [
-    [["0A0A070C","0A0A070C"],"","",""],
-    "0A04070C","",""
-  ],
-  [
-    [["0A0A0609","0A0A060A"],"", "",""],
-    ["0B700770","0B700770",["","0B700770","0B700770"],""],
-    ["0A040710","0B700770",["","0B700770","0B700770"],""],
-    ["","",["","0B700770","0B700770"],""]
-  ],
-  [
-    [["0A0A06090C00","0A0A060A0C00"],"","",""],
-    "0B7007740C00","0B7007740C00","0B7007700C00"
-  ],
+  [["0A0A06A90C00","","",""],"0B7007740C00","0B7007740C00","0B7007700C00"],
+
   [
     "",
     [
@@ -1114,11 +993,11 @@ var Operands = [
   [
     "",
     [
-      ["",["","",["","137007700C00","137007700C00"],""],"",""],
-      ["",["","",["","137007700C00","137007700C00"],""],"",""],
+      ["",["","",["137007700C00","","137007700C00"],""],"",""],
+      ["",["","",["137007700C00","","137007700C00"],""],"",""],
       [["060A0C00","","",""],"1370077C0C00","",""],
       "",
-      [["060A0C00","","",""],["137007700C00","137007700C00",["","137007700C00","137007740C00"],""],"",""],
+      [["060A0C00","","",""],["137007700C00","137007700C00",["137007700C00","","137007740C00"],""],"",""],
       "",
       [["060A0C00","","",""],"1370077C0C00","",""],
       ""
@@ -1133,22 +1012,43 @@ var Operands = [
       [["137007700C00","137007700C00","",""],"137007100C00","",""],["","137007700C00","",""]
     ]
   ],
+  [["0A0A06A9","","",""],["0A040710","13300B300730","0A0F13700770",""],"",""],
+  [["0A0A06A9","","",""],["0A040710","13300B300730","0A0F13700770",""],"",""],
+  [["0A0A06A9","","",""],["0A040710","13300B300730","0A0F13700774",""],"",""],
+  [["",["","",""],"",""],"","",""],
+  [
+    ["06360A03","",["0B700774","","0B700778"],""],
+    [["","0A040C000C00"],"",["0B700774","","0B700778"],""],
+    ["","","0B0C0644",""],
+    [["","0A0406040C000C00"],"","0B0C0646",""]
+  ],
+  [
+    ["0A030636","",["0B700774","","0B700778"],""],
+    [["","0A040604"],"",["0B700774","","0B700778"],""],
+    ["","","0B0C0644",""],
+    [["","0A040640"],"","0B0C0646",""]
+  ],
+  [
+    "",
+    ["","",["0B700774","","0B700778"],""],
+    ["","",["0B700774","","0B700778"],""],
+    ["","",["0B700774","","0B700778"],""]
+  ],
+  [
+    "",
+    ["","",["0B700774","","0B700778"],""],
+    ["","","0A041204070C",""],
+    ["","","0A041204070C",""]
+  ],
+  [
+    "",["0A040604","0B7013700770","",""],
+    "",["0A040604","0B7013700770","",""]
+  ],
+  [
+    "",["0A040604","0B7013700770","",""],
+    "",["0A040604","0B7013700770","",""]
+  ],
 
-  ["0A0A060A","0A040710","",""],
-  ["0A0A060A","0A040710","",""],
-  ["0A0A060A","0A040710","",""],
-  "",
-  [
-    ["06060A03","","",""],
-    ["06030A03","0A040C000C00","","0A0407100C000C00"]
-  ],
-  [
-    ["0A030606","","",""],
-    ["0A030603","0A040710","","0A040710"]
-  ],
-  "","",
-  ["","0A040710","","0A040710"],
-  ["","0A040710","","0A040710"],
   ["070C0A0A","070C0A04","0A04060A",""],
   ["060A0A0A","07100A04","07100A04",""],
   "1002000C","1002000C","1002000C","1002000C","1002000C","1002000C","1002000C","1002000C",
@@ -2562,6 +2462,7 @@ function Decode_ModRM_SIB_Address( ModRM, BySize, Setting ){
     //Also if By size attribute is also true the selected by size index can not exceed 15 anyways which is the max combination the first four bits.
     //-------------------------------------------------------------------------------------------------------------------------
 
+    var b = ( Setting & 0xF0 ) >> 4;
     Setting = Setting & 0x0F;
 
     //check if Address size is a XMM  which allows SIMD vector extension.
@@ -2577,6 +2478,16 @@ function Decode_ModRM_SIB_Address( ModRM, BySize, Setting ){
          Setting = 8;
       }
     }
+
+    if( !BySize ) //Register check.
+    {
+       if( b >= 4 & b <= 7 )
+       {
+          SSE = true;
+       }
+    }
+
+    b = null;
 
     //If Vector extended then MM is changed to QWORD.
 
@@ -2797,6 +2708,10 @@ function Decode_ModRM_SIB_Address( ModRM, BySize, Setting ){
 
   else
   {
+    //If the upper 4 bits are defined and by size is false the upper four bits is the selected register.
+    
+    (!BySize & (Setting&0xF0)>0) && (Setting >>= 4);
+    
     //Decode the select register though the register decode function.
 
     out = DecodeRegValue(BaseExtend | ModRM[2], BySize, Setting);
@@ -3134,6 +3049,7 @@ function DecodeOpcode(){
        {
          Name = Name[Extension];
          Type = Type[Extension];
+         if( Extension != 0 ){ SSE = true; }
        }
        else{Name = "???"; Type = "";}
     }
@@ -3167,8 +3083,10 @@ function DecodeOpcode(){
 
   if(Name instanceof Array && Name.length == 3)
   {
-    var s = SizeAttrSelect & 1;
-    if( WidthBit ){ s=2; }
+
+    var s = ( SizeAttrSelect > 0 ) & 1;
+    ( Extension == 0 ) && ( s = 1 - s );
+    ( WidthBit ) && ( s = 2 );
 
     if (Name[ s ] !== "")
     {
@@ -3180,9 +3098,12 @@ function DecodeOpcode(){
 
     else
     {
-      Name = Name[1]; //set it to the Mid default Mnemonic
-      Type = Type[1]; //Operand array always matches the Mnemonic structure
+      Name = Name[0]; //set it to the Mid default Mnemonic
+      Type = Type[0]; //Operand array always matches the Mnemonic structure
     }
+
+    s=null;
+
   }
 
   //If Extension is not 0 then add the vector extend "V" to the instruction.
@@ -3516,7 +3437,7 @@ function DecodeOperands(){
 
       else if( X86Decoder[i].Type >= 7 )
       {
-        out[ X86Decoder[i].OpNum ] = ["ST", "FS", "GS", "1"][ ( X86Decoder[i].Type - 7 ) ];
+        out[ X86Decoder[i].OpNum ] = ["ST", "FS", "GS", "1", "3"][ ( X86Decoder[i].Type - 7 ) ];
       }
 
       X86Decoder[i].Deactivate(); //Deactivate the operand along the Decoder.
@@ -3792,5 +3713,5 @@ function Disassemble( Code )
 
   //return the decoded binary code
 
-  return(Out);
-}
+  return(Out);}
+  
