@@ -1,5 +1,8 @@
 /*-------------------------------------------------------------------------------------------------------------------------
-Binary byte code array.
+Binary byte code array. It is limited to an Uint32 number because JavaScript does not use 64 bit array indexes.
+---------------------------------------------------------------------------------------------------------------------------
+Function ^LoadBinCode()^ takes a string input of hex and loads it into the BinCode array it is recommended that the location
+the hex string is read from a file, or sector matches the disassemblers set base address using function ^SetBasePosition()^.
 -------------------------------------------------------------------------------------------------------------------------*/
 
 var BinCode = [];
@@ -11,20 +14,46 @@ When Bit Mode is 2 the disassembler will default to decoding 64 bit binary code 
 var BitMode = 2;
 
 /*-------------------------------------------------------------------------------------------------------------------------
-CodePos32 is the actual position in the Binary byte code array.
-However It is limited to an Uint32 number because JavaScript does not use 64 bit indexes.
+The variable CodePos32 is the position in the BinCode array starts at 0 for each new section loaded in by ^LoadBinCode()^.
+However It is limited to an Uint32 number because JavaScript does not use 64 bit indexes in arrays.
+---------------------------------------------------------------------------------------------------------------------------
+The function ^NextByte()^ moves CodePos32, and the Disassemblers Base address by one stored in Pos64, Pos32.
+The BinCode array is designed for loading in a section of binary that is supposed to be from the set Base address in Pos64, and Pos32.
 -------------------------------------------------------------------------------------------------------------------------*/
 
 var CodePos32 = 0x00000000;
 
 /*-------------------------------------------------------------------------------------------------------------------------
-The simulated 64 bit address binary location uses two 32 bit integers.
-This allows you to set an 64 bit address base location using the function ^SetBasePosition()^.
-In which all binary instructions in the Binary byte code array disassemble as if they are located in that address.
-While the CodePos32 moves though the array of byte values normally for your X86 instructions.
+The Pos64, and Pos32 is the actual base address that instructions are supposed to be from in memory when they are loaded
+into the BinCode array using the Function ^LoadBinCode()^.
+---------------------------------------------------------------------------------------------------------------------------
+The function ^SetBasePosition()^ sets the base location in Pos64, and Pos32, and Code Segment.
+The function ^SetBasePosition()^ uses a hex string it can be 16 bit's, 32 bit's, and 64 bit's long depends on BitMode.
+The Colon ":" is also used to set the code segment which is only calculated in 16 bit binaries, or In 32 bit binaries if
+Code segment is set 36 or higher.
+---------------------------------------------------------------------------------------------------------------------------
+Together this removes the 32 bit index limitation of the BinCode Array by setting the base address, and loading in binary.
 -------------------------------------------------------------------------------------------------------------------------*/
 
-var Pos64 = 0x00000000, Pos32 = 0x00000000;
+var Pos64 = 0x00000000, Pos32 = 0x00000000; //32/64 Instruction pointer register.
+
+/*-------------------------------------------------------------------------------------------------------------------------
+Code Segment is used in 16 bit binaries in which the segment is times 16 added to the 16 bit address position.
+This was done to load more programs in 16 bit space at an selected segment location. In 16 bit X86 processors the instruction
+pointer register counts from 0000 hex to FFFF hex and starts over at 0000 hex. Allowing a program to be a max length of
+65535 bytes long. The Code Segment is multiplied by 16 then is added to the instruction pointer position in memory.
+---------------------------------------------------------------------------------------------------------------------------
+In 32 bit, and 64 bit the address combination is large enough that segmented program loading was no longer required.
+However 32 bit still supports Segmented addressing if used, but 64 bit binaries do not. Also if the code segment is set
+36, or higher in 32 bit binaries this sets SEG:OFFSET address format for each instructions Memory position.
+---------------------------------------------------------------------------------------------------------------------------
+In 64 bit mode, an programs instructions are in a 64 bit address using the processors full instruction pointer, but in 32
+bit instructions the first 32 bit of the instruction pointer is used. In 16 bit the first 16 bits of the instruction pointer
+is used, but with the code segment. Each instruction is executed in order by the Instruction pointer that goes in sectional sizes
+"RIP (64)/EIP (32)/IP (16)" Depending on the Bit mode the 64 bit CPU is set in, or if the CPU is 32 bit to begin.
+-------------------------------------------------------------------------------------------------------------------------*/
+
+var CodeSeg = 0x0000;
 
 /*-------------------------------------------------------------------------------------------------------------------------
 The InstructionHex String stores the Bytes of decoded instructions. It is shown to the left side of the disassembled instruction.
@@ -33,7 +62,7 @@ The InstructionHex String stores the Bytes of decoded instructions. It is shown 
 var InstructionHex = "";
 
 /*-------------------------------------------------------------------------------------------------------------------------
-The InstructionPos String stores the start position of a decoded binary instruction in memory.
+The InstructionPos String stores the start position of a decoded binary instruction in memory from the function ^GetPosition()^.
 -------------------------------------------------------------------------------------------------------------------------*/
 
 var InstructionPos = "";
@@ -100,49 +129,50 @@ var Mnemonics = [
   /*------------------------------------------------------------------------------------------------------------------------
   First Byte operations 0 to 255.
   ------------------------------------------------------------------------------------------------------------------------*/
-  "ADD","ADD","ADD","ADD","ADD","ADD","???","???",
-  "OR","OR","OR","OR","OR","OR","???"
+  "ADD","ADD","ADD","ADD","ADD","ADD","PUSH ES","POP ES",
+  "OR","OR","OR","OR","OR","OR","PUSH CS"
   ,
   "" //*Two byte instructions prefix sets opcode 01,000000000 next byte read is added to the lower 8 bit's.
   ,
-  "ADC","ADC","ADC","ADC","ADC","ADC","???","???",
-  "SBB","SBB","SBB","SBB","SBB","SBB","???","???",
-  "AND","AND","AND","AND","AND","AND","???","???",
+  "ADC","ADC","ADC","ADC","ADC","ADC","PUSH SS","POP SS",
+  "SBB","SBB","SBB","SBB","SBB","SBB","PUSH DS","POP DS",
+  "AND","AND","AND","AND","AND","AND",
+  "ES:[", //Extra segment override sets SegOveride "ES:[".
+  "DAA",
   "SUB","SUB","SUB","SUB","SUB","SUB",
   "CS:[", //Code segment override sets SegOveride "CS:[".
-  "???",
+  "DAS",
   "XOR","XOR","XOR","XOR","XOR","XOR",
   "SS:[", //Stack segment override sets SegOveride "SS:[".
-  "???",
+  "AAA",
   "CMP","CMP","CMP","CMP","CMP","CMP",
   "DS:[", //Data Segment override sets SegOveride "DS:[".
-  "???",
+  "AAS",
   /*------------------------------------------------------------------------------------------------------------------------
   Start of Rex Prefix adjustment setting uses opcodes 40 to 4F. These opcodes are only decoded as adjustment settings
   by the function ^DecodePrefixAdjustments()^ while in 64 bit mode. If not in 64 bit mode the codes are not read
   by the function ^DecodePrefixAdjustments()^ which allows the opcode to be set 40 to 4F hex in which the defined
   instructions bellow are used by ^DecodeOpcode()^.
   ------------------------------------------------------------------------------------------------------------------------*/
-  "","","","","","","","","","","","","","","","",
+  "INC","INC","INC","INC","INC","INC","INC","INC",
+  "DEC","DEC","DEC","DEC","DEC","DEC","DEC","DEC",
   /*------------------------------------------------------------------------------------------------------------------------
   End of the Rex Prefix adjustment setting opcodes.
   ------------------------------------------------------------------------------------------------------------------------*/
   "PUSH","PUSH","PUSH","PUSH","PUSH","PUSH","PUSH","PUSH",
   "POP","POP","POP","POP","POP","POP","POP","POP",
-  "???","???",
-  "", //EVEX prefix adjustment settings only used in 64 bit mode, otherwise the defined instruction is used.
+  ["PUSHA","PUSHAD",""],["POPA","POPAD",""],
+  [["BOUND","BOUND",""],"???"], //EVEX prefix adjustment settings only used in 64 bit mode, otherwise the defined BOUND instruction is used.
   "MOVSXD",
   "FS:[","GS:[", //Sets SegOveride "FS:[" next opcode sets "GS:[".
-  "???","???",
+  "","", //Operand Size, and Address size adjustment to ModR/M.
   "PUSH","IMUL","PUSH","IMUL",
   "INS","INS","OUTS","OUTS",
   "JO","JNO","JB","JAE","JE","JNE","JBE","JA",
-  "JS","JNS","JP","JNP","JL","JGE","JLE","JG"
-  ,
-  ["ADD","OR","ADC","SBB","AND","SUB","XOR","CMP"] //Group opcode uses the ModR/M register selection 0 though 7 giving 8 instruction in one opcode.
-  ,
+  "JS","JNS","JP","JNP","JL","JGE","JLE","JG",
+  ["ADD","OR","ADC","SBB","AND","SUB","XOR","CMP"], //Group opcode uses the ModR/M register selection 0 though 7 giving 8 instruction in one opcode.
   ["ADD","OR","ADC","SBB","AND","SUB","XOR","CMP"],
-  "???",
+  ["ADD","OR","ADC","SBB","AND","SUB","XOR","CMP"],
   ["ADD","OR","ADC","SBB","AND","SUB","XOR","CMP"],
   "TEST","TEST","XCHG","XCHG",
   "MOV","MOV","MOV","MOV",
@@ -154,8 +184,7 @@ var Mnemonics = [
   "XCHG","XCHG","XCHG","XCHG","XCHG","XCHG","XCHG",
   ["CWDE","CBW","CDQE"], //*Opcode 0 to 3 for instructions that change name by size setting.
   ["CDQ","CWD","CQO"],
-  "???",
-  "WAIT",
+  "CALL","WAIT",
   ["PUSHFQ","PUSHF","PUSHFQ"],
   ["POPFQ","POPF","POPFQ"],
   "SAHF","LAHF",
@@ -171,8 +200,8 @@ var Mnemonics = [
   ["ROL","ROR","RCL","RCR","SHL","SHR","SAL","SAR"],
   ["ROL","ROR","RCL","RCR","SHL","SHR","SAL","SAR"],
   "RET","RET",
-  "", //VEX prefix adjustment settings only used in 64 bit mode, otherwise the defined instruction is used.
-  "", //VEX prefix adjustment settings only used in 64 bit mode, otherwise the defined instruction is used.
+  "LES", //VEX prefix adjustment settings only used in 64 bit mode, otherwise the defined instruction is used.
+  "LDS", //VEX prefix adjustment settings only used in 64 bit mode, otherwise the defined instruction is used.
   ["MOV","???","???","???","???","???","???","XABORT"],
   ["MOV","???","???","???","???","???","???","XBEGIN"],
   "ENTER","LEAVE","RETF","RETF","INT","INT","INTO",
@@ -181,7 +210,7 @@ var Mnemonics = [
   ["ROL","ROR","RCL","RCR","SHL","SHR","SAL","SAR"],
   ["ROL","ROR","RCL","RCR","SHL","SHR","SAL","SAR"],
   ["ROL","ROR","RCL","RCR","SHL","SHR","SAL","SAR"],
-  "???","???","???",
+  "AAMB","AADB","???",
   "XLAT",
   /*------------------------------------------------------------------------------------------------------------------------
   X87 FPU
@@ -244,17 +273,22 @@ var Mnemonics = [
     ]
   ],
   /*------------------------------------------------------------------------------------------------------------------------
-  End of X87 FPU
+  End of X87 FPU.
   ------------------------------------------------------------------------------------------------------------------------*/
   "LOOPNE","LOOPE","LOOP","JRCXZ",
   "IN","IN","OUT","OUT",
-  "CALL","JMP",
-  "???",
-  "JMP",
+  "CALL","JMP","JMP","JMP",
   "IN","IN","OUT","OUT",
-  "LOCK",
-  "???",
-  "REPNE","REP",
+  /*------------------------------------------------------------------------------------------------------------------------
+  The Repeat, and lock prefix opcodes apply to the next opcode.
+  ------------------------------------------------------------------------------------------------------------------------*/
+  "LOCK", //Adds LOCK to the start of instruction. When Opcode F0 hex is read by function ^DecodePrefixAdjustments()^ sets PrefixG2 to LOCK.
+  "ICEBP", //Instruction ICEBP.
+  "REPNE", //Adds REPNE (Opcode F2 hex) to the start of instruction. Read by function ^DecodePrefixAdjustments()^ sets PrefixG1 to REPNE.
+  "REP", //Adds REP (Opcode F3 hex) to the start of instruction. Read by function ^DecodePrefixAdjustments()^ sets PrefixG1 to REP.
+  /*------------------------------------------------------------------------------------------------------------------------
+  End of Repeat, and lock instruction adjustment codes.
+  ------------------------------------------------------------------------------------------------------------------------*/
   "HLT","CMC",
   ["TEST","???","NOT","NEG","MUL","IMUL","DIV","IDIV"],
   ["TEST","???","NOT","NEG","MUL","IMUL","DIV","IDIV"],
@@ -348,8 +382,42 @@ var Mnemonics = [
   "???",
   "", //*Three byte instructions prefix combo 0F 3A (Opcode = 01,00111010) sets opcode 11,000000000 next byte read is added to the lower 8 bit's.
   "???","???","???","???","???",
-  "CMOVO","CMOVNO","CMOVB","CMOVAE","CMOVE","CMOVNE","CMOVBE","CMOVA",
-  "CMOVS","CMOVNS","CMOVP","CMOVNP","CMOVL","CMOVGE","CMOVLE","CMOVG",
+  "CMOVO",
+  [
+    [["CMOVNO","CMOVNO","CMOVNO"],
+    ["KANDW","","KANDQ"],"",""],["",["KANDB","","KANDD"],"",""],"",""
+  ],
+  [
+    [["CMOVB","CMOVB","CMOVB"],
+    ["KANDNW","","KANDNQ"],"",""],["",["KANDNB","","KANDND"],"",""],"",""
+  ],
+  "CMOVAE",
+  [
+    [["CMOVE","CMOVE","CMOVE"],
+    ["KNOTW","","KNOTQ"],"",""],["",["KNOTB","","KNOTD"],"",""],"",""
+  ],
+  [
+    [["CMOVNE","CMOVNE","CMOVNE"],
+    ["KORW","","KORQ"],"",""],["",["KORB","","KORD"],"",""],"",""
+  ],
+  [
+    [["CMOVBE","CMOVBE","CMOVBE"],
+    ["KXNORW","","KXNORQ"],"",""],["",["KXNORB","","KXNORD"],"",""],"",""
+  ],
+  [
+    [["CMOVA","CMOVA","CMOVA"],
+    ["KXORW","","KXORQ"],"",""],["",["KXORB","","KXORD"],"",""],"",""
+  ],
+  "CMOVS","CMOVNS",
+  [
+    [["CMOVP","CMOVP","CMOVP"],
+    ["KADDW","","KADDQ"],"",""],["",["KADDB","","KADDD"],"",""],"",""
+  ],
+  [
+    [["CMOVNP","CMOVNP","CMOVNP"],
+    ["KUNPCKWD","","KUNPCKDQ"],"",""],["",["KUNPCKBW","","???"],"",""],"",""
+  ],
+  "CMOVL","CMOVGE","CMOVLE","CMOVG",
   [
     "???",
     [
@@ -476,8 +544,34 @@ var Mnemonics = [
   ],
   "JO","JNO","JB","JAE","JE","JNE","JBE","JA",
   "JS","JNS","JP","JNP","JL","JGE","JLE","JG",
-  "SETO","SETNO","SETB","SETAE","SETE","SETNE","SETBE","SETA",
-  "SETS","SETNS","SETP","SETNP","SETL","SETGE","SETLE","SETG",
+  [
+    ["SETO",
+    ["KMOVW","","KMOVQ"],"",""],["",["KMOVB","","KMOVD"],"",""],"",""
+  ],
+  [
+    ["SETNO",
+    ["KMOVW","","KMOVQ"],"",""],["",["KMOVB","","KMOVD"],"",""],"",""
+  ],
+  [
+    ["SETB",["KMOVW","","???"],"",""],
+    ["",["KMOVB","","???"],"",""],"",
+    ["",["KMOVD","","KMOVQ"],"",""]
+  ],
+  [
+    ["SETAE",["KMOVW","","???"],"",""],
+    ["",["KMOVB","","???"],"",""],"",
+    ["",["KMOVD","","KMOVQ"],"",""]
+  ],
+  "SETE","SETNE","SETBE","SETA",
+  [
+    ["SETS",
+    ["KORTESTW","","KORTESTQ"],"",""],["",["KORTESTB","","KORTESTD"],"",""],"",""
+  ],
+  [
+    ["SETNS",
+    ["KTESTW","","KTESTQ"],"",""],["",["KTESTB","","KTESTD"],"",""],"",""
+  ],
+  "SETP","SETNP","SETL","SETGE","SETLE","SETG",
   "PUSH","POP",
   "CPUID", //Identifies the CPU and which Instructions the current CPU can use.
   "BT",
@@ -787,10 +881,12 @@ var Operands = [
   "06000A000003","070E0B0E0003","0A0006000003","0B0E070E0003","16000C000003","170E0D060003","","",
   "06000A000003","070E0B0E0003","0A0006000003","0B0E070E0003","16000C000003","170E0D060003","","",
   "06000A00","070E0B0E","0A000600","0B0E070E","16000C00","170E0D06","","",
-  "","","","","","","","","","","","","","","","",
+  "03060003","03060003","03060003","03060003","03060003","03060003","03060003","03060003",
+  "03060003","03060003","03060003","03060003","03060003","03060003","03060003","03060003",
   "030A","030A","030A","030A","030A","030A","030A","030A",
   "030A","030A","030A","030A","030A","030A","030A","030A",
-  "","","",
+  ["","",""],["","",""],
+  [["0A020606","0A010604",""],""],
   "0B0E0704",
   "","","","",
   "0D06","0B0E070E0D06",
@@ -800,7 +896,7 @@ var Operands = [
   "10000002000C","10000002000C","10000002000C","10000002000C","10000002000C","10000002000C","10000002000C","10000002000C",
   ["06000C000003","06000C000003","06000C000003","06000C000003","06000C000003","06000C000003","06000C000003","06000C00"],
   ["070E0D060003","070E0D060003","070E0D060003","070E0D060003","070E0D060003","070E0D060003","070E0D060003","070E0D06"],
-  "",
+  ["06000C000003","06000C000003","06000C000003","06000C000003","06000C000003","06000C000003","06000C000003","06000C00"],
   ["070E0C000003","070E0C000003","070E0C000003","070E0C000003","070E0C000003","070E0C000003","070E0C000003","070E0C00"],
   "06000A00","070E0B0E",
   "0A0006000003","0B0E070E0003",
@@ -813,7 +909,8 @@ var Operands = [
   [["","","",""],["","","",""],["","","",""],["","","",""]],
   "170E030E0003","170E030E0003","170E030E0003","170E030E0003","170E030E0003","170E030E0003","170E030E0003",
   ["","",""],["","",""],
-  "","",
+  "0D060C01", //CALL Ap (w:z).
+  "",
   ["","",""],["","",""],
   "","",
   "160004000001","170E050E0001",
@@ -827,7 +924,7 @@ var Operands = [
   ["06000C00","06000C00","06000C00","06000C00","06000C00","06000C00","06000C00","06000C00"],
   ["070E0C00","070E0C00","070E0C00","070E0C00","070E0C00","070E0C00","070E0C00","070E0C00"],
   "0C010008","0008",
-  "","",
+  "0B060906","0B060906",
   ["06000C000001","","","","","","","0C00"],
   ["070E0D060001","","","","","","","1002"],
   "0C010C00","",
@@ -838,7 +935,7 @@ var Operands = [
   ["070E2A00","070E2A00","070E2A00","070E2A00","070E2A00","070E2A00","070E2A00","070E2A00"],
   ["06001800","06001800","06001800","06001800","06001800","06001800","06001800","06001800"],
   ["070E1800","070E1800","070E1800","070E1800","070E1800","070E1800","070E1800","070E1800"],
-  "","","",
+  "0C00","0C00","",
   "1E00",
   /*------------------------------------------------------------------------------------------------------------------------
   X87 FPU.
@@ -903,10 +1000,10 @@ var Operands = [
   End of X87 FPU.
   ------------------------------------------------------------------------------------------------------------------------*/
   "10000004","10000004","10000004","10000004",
-  "16000C00","170E0C00",
-  "0C001600","0C00170E",
-  "10020008","100200040004",
-  "",
+  "16000C00","170E0C00","0C001600","0C00170E",
+  "10020008",
+  "10020008",
+  "0D060C01", //JMP Ap (w:z).
   "100000040004",
   "16001A01","170E1A01",
   "1A011600","1A01170E",
@@ -1001,8 +1098,42 @@ var Operands = [
   "",
   "",//Three byte opcodes 0F3A
   "","","","","",
-  "0B0E070E","0B0E070E","0B0E070E","0B0E070E","0B0E070E","0B0E070E","0B0E070E","0B0E070E",
-  "0B0E070E","0B0E070E","0B0E070E","0B0E070E","0B0E070E","0B0E070E","0B0E070E","0B0E070E",
+  "0B0E070E",
+  [
+    [["0A020624","0A010612","0A030636"],
+    ["0A0F120F06FF","","0A0F120F06FF"],"",""],["",["0A0F120F06FF","","0A0F120F06FF"],"",""],"",""
+  ],
+  [
+    [["0A020624","0A010612","0A030636"],
+    ["0A0F120F06FF","","0A0F120F06FF"],"",""],["",["0A0F120F06FF","","0A0F120F06FF"],"",""],"",""
+  ],
+  "0B0E070E",
+  [
+    [["0A020624","0A010612","0A030636"],
+    ["0A0F06FF","","0A0F06FF"],"",""],["",["0A0F06FF","","0A0F06FF"],"",""],"",""
+  ],
+  [
+    [["0A020624","0A010612","0A030636"],
+    ["0A0F120F06FF","","0A0F120F06FF"],"",""],["",["0A0F120F06FF","","0A0F120F06FF"],"",""],"",""
+  ],
+  [
+    [["0A020624","0A010612","0A030636"],
+    ["0A0F120F06FF","","0A0F120F06FF"],"",""],["",["0A0F120F06FF","","0A0F120F06FF"],"",""],"",""
+  ],
+  [
+    [["0A020624","0A010612","0A030636"],
+    ["0A0F120F06FF","","0A0F120F06FF"],"",""],["",["0A0F120F06FF","","0A0F120F06FF"],"",""],"",""
+  ],
+  "0B0E070E","0B0E070E",
+  [
+    [["0A020624","0A010612","0A030636"],
+    ["0A0F120F06FF","","0A0F120F06FF"],"",""],["",["0A0F120F06FF","","0A0F120F06FF"],"",""],"",""
+  ],
+  [
+    [["0A020624","0A010612","0A030636"],
+    ["0A0F120F06FF","","0A0F120F06FF"],"",""],["",["0A0F120F06FF","",""],"",""],"",""
+  ],
+  "0B0E070E","0B0E070E","0B0E070E","0B0E070E",
   ["",[["0B0C0648","0B0C0730","",""],["0B0C0648","0B0C0730","",""],"",""]],
   ["0B7007700126","0B700770011A","0A04120406430122","0A04120406490112"],
   [
@@ -1082,7 +1213,6 @@ var Operands = [
   [["0A0A06A9","","",""],["0A040710","13300B300730","0A0F137007700130",""],"",""],
   [["0A0A06A9","","",""],["0A040710","13300B300730","0A0F137007700120",""],"",""],
   [["",["","",""],"",""],"","",""],
-
   [
     ["06360A03","",["0B7007700125","","0B3807700119"],""],
     [["","0A040C000C00"],"",["0B7007380125","","0B7007700119"],""],
@@ -1124,8 +1254,34 @@ var Operands = [
   ],
   "1002000C","1002000C","1002000C","1002000C","1002000C","1002000C","1002000C","1002000C",
   "1002000C","1002000C","1002000C","1002000C","1002000C","1002000C","1002000C","1002000C",
-  "0600","0600","0600","0600","0600","0600","0600","0600",
-  "0600","0600","0600","0600","0600","0600","0600","0600",
+  [
+    ["0600",
+    ["0A0F0612","","0A0F0636"],"",""],["",["0A0F0600","","0A0F0624"],"",""],"","" 
+  ],
+  [
+    ["0600",
+    ["06120A0F","","06360A0F"],"",""],["",["06000A0F","","06240A0F"],"",""],"",""
+  ],
+  [
+    ["0600",["0A0F06F4","",""],"",""],
+    ["",["0A0F06F4","",""],"",""],"",
+    ["",["0A0F06F6","","0A0F06F6"],"",""]
+  ],
+  [
+    ["0600",["06F40A0F","",""],"",""],
+    ["",["06F40A0F","",""],"",""],"",
+    ["",["06F60A0F","","06F60A0F"],"",""]
+  ],
+  "0600","0600","0600","0600",
+  [
+    ["0600",
+    ["0A0F06FF","","0A0F06FF"],"",""],["",["0A0F06FF","","0A0F06FF"],"",""],"",""
+  ],
+  [
+    ["0600",
+    ["0A0F06FF","","0A0F06FF"],"",""],["",["0A0F06FF","","0A0F06FF"],"",""],"",""
+  ],
+  "0600","0600","0600","0600","0600","0600",
   "2608","2608",
   "",
   "070E0B0E0003",
@@ -1444,7 +1600,6 @@ var Operand = function(){
       Deactivate:function(){ this.Active = false; }
     }
   );
-
 };
 
 /*-------------------------------------------------------------------------------------------------------------------------
@@ -1567,7 +1722,7 @@ var AddressOverride = false;
 /*-------------------------------------------------------------------------------------------------------------------------
 Extended Register value changes by the "R bit" in the REX prefix, or by the "Double R bit" settings in EVEX Extension
 which makes the Register operand reach to a max value of 32 registers along the register array.
-Normally the Register selection in ModR/M, and Reg Opcode is limited to three bits in binary 000 = 0 to 111 = 7.
+Normally the Register selection in ModR/M, is limited to three bits in binary 000 = 0 to 111 = 7.
 RegExtend stores the two binary bits that are added onto the three bit register selection.
 ---------------------------------------------------------------------------------------------------------------------------
 When RegExtend is 00,000 the added lower three bits is 00,000 = 0 to 00,111 = 7.
@@ -1676,8 +1831,8 @@ Some codes can only be used in VEX, but not EVEX, also MMX instruction can not b
 By default Extension is 0 for decoding of instructions normally.
 ---------------------------------------------------------------------------------------------------------------------------
 Used by function ^DecodeOpcode()^ adds the letter "V" to the instruction name to show it uses Vector adjustments.
+When the Function ^DecodeOpcode()^ completes if Vect is not true and an Extension is active the instruction is invalid.
 Used By function ^DecodeOperandString()^ which allows the Vector operand to be used if existent in the operand string.
-when the Function ^DecodeOperands()^ completes if Vect is not true and an Extension is active the instruction is invalid.
 -------------------------------------------------------------------------------------------------------------------------*/
 
 var Extension = 0;
@@ -1791,7 +1946,7 @@ This is used by function ^DecodeInstruction()^.
 var BND = false;
 
 /*-------------------------------------------------------------------------------------------------------------------------
-The Invalid Instruction variable is very important as some bit settings in vector extension create invalid operation codes.
+The Invalid Instruction variable is very important as some bit settings in vector extensions create invalid operation codes.
 Also some opcodes are invalid in different cpu bit modes.
 ---------------------------------------------------------------------------------------------------------------------------
 Function ^DecodePrefixAdjustments()^ Set the Invalid Opcode if an instruction or prefix is compared that is invalid for CPU bit mode.
@@ -2056,13 +2211,43 @@ var scale = [
  ];
 
 /*-------------------------------------------------------------------------------------------------------------------------
-This function moves the simulated 64 bit address by one and caries to the 64 bit section of the simulated address when the
-end of the 32 bit int is reached. This function also moves the binary code array position CodePos32 by one basically this
-function is used to progress the disassembler as it is decoding a sequence of bytes.
+This function loads the BinCode array using a hex string as input. If input is is invalid returns false.
 -------------------------------------------------------------------------------------------------------------------------*/
 
-function NextByte(){
+function LoadBinCode( HexStr )
+{
+  //Reset Code Position in Bin Code array.
 
+  CodePos32 = 0;
+
+  //Clear BinCode.
+
+  BinCode = new Array();
+
+  //Iterate though the hex string and covert to 0 to 255 byte values into the BinCode array.
+
+  for( var i = 0, el = 0; i < HexStr.length; i += 2, el++ )
+  {
+    BinCode[el] = parseInt(HexStr.substring(i, i + 2), 16);
+
+    //If input is invalid reset BinCode, and return false.
+
+    if( isNaN(BinCode[el]) ){ return( false ); }
+  }
+
+  //return true.
+
+  return( true );
+}
+
+/*-------------------------------------------------------------------------------------------------------------------------
+This function moves the address by one and caries to 64 section for the address. The BitMode setting limits how much of
+the 64 bit address is used, for the type of binary being disassemble. This function also moves the binary code array
+position CodePos32 by one basically this function is used to progress the disassembler as it is decoding a sequence of bytes.
+-------------------------------------------------------------------------------------------------------------------------*/
+
+function NextByte()
+{
   //record the starting position.
 
   if( InstructionPos == "" ){ InstructionPos = GetPosition(); }
@@ -2075,67 +2260,119 @@ function NextByte(){
   InstructionHex += t; //add it to the current bytes used for the decode instruction.
   t = null; //set the temporary string used for padding it to a hex byte null.]
 
-  //Move the Simulated 64 bit address by one byte for the next byte.
+  //Add the 32 bit array index position by one for the binary code array
 
-  Pos32 += 1;
+  CodePos32++;
 
-  //if the first 32 bits of the simulated 64 bit address position is grater than a max 32 bit value carry to Pos64.
+  //Check if the code position is out of bounds for the section of binary in BinCode.
+  //If CodePos is not out of bounds continue the real address.
 
-  if (Pos32 > 0xFFFFFFFF)
+  if ( CodePos32 < BinCode.length )
   {
-    Pos32 = 0x00000000;
-    Pos64 += 1;
+
+    //Add one to first 32 bits.
+
+    Pos32++;
+
+    //Pos32 can only go 0x0000 to 0xFFFF hex as a 16 bit address and must carry to Pos32 if Bit Mode Is higher than 16 bits.
+
+    if ( ( Pos32 & 0x0000FFFF ) > 0x0000FFFF & BitMode == 0 )
+    {
+      Pos32 = ( ( Pos32 >> 16 ) & 0xFFFF ) << 16;
+    }
+
+    //else check if 32 bit address reaches it's end it starts over numerically then must carry to Pos64 if Bit Mode Is higher than 32 bit.
+
+    else if ( Pos32 > 0xFFFFFFFF )
+    {
+      Pos32 = 0x00000000;
+      ( BitMode >= 2 ) && ( Pos64++ ); //only add one to 64 bit position if it is a 64 bit binary, or higher.
+    }
+
+    //If the 64 bit address reaches it's end the default behavior of the 64 bit instruction pointer register is
+    //to start back at 0.
+
+    if ( Pos64 > 0xFFFFFFFF )
+    {
+      Pos64 = 0x00000000;
+    }
   }
-
-  //if the carry 64 bit address reaches it's end the default behavior of the 64 bit instruction pointer register is
-  //to start back at 0.
-
-  if (Pos64 > 0xFFFFFFFF)
-  {
-    Pos64 = 0x00000000;
-  }
-
-  //add the 32 bit array index position by one for the binary code array
-
-  CodePos32 += 1;
-
-  //if the code position reaches the end of the array index
-
-  if (CodePos32 > 0xFFFFFFFF)
-  {
-    CodePos = 0; //for now lets just set it 0 without adding in the binary disk read library
-  }
-
 }
 
 /*-------------------------------------------------------------------------------------------------------------------------
-Takes a 64 bit hex string and sets it as the 64 address position.
+Takes a 64/32/16 bit hex string and sets it as the address position depending on the address format it is split into
+segment, and offset address. Note that the Code Segment is used in 16 bit code. Also code segment is also used in 32 bit
+if set 36, or higher. Effects instruction location in memory when decoding a program.
 -------------------------------------------------------------------------------------------------------------------------*/
 
-function SetBasePosition( Address64 ){
-  Pos32 = parseInt(Address64.slice(-8), 16);
-  Pos64 = parseInt(Address64.substring(0, Address64.length - 8), 16);
-  if ( Pos32 < 0 ) { Pos32 += Math.pow( 2, 32 ); }
+function SetBasePosition( Address )
+{
+  //Split the Segment:offset.
+  
+  var t = Address.split(":");
+
+  //Set the 16 bit code segment position if there is one.
+
+  if ( t.length >= 1 ){ CodeSeg = parseInt(t[0].slice( -4 ), 16); Address = t[1]; }
+  t = null;
+
+  //Adjust the Instruction pointer 16(IP)/32(EIP)/64(RIP). Also varies based on Bit Mode.
+
+  if( Address.length >= 9 & BitMode == 2 ){ Pos64 = parseInt((Address.slice(-16)).substring(0, 8), 16); }
+  if( Address.length >= 5 & BitMode >= 1 & !( BitMode == 1 & CodeSeg >= 36 ) ){ Pos32 = parseInt(Address.slice(-8), 16); }
+  else if( Address.length >= 1 & BitMode >= 0 ){ Pos32 = ( Pos32 & 0xFFFF0000 ) | ( parseInt(Address.slice(-4), 16) ); }
+
+  //Convert Pos64, and Pos32 to undignified integer.
+
   if ( Pos64 < 0 ) { Pos64 += Math.pow( 2, 32 ); }
+  if ( Pos32 < 0 ) { Pos32 += Math.pow( 2, 32 ); }
 }
 
 /*-------------------------------------------------------------------------------------------------------------------------
-Gives back the current 64 bit address position.
+Gives back the current Instruction address position.
+In 16 bit an instruction location is Bound to the code segment location in memory, and the first 16 bit of the instruction pointer 0 to 65535.
+In 32 bit an instruction location uses the first 32 bit's of the instruction pointer 
 -------------------------------------------------------------------------------------------------------------------------*/
 
-function GetPosition(){
-  for (var S32 = Pos32.toString(16) ; S32.length < 8; S32 = "0" + S32);
-  for (var S64 = Pos64.toString(16) ; S64.length < 8; S64 = "0" + S64);
-  return ((S64 + S32).toUpperCase());}
+function GetPosition()
+{
+  //If 16 bit Seg:Offset, or if 32 bit and CodeSeg is 36, or higher.
+  
+  if( BitMode == 0 | ( BitMode == 1 & CodeSeg >= 36 ) )
+  {
+    for (var S16 = ( Pos32 & 0xFFFF ).toString(16); S16.length < 4; S16 = "0" + S16 );
+    for (var Seg = ( CodeSeg ).toString(16); Seg.length < 4; Seg = "0" + Seg );
+    return( ( Seg + ":" + S16 ).toUpperCase() );
+  }
+
+  var S64="", S32=""; //32 bit, and 64 bit section.
+
+  //If 32 bit or higher.
+
+  if( BitMode >= 1 )
+  {
+    for (var S32 = Pos32.toString(16) ; S32.length < 8; S32 = "0" + S32);
+  }
+
+  //If 64 bit.
+
+  if( BitMode == 2 )
+  {
+    for (var S64 = Pos64.toString(16) ; S64.length < 8; S64 = "0" + S64);
+  }
+
+  return ((S64 + S32).toUpperCase()); //Return the 32/64 address.
+}
 
 /*-------------------------------------------------------------------------------------------------------------------------
-Moves the dissembler 64 bit simulated address, and CodePos32 to correct address.
+Moves the dissembler 64 bit address, and CodePos32 to correct address. Returns false if address location is out of bounds.
 -------------------------------------------------------------------------------------------------------------------------*/
 
-function GotoPosition( Address64 ){
+function GotoPosition( Address )
+{
   //Split the selected Address into two 32 bit numbers.
-  var LocPos32 = parseInt(Address64.slice(-8), 16);
-  var LocPos64 = parseInt(Address64.substring(0, Address64.length - 8), 16);
+  var LocPos32 = parseInt(Address.slice(-8), 16);
+  var LocPos64 = parseInt(Address.substring(0, Address.length - 8), 16);
   //Find the difference between the current simulated 64 address and the selected address location.
   var Dif32 = Pos32 - LocPos32, Dif64 = Pos64 - LocPos64;
   //Subtract the difference to the CodePos32 Section.
@@ -2157,7 +2394,8 @@ function GotoPosition( Address64 ){
 Finds bit positions to the Size attribute indexes in REG array, and Pointer Array. For the Size Attribute variations.
 -------------------------------------------------------------------------------------------------------------------------*/
 
-function GetOperandSize( SizeAttribute ){
+function GetOperandSize( SizeAttribute )
+{
 
   //Log 2
 
@@ -2221,7 +2459,6 @@ function GetOperandSize( SizeAttribute ){
   //note the fourth size that is -1 in the returned size attribute is Vector length 11=3 which is invalid unless Intel decides to add 1024 bit vectors.
 
   return( ( [ S3, S2, S1, -1 ] )[ SizeAttrSelect ] );
-
 }
 
 /*-------------------------------------------------------------------------------------------------------------------------
@@ -2232,7 +2469,8 @@ The second element is the three bits for the ModR/M byte Opcode/Reg bits, or the
 The third element is the last three bits for the ModR/M byte the R/M bits, or the SIB Base Register value as a number value 0 to 7
 -------------------------------------------------------------------------------------------------------------------------*/
 
-function Decode_ModRM_SIB_Value(){
+function Decode_ModRM_SIB_Value()
+{
 
   //Get the current position byte value
 
@@ -2269,7 +2507,6 @@ function Decode_ModRM_SIB_Value(){
   //return the array containing the decoded values of the byte.
 
   return (ByteValueArray);
-
 }
 
 /*-------------------------------------------------------------------------------------------------------------------------
@@ -2287,7 +2524,8 @@ If BySize is false the SizeSetting is used numerically as a single size selectio
 0=8,1=16,2=32,3=64 by size setting value.
 -------------------------------------------------------------------------------------------------------------------------*/
 
-function DecodeImmediate( type, BySize, SizeSetting ){
+function DecodeImmediate( type, BySize, SizeSetting )
+{
 
   var imm = ""; //this will store each byte in reverse order for little endian format as a hex string
 
@@ -2410,6 +2648,11 @@ function DecodeImmediate( type, BySize, SizeSetting ){
           //Put the 64 bit address together.
 
           imm = IMM64 + IMM32;
+          
+          //The size of the relative address varies based on bit mode, and code segment.
+
+          imm = imm.slice(-(Math.pow(2,BitMode)*4));
+          if( CodeSeg >= 36 & BitMode == 1 ){ imm = imm.slice(-4); }
       }
 
       else if (type == 3) //if it is singed int Displacement Calculate and simulate Integer Center Points for Immediate Sizes 8,16,32.
@@ -2468,14 +2711,14 @@ function DecodeImmediate( type, BySize, SizeSetting ){
   //return the immediate result
 
   return (imm.toUpperCase());
-
 }
 
 /*-------------------------------------------------------------------------------------------------------------------------
 Decode registers by Size attributes, or a select register index.
 -------------------------------------------------------------------------------------------------------------------------*/
 
-function DecodeRegValue( RValue, BySize, Setting ) {
+function DecodeRegValue( RValue, BySize, Setting )
+{
 
   //If the instruction is a Vector instruction, and no extension is active like EVEX, VEX Make sure Size attribute uses the default vector size.
 
@@ -2511,7 +2754,6 @@ function DecodeRegValue( RValue, BySize, Setting ) {
   //Return the Register.
 
   return (REG[Setting][ RValue ]);
-
 }
 
 /*-------------------------------------------------------------------------------------------------------------------------
@@ -2520,7 +2762,8 @@ Note if by size attributes is false the lower four bits is the selected Memory p
 and the higher four bits is the selected register.
 -------------------------------------------------------------------------------------------------------------------------*/
 
-function Decode_ModRM_SIB_Address( ModRM, BySize, Setting ){
+function Decode_ModRM_SIB_Address( ModRM, BySize, Setting )
+{
 
   var out = ""; //the variable out is what stores the decoded address pointer, or Register if Register mode.
 
@@ -2792,7 +3035,6 @@ function Decode_ModRM_SIB_Address( ModRM, BySize, Setting ){
   //return what the "Register mode" is, or "Memory address"
 
   return (out);
-
 } //End of ModR/M address Base Register Effective Address decode, and mode bit's decode.
 
 /*-------------------------------------------------------------------------------------------------------------------------
@@ -2803,7 +3045,8 @@ LDS and LES where changed to Vector extension attribute adjustments to SSE instr
 At the end of this function "Opcode" should not hold any prefix code, so then Opcode contains an operation code.
 -------------------------------------------------------------------------------------------------------------------------*/
 
-function DecodePrefixAdjustments(){
+function DecodePrefixAdjustments()
+{
 
   //-------------------------------------------------------------------------------------------------------------------------
   Opcode = ( Opcode & 0x300 ) | BinCode[CodePos32]; //Add 8 bit opcode while bits 9, and 10 are used for opcode map.
@@ -2956,7 +3199,7 @@ function DecodePrefixAdjustments(){
       ZeroMerg = ( Opcode & 0x800000 ) >> 23; //Zero Merge to destination control.
       SizeAttrSelect = ( Opcode & 0x600000 ) >> 21; //The EVEX.L'L Size combination.
       BRound = (Opcode & 0x100000 ) >> 20; //Broadcast Round Memory address system.
-      VectorRegister |= ( Opcode & 0x080000 ) >> 15; //The EVEX.V' vector extension adds 15 to EVEX.V3V2V1V0.
+      VectorRegister |= ( Opcode & 0x080000 ) >> 15; //The EVEX.V' vector extension adds an extra V bit to the vector register selection for 0 to 31.
       MaskRegister = ( Opcode & 0x070000 ) >> 16; //Mask to destination.
 
       Opcode = ( Opcode & 0x03 ) << 8; //Change Operation code map.
@@ -2975,7 +3218,7 @@ function DecodePrefixAdjustments(){
 
   //Segment overrides
 
-  if (Opcode == 0x2E | Opcode == 0x36 | Opcode == 0x3E | Opcode == 0x64 | Opcode == 0x65)
+  if (Opcode == 0x26 | Opcode == 0x2E | Opcode == 0x36 | Opcode == 0x3E | Opcode == 0x64 | Opcode == 0x65)
   {
     SegOverride = Mnemonics[ Opcode ]; //Set the Left Bracket for the ModR/M memory address.
     return(DecodePrefixAdjustments()); //restart function decode more prefix settings that can effect the decode instruction.
@@ -3017,8 +3260,18 @@ function DecodePrefixAdjustments(){
     return(DecodePrefixAdjustments()); //restart function decode more prefix settings that can effect the decode instruction.
   }
 
-  return(0); //regular opcode no extension active like VEX, or EVEX.
+  //Before ending the function "DecodePrefixAdjustments()" some opcode combinations are invalid in 64 bit mode.
 
+  if ( BitMode === 2 )
+  {
+    InvalidOp |= ( ( ( Opcode & 0x07 ) >= 0x06 ) & ( Opcode <= 0x40 ) );
+    InvalidOp |= ( Opcode == 0x60 | Opcode == 0x61 );
+    InvalidOp |= ( Opcode == 0xD4 | Opcode == 0xD5 );
+    InvalidOp |= ( Opcode == 0x9A | Opcode == 0xEA );
+    InvalidOp |= ( Opcode == 0x82 );
+  }
+
+  return(0); //regular opcode no extension active like VEX, or EVEX.
 }
 
 /*-------------------------------------------------------------------------------------------------------------------------
@@ -3032,7 +3285,8 @@ However DecodePrefixAdjustments can also prevent this function from being called
 used for the bit mode the CPU is in as it will set InvalidOp true.
 -------------------------------------------------------------------------------------------------------------------------*/
 
-function DecodeOpcode(){
+function DecodeOpcode()
+{
 
   //get the Operation name by the operations opcode.
 
@@ -3181,27 +3435,35 @@ function DecodeOpcode(){
 
   //If Extension is not 0 then add the vector extend "V" to the instruction.
   //During the decoding of the operands the instruction can be returned as invalid if it is an Arithmetic, or MM, ST instruction.
+  //Vector mask instructions start with K instead of V any instruction that starts with K and is an
+  //vector mask Instruction which starts with K instead of V.
 
-  if( Extension > 0 ) { Name = "V" + Name; }
+  if( Extension > 0 & Name.charAt(0) != "K" ) { Name = "V" + Name; }
+
+  //In 32 bit mode, or bellow only one instruction MOVSXD is replaced with ARPL.
+
+  if( BitMode <= 1 )
+  {
+    if( Name == "MOVSXD" ) { Name = "ARPL"; Type = "06020A01"; }
+  }
 
   //return the instruction name, and operand encoding type.
 
   return( [ Name, Type ] );
-
 }
 
 /*-------------------------------------------------------------------------------------------------------------------------
 Read each operand in the Operand String then set the correct operand in the X86 decoder array.
-And also OpNum is the order the operands are read in the operand string this number (OpNum) is set to the
-operand in the decoder array as each operand is read. Each set operand will be decoded by the function
-^DecodeOperands()^. The OpNum is the order the decoded operands will be positioned after they are decoded
+OpNum is the order the operands are read in the operand string. The Operand type is which operand will be set
+active along the X86Decoder. The OpNum is the order the decoded operands will be positioned after they are decoded
 in order along the X86 decoder. The order the operands display is different than the order they decode in sequence.
 ---------------------------------------------------------------------------------------------------------------------------
 This function is used after the function ^DecodeOpcode()^ because the function ^DecodeOpcode()^ gives back the
-operand string for what the instruction takes as input plus they are in order.
+operand string for what the instruction takes as input.
 -------------------------------------------------------------------------------------------------------------------------*/
 
-function DecodeOperandString( OperandString ){
+function DecodeOperandString( OperandString )
+{
 
   //Variables that are used for decoding one operands across the operand string.
 
@@ -3302,7 +3564,6 @@ function DecodeOperandString( OperandString ){
     }
 
   }
-
 }
 
 /*-------------------------------------------------------------------------------------------------------------------------
@@ -3310,7 +3571,8 @@ Decode each of the operands along the X86Decoder and deactivate them.
 This function is used after ^DecodeOperandString()^ which sets up the X86 Decoder for the instructions operands.
 -------------------------------------------------------------------------------------------------------------------------*/
 
-function DecodeOperands(){
+function DecodeOperands()
+{
 
   //The Operands array is a string array in which the operand number is the element the decoded operand is positioned.
 
@@ -3551,7 +3813,6 @@ function DecodeOperands(){
   //convert the operand array to a string and return it.
 
   return ( out.toString() );
-
 }
 
 /*-------------------------------------------------------------------------------------------------------------------------
@@ -3606,7 +3867,7 @@ function DecodeInstruction()
       if( ( ( VectS & 0x20 ) == 0 ) & !WidthBit ){ InvalidOp = true; }
     }
 
-    //InvalidOp = ( ( ( SIMD & 1 ) != WidthBit ) ) & ( VectS & 0x10 ); Note use ignore width bit pastern EVEX.
+    //InvalidOp = ( ( ( SIMD & 1 ) != WidthBit ) ) & ( VectS & 0x10 ); Note use, and ignore width bit pastern EVEX.
 
   }
 
@@ -3625,6 +3886,15 @@ function DecodeInstruction()
     //Decode each operand along the Decoder array in order, and deactivate them.
 
     Operands = DecodeOperands();
+
+    //32/16 bit instructions 9A, and EA use Segment, and offset with Immediate format.
+
+    if( Opcode == 0x9A | Opcode == 0xEA )
+    {
+      var t = Operands.split(",");
+      Operands = t[1] + ":" +t[0];
+      t = null;
+    }
 
     //**Depending on the operation different prefixes replace others for  HLE, or MPX, and branch prediction.
     //if REP prefix, and LOCK prefix are used together, and the current decoded operation allows HLE XRELEASE.
@@ -3689,12 +3959,16 @@ function DecodeInstruction()
       //Go to the Calculated address right after the Instruction UD.
       GotoPosition(  S64 + S32 );
       //Set prefixes, and operands to empty strings, and set Instruction to UD.
-      PrefixG1 = "";PrefixG2 = ""; Instruction[0] = "UD"; Operands = "";
+      PrefixG1 = "";PrefixG2 = ""; Instruction[0] = "???"; Operands = "";
     }
 
     //Put the Instruction sequence together.
 
-    out = PrefixG1 + " " + PrefixG2 + " " + Instruction[0] + " " + Operands
+    out = PrefixG1 + " " + PrefixG2 + " " + Instruction[0] + " " + Operands;
+
+    //Remove any trailing spaces because of unused prefixes etc.
+
+    out = out.replace(/^[ ]+|[ ]+$/g,'');
 
     //Add error suppression.
 
@@ -3751,21 +4025,18 @@ function Reset()
   //Deactivate all operands along the X86Decoder.
 
   for( var i = 0; i < X86Decoder.length; X86Decoder[i++].Deactivate() );
-
 }
 
 /*-------------------------------------------------------------------------------------------------------------------------
 do an linear disassemble.
 -------------------------------------------------------------------------------------------------------------------------*/
 
-function Disassemble( Code )
+function LDisassemble()
 {
 
   var Instruction = ""; //Stores the Decoded instruction.
 
   var Out = "";  //The Disassemble output
-
-  BinCode = Code; //set the binary code array.
 
   //Disassemble binary code using an linear pass.
 
@@ -3785,7 +4056,7 @@ function Disassemble( Code )
 
     if(ShowInstructionPos)
     {
-      Out += InstructionPos + "\x09";
+      Out += InstructionPos + " ";
     }
 
     //Show Each byte that was read to decode the instruction if ShowInstructionHex decoding is active.
@@ -3793,8 +4064,8 @@ function Disassemble( Code )
     if(ShowInstructionHex)
     {
       InstructionHex = InstructionHex.toUpperCase();
-      for(; InstructionHex.length < 30; InstructionHex = InstructionHex + " " );
-      Out += InstructionHex + "\x09";
+      for(; InstructionHex.length < 32; InstructionHex = InstructionHex + " " );
+      Out += InstructionHex + "";
     }
 
     //Put the decoded instruction into the output and make a new line.
