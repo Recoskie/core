@@ -1,69 +1,166 @@
 <html>
+
 <body onload="(function(){Decode(document.getElementById('T').value);})()">
 
-<script type="text/javascript" src="DisassembleX86-64.js"></script>
+  <script type="text/javascript" src="X86Decoder.js"></script>
 
-<script type="text/javascript">
+  <script type="text/javascript">
 
-BitMode = 2; //Bit mode 64.
-SetBasePosition("7777777777777777"); //Set the base address.
+    BitMode = 2; //Bit mode 64.
+    SetBasePosition("0007:7777777777777777"); //Set the base address.
 
-function Decode(e)
-{
+    function Decode(e)
+    {
 
-   var BinaryHex = e;
+      //Set Base address for the binary based on the base address entered by user.
 
-    var ByteArray = new Array();
+      var CodeSegment = document.getElementById("CS").value;
+      var Offset = document.getElementById("RIP").value;
 
-    for(var i = 0, el = 0;i < BinaryHex.length;i += 2, el++) { ByteArray[el] = parseInt(BinaryHex.substring(i, i + 2), 16); }
+      SetBasePosition(CodeSegment + ":" + Offset); //Set the position the binary is read from.
 
-    out = Disassemble( ByteArray );
+      //Depending on format 8086 (X86-16), 386 (X86-32), and X86-64 Instruction Pointer Size changes.
 
-    //used the byte code array with the Disassemble function
+      var P = GetPosition().split(":"); //Split code segment, and instruction offset separator.
+      var Offset = P[P.length - 1]; //Read the last element for the Instruction pointer.
 
-    if( out != "" ) { document.getElementById("DisAsm").value = out; }
+      var Seg = (document.getElementById("CS").value).slice(-4);
 
-    //else no output try again.
+      //If segment is read set it as Seg.
 
-    else
-   {
-      out = Disassemble( ByteArray );
-      if( out != "" ) { document.getElementById("DisAsm").value = out; }
+      if (P.length == 2)
+      {
+        Seg = P[0];
+      }
 
-       //else not output try once more.
+      //The Instruction ofsset size is the Instruction pointer size.
+
+      if (Offset.length == 16)
+      {
+        document.getElementById("XIP").innerHTML = "RIP:";
+      }
+
+      else if (Offset.length == 8)
+      {
+        document.getElementById("XIP").innerHTML = "EIP:";
+      }
+      else
+      {
+        document.getElementById("XIP").innerHTML = "IP:";
+      }
+
+
+      document.getElementById("RIP").value = Offset; //Update the instruction pointer size based on CPU format type.
+      document.getElementById("CS").value = Seg; //Update the CodeSegment.
+
+      //Read the X86 hex code enterded by user.
+
+      var Hex = e.replace(/\n|\r\n|\r/g, ""); //Remove enters.
+      Hex = Hex.replace(/ /g, ""); //Remove spaces.
+
+      //Load the Hex string into the Disassembler.
+
+      if (LoadBinCode(Hex)) //Check if loaded correctly.
+      {
+        //Clear error output.
+
+        document.getElementById("ERR").innerHTML = "";
+
+        //Use the Linear Disassemble algorithm, for the Section of binary.
+
+        out = LDisassemble();
+
+        //Update the disassemble output.
+
+        document.getElementById("DisAsm").value = out;
+      }
+
+      //else the hex input is bad.
 
       else
       {
-        out = Disassemble( ByteArray );
-        if( out != "" ) { document.getElementById("DisAsm").value = out; }
+        document.getElementById("ERR").innerHTML = "<hr />Only numbers 0 though 9, and alphabetical letters A to F are allowed. Any other characters will result in invalid instructions.";
       }
-   }
+    }
 
-    GotoPosition("7777777777777777"); //Goto the start base address.
-  }
-</script>
+    //Updates the dissasembly output when a setting changes.
 
-<center>
-<h1>
+    function Update()
+    {
+      Decode(document.getElementById('T').value);
+    }
+
+//setTimeout(function(){Decode(e.value);}, 4);
+
+  </script>
+
+  <center>
+    <h1>
 Full X86 Disassembler by Damian Recoskie.
 </h1>
-<h4>Version 2.0 Beta.</h4>
-</center>
+    <h4>Version 2.0 Beta.</h4>
+  </center>
 
-<table border="1px" width = "100%">
-<tr><td><center>X86 Code Hex.</center></td><td><center>Disassembly</center></td></tr>
-<tr><td><center>You can type in numbers here which will update the Disassembly output.<hr />Only numbers 0 though 9, and alphabetical letters A to F are allowed. Any formating, or even an enter, or space will result in invalid instructions.</center></td><td><center>As you change the X86 code the Result is displayed Here.</center></td></tr>
-<tr>
-<td width = "50%">
-<textarea id="T"  style="font-family:monospace;width:100%;" rows='30'
-onkeydown="var e=this; setTimeout(function(){Decode(e.value);}, 4);"
-onkeyup="var e=this; setTimeout(function(){Decode(e.value);}, 4);"
-onpaste="var e=this; setTimeout(function(){Decode(e.value);}, 100);">CCEB004883C438C3CCCCCCCCCCCCCCCC488BC448895810488970184889782055488DA8E8FDFFFF4881EC10030000488B05930A0A004833C4488985000200004C8B05AAD8090033C0488944244233F6C74424582A002C00488D05B23F05004889442460488D45F04889442448488BF9C744244000000802</textarea>
-</td>
-<td width = "50%">
-<textarea id="DisAsm" style="font-family:monospace;width:100%;" wrap="off" rows='30' readonly></textarea>
-</td>
-</tr>
-</table>
+  <table border="1px" width="100%">
+    <tr>
+      <td>Format:</td>
+      <td><input type="radio" name="Format" onclick="BitMode = 0;Update();" value="16bit">16 bit binaries 8086 (X86-16).</td>
+      <td><input type="radio" name="Format" onclick="BitMode = 1;Update();" value="32bit">32 bit binaries 80386 (X86-32).</td>
+      <td><input type="radio" name="Format" onclick="BitMode = 2;Update();" value="64bit" checked>64 bit binaries (X86-64).</td>
+    </tr>
+  </table>
+
+  <table border="1px" width="100%">
+    <tr>
+      <td>Display Options:</td>
+      <td><input type="checkbox" name="Display" onclick="ShowInstructionHex = this.checked;Update();" value="Hex" checked>Show Disassembled Instruction Hex.</td>
+      <td><input type="checkbox" name="Display" onclick="ShowInstructionPos = this.checked;Update();" value="Pos" checked>Show Instruction Memory Position.</td>
+    </tr>
+  </table>
+
+  <table border="1px" width="100%">
+    <tr>
+      <td>Base Address:</td>
+      <td>
+        CS:<input type="text" id="CS" value="0007" onkeyup="(function(){Decode(document.getElementById('T').value);})();" onpaste="(function(){Decode(document.getElementById('T').value);})();">(Code Segment).
+      </td>
+      <td>
+        <table><tr><td><div id="XIP">RIP:</div></td><td><input type="text" id="RIP" value="7777777777777777" onkeyup="(function(){Decode(document.getElementById('T').value);})();" onpaste="(function(){Decode(document.getElementById('T').value);})();">(Instruction Pointer Register).</td></tr></table>
+      </td>
+    </tr>
+  </table>
+
+  <br />
+
+  <table border="1px" width="100%">
+    <tr>
+      <td>
+        <center>X86 Code Hex.</center>
+      </td>
+      <td>
+        <center>Disassembly</center>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <center>
+          You can type in numbers here which will update the Disassembly output.
+          <div id="ERR"></div>
+        </center>
+      </td>
+      <td>
+        <center>As you change the X86 code the Result is displayed Here.</center>
+      </td>
+    </tr>
+    <tr>
+      <td width="30%">
+        <textarea id="T" style="font-family:monospace;width:100%;" rows="27" onkeyup="var e=this; Decode(e.value);" onpaste="var e=this; setTimeout(function(){Decode(e.value);}, 100);">CCEB004883C438C3CCCCCCCCCCCCCCCC488BC448895810488970184889782055488DA8E8FDFFFF4881EC10030000488B05930A0A004833C4488985000200004C8B05AAD8090033C0488944244233F6C74424582A002C00488D05B23F05004889442460488D45F04889442448488BF9C744244000000802</textarea>
+      </td>
+      <td width="70%">
+        <textarea id="DisAsm" style="font-family:monospace;width:100%;" rows="27" wrap="off" readonly></textarea>
+      </td>
+    </tr>
+  </table>
 </body>
+
 </html>
