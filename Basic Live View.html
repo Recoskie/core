@@ -2,12 +2,12 @@
 
 <body onload="(function(){Decode(document.getElementById('T').value);})()">
 
-  <script type="text/javascript" src="DisassembleX86-64.js"></script>
+  <script type="text/javascript" src="X86Decoder.js"></script>
 
   <script type="text/javascript">
 
     BitMode = 2; //Bit mode 64.
-    SetBasePosition("0007:7777777777777777"); //Set the base address.
+    SetBasePosition("0016:7777777777777777"); //Set the base address.
 
     function Decode(e)
     {
@@ -89,15 +89,12 @@
     {
       Decode(document.getElementById('T').value);
     }
-
-//setTimeout(function(){Decode(e.value);}, 4);
-
   </script>
 
   <center>
     <h1>
-Full X86 Disassembler by Damian Recoskie.
-</h1>
+      Full X86 Disassembler by Damian Recoskie.
+    </h1>
     <h4>Version 2.0 Beta.</h4>
   </center>
 
@@ -122,7 +119,7 @@ Full X86 Disassembler by Damian Recoskie.
     <tr>
       <td>Base Address:</td>
       <td>
-        CS:<input type="text" id="CS" value="0007" onkeyup="(function(){Decode(document.getElementById('T').value);})();" onpaste="(function(){Decode(document.getElementById('T').value);})();">(Code Segment).
+        CS:<input type="text" id="CS" value="0016" onkeyup="(function(){Decode(document.getElementById('T').value);})();" onpaste="(function(){Decode(document.getElementById('T').value);})();">(Code Segment).
       </td>
       <td>
         <table><tr><td><div id="XIP">RIP:</div></td><td><input type="text" id="RIP" value="7777777777777777" onkeyup="(function(){Decode(document.getElementById('T').value);})();" onpaste="(function(){Decode(document.getElementById('T').value);})();">(Instruction Pointer Register).</td></tr></table>
