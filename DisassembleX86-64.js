@@ -50,7 +50,7 @@ However 32 bit still supports Segmented addressing if used, but 64 bit binaries 
 In 64 bit mode, an programs instructions are in a 64 bit address using the processors full instruction pointer, but in 32
 bit instructions the first 32 bit of the instruction pointer is used. In 16 bit the first 16 bits of the instruction pointer
 is used, but with the code segment. Each instruction is executed in order by the Instruction pointer that goes in sectional sizes
-"RIP (64)/EIP (32)/IP (16)" Depending on the Bit mode the 64 bit CPU is set in, or if the CPU is 32 bit to begin.
+"RIP (64)/EIP (32)/IP (16)" Depending on the Bit mode the 64 bit CPU is set in, or if the CPU is 32 bit to begin with.
 -------------------------------------------------------------------------------------------------------------------------*/
 
 var CodeSeg = 0x0000;
@@ -213,7 +213,7 @@ var Mnemonics = [
   "AAMB","AADB","???",
   "XLAT",
   /*------------------------------------------------------------------------------------------------------------------------
-  X87 FPU
+  X87 FPU.
   ------------------------------------------------------------------------------------------------------------------------*/
   [
     ["FADD","FMUL","FCOM","FCOMP","FSUB","FSUBR","FDIV","FDIVR"],
@@ -1565,7 +1565,6 @@ The following X86 patent link might help http://www.google.com/patents/US7640417
 -------------------------------------------------------------------------------------------------------------------------*/
 
 var Operand = function(){
-
   return(
     {
 
@@ -2230,7 +2229,7 @@ function LoadBinCode( HexStr )
   {
     BinCode[el] = parseInt(HexStr.substring(i, i + 2), 16);
 
-    //If input is invalid reset BinCode, and return false.
+    //If input is invalid return false.
 
     if( isNaN(BinCode[el]) ){ return( false ); }
   }
@@ -3085,6 +3084,7 @@ function DecodePrefixAdjustments()
 
     if( Opcode >= 0x40 & Opcode <= 0x4F)
     {
+      RexActive = true; //Set Rex active uses 8 bit registers in lower order as 0 to 15.
       BaseExtend = (Opcode & 0x01) << 3; //Base Register extend setting.
       IndexExtend = ( ( Opcode & 0x02 ) ) << 2; //Index Register extend setting.
       RegExtend = ( ( Opcode & 0x04 ) ) << 1; //Register Extend Setting.
@@ -3822,7 +3822,7 @@ The main Instruction decode function plugs everything in together for the steps 
 function DecodeInstruction()
 {
 
-  //Reset Prefixe adjustments, and vector setting adjustments.
+  //Reset Prefix adjustments, and vector setting adjustments.
 
   Reset();
 
@@ -4033,7 +4033,7 @@ do an linear disassemble.
 
 function LDisassemble()
 {
-
+  
   var Instruction = ""; //Stores the Decoded instruction.
 
   var Out = "";  //The Disassemble output
