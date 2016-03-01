@@ -888,7 +888,9 @@ var Operands = [
   "","","","",
   "0D06","0B0E070E0D06",
   "0C00","0B0E070E0C00",
+
   "22001A01","230E1A01","1A012000","1A01210E",
+
   "10000002000C","10000002000C","10000002000C","10000002000C","10000002000C","10000002000C","10000002000C","10000002000C",
   "10000002000C","10000002000C","10000002000C","10000002000C","10000002000C","10000002000C","10000002000C","10000002000C",
   ["06000C000003","06000C000003","06000C000003","06000C000003","06000C000003","06000C000003","06000C000003","06000C00"],
@@ -899,7 +901,7 @@ var Operands = [
   "0A0006000003","0B0E070E0003",
   "06000A000001","070E0B0E0001",
   "0A0006000001","0B0E070E0001",
-  "072E0A080001",
+  "06020A080001",
   ["0B0E0601",""],
   "0A0806020001",
   ["070A","","","","","","",""],
@@ -913,9 +915,9 @@ var Operands = [
   "160004000001","170E050E0001",
   "040016000001","050E170E0001",
   "22002000","230E210E",
-  "20002200","210E230E",
+  "22002000","230E210E",
   "16000C00","170E0D06",
-  "2200","230E","2000","210E","2200","230E",
+  "22001600","230E170E","16002000","170E210E","16002200","170E230E",
   "02000C000001","02000C000001","02000C000001","02000C000001","02000C000001","02000C000001","02000C000001","02000C000001",
   "030E0D0E0001","030E0D0E0001","030E0D0E0001","030E0D0E0001","030E0D0E0001","030E0D0E0001","030E0D0E0001","030E0D0E0001",
   ["06000C00","06000C00","06000C00","06000C00","06000C00","06000C00","06000C00","06000C00"],
@@ -3414,9 +3416,9 @@ function DecodeOpcode()
   if(Name instanceof Array && Name.length == 3)
   {
 
-    var s = ( SizeAttrSelect > 0 ) & 1;
-    ( Extension == 0 ) && ( s = 1 - s );
-    ( WidthBit ) && ( s = 2 );
+    var s = ( SizeAttrSelect > 0 ) & 1; //The first bit for size 32/16.
+    if( Extension == 0 & BitMode != 0 ) { s = 1 - s; } //Flip Default size for 16 bit, and Vector length value.
+    ( WidthBit ) && ( s = 2 ); //Goes 64 using the Width bit.
 
     if (Name[ s ] !== "")
     {
@@ -3761,22 +3763,34 @@ function DecodeOperands()
 
       else if( X86Decoder[i].Type == 4 )
       {
+        var s = 3; //If 32, or 64 bit ModR/M.
+
+        if( ( BitMode == 0 & !AddressOverride ) | ( BitMode == 1 & AddressOverride ) ){ s = 7; } //If 16 bit ModR/M.
+
         out[ X86Decoder[i].OpNum ] = Decode_ModRM_SIB_Address(
-          [ 0, 0, 3 ], //the RBX register only for the pointer.
+          [ 0, 0, s ], //the RBX register only for the pointer.
           X86Decoder[i].BySizeAttrubute, //By size attribute or not.
           X86Decoder[i].Size //size attributes.
         );
+
+        s = null;
       }
 
       //source and destination address Explicit Operands prefixes can extend the registers and change pointer size.
 
       else if( X86Decoder[i].Type == 5 | X86Decoder[i].Type == 6 )
       {
+        var s = 1; //If 32, or 64 bit ModR/M.
+
+        if( ( BitMode == 0 & !AddressOverride ) | ( BitMode == 1 & AddressOverride ) ) { s = -1; } //If 16 bit ModR/M.
+
         out[ X86Decoder[i].OpNum ] = Decode_ModRM_SIB_Address(
-            [ 0, 0, ( X86Decoder[i].Type + 1 ) ], //source and destination pointer register by type value.
+            [ 0, 0, ( X86Decoder[i].Type + s ) ], //source and destination pointer register by type value.
             X86Decoder[i].BySizeAttrubute, //By size attribute or not.
             X86Decoder[i].Size //size attributes.
           );
+
+        s = null;
       }
 
       //The ST only Operand, and FS, GS.
