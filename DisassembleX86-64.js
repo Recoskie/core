@@ -38,7 +38,7 @@ Together this removes the 32 bit index limitation of the BinCode Array by settin
 var Pos64 = 0x00000000, Pos32 = 0x00000000; //32/64 Instruction pointer register.
 
 /*-------------------------------------------------------------------------------------------------------------------------
-Code Segment is used in 16 bit binaries in which the segment is times 16 added to the 16 bit address position.
+Code Segment is used in 16 bit binaries in which the segment is times 16 (Left Shift 4) added to the 16 bit address position.
 This was done to load more programs in 16 bit space at an selected segment location. In 16 bit X86 processors the instruction
 pointer register counts from 0000 hex to FFFF hex and starts over at 0000 hex. Allowing a program to be a max length of
 65535 bytes long. The Code Segment is multiplied by 16 then is added to the instruction pointer position in memory.
@@ -1687,10 +1687,10 @@ var Operands = [
   "",
   ["",["","",["0B70137007700120","","0B70137007700120"],""],"",""],
   "","",
-  ["",["",["0B3007301330","","0B3006481330"],["0B7007700120","","0B7007380110"],""],"",""],
-  ["",["",["0A0407301204","","0B3007301330"],["0B3807700120","","0B3807700110"],""],"",""],
-  ["",["",["0B3007301330","","0B3006481330"],["0B7007700120","","0B7007380110"],""],"",""],
-  ["",["",["0A0407301204","","0B3007301330"],["0B3807700120","","0B7007700110"],""],"",""],
+  ["",["",["0B3007301330","","0B3006481330"],["0B70077001A4","","0B7007380198"],""],"",""],
+  ["",["",["0A0407301204","","0B3007301330"],["0B38077001A4","","0B3807700198"],""],"",""],
+  ["",["",["0B3007301330","","0B3006481330"],["0B70077001A4","","0B7007380198"],""],"",""],
+  ["",["",["0A0407301204","","0B3007301330"],["0B38077001A4","","0B7007700198"],""],"",""],
   "","",
   ["",["",["0B3013300730","","0B3013300730"],["0B70137007700126","","0B7013700770011A"],""],"",""],
   ["",["",["0B3013300730","","0B3013300730"],["0B70137007700126","","0B7013700770011A"],""],"",""],
@@ -1702,10 +1702,10 @@ var Operands = [
   ["",["",["0A0412040714","","0A0412040718"],["0A04120406440122","","0A04120406460112"],""],"",""],
   ["",["",["0B3013300730","","0B3013300730"],["0B70137007700126","","0B7013700770011A"],""],"",""],
   ["",["",["0A0412040714","","0A0412040718"],["0A04120406440122","","0A04120406460112"],""],"",""],
-  ["",["","",["07700B700120","","07380B700110"],""],"",""],
-  ["",["","",["07700B380120","","07700B700110"],""],"",""],
-  ["",["","",["07700B700120","","07380B700110"],""],"",""],
-  ["",["","",["07700B380120","","07700B700110"],""],"",""],
+  ["",["","",["07700B7001A4","","07380B700198"],""],"",""],
+  ["",["","",["07700B3801A4","","07700B700198"],""],"",""],
+  ["",["","",["07700B7001A4","","07380B700198"],""],"",""],
+  ["",["","",["07700B3801A4","","07700B700198"],""],"",""],
   "","",
   ["",["",["0B3013300730","","0B3013300730"],["0B70137007700126","","0B7013700770011A"],""],"",""],
   ["",["",["0B3013300730","","0B3013300730"],["0B70137007700126","","0B7013700770011A"],""],"",""],
@@ -2116,9 +2116,16 @@ var Vect = false;
 /*-------------------------------------------------------------------------------------------------------------------------
 VectS is an 8 bit value that stores the Settings for a vector instruction.
 ---------------------------------------------------------------------------------------------------------------------------
-VectS format = 0 (Reserved), 0 (No Vect) , 0 (W=0), 0 (W=1), 0 (B64), 0 (B32), 0 ({ER}), 0 ({SAE}).
-The two reserved bits are planed for future use if necessary. No Vect is used for instructions that are not vectors.
-Some arithmetic instructions are combined with vector instruction no Vect is required for these instructions.
+VectS format = 0 (VSIB), 0 (No Vect), 0 (W=0), 0 (W=1), 0 (B64), 0 (B32), 0 ({ER}), 0 ({SAE}).
+---------------------------------------------------------------------------------------------------------------------------
+Some arithmetic instructions are combined with vector instructions, so no Vect is required for these instructions.
+No vect disables the registers from defaulting to XMM (Smallest vector register) if the size attribute is lower than 128.
+General Arithmetic instructions operate on 64 bit's, and lower.
+---------------------------------------------------------------------------------------------------------------------------
+The B32, and B64 setting is for the Broadcast round size for the vector elements size when broadcast round is used in address mode.
+---------------------------------------------------------------------------------------------------------------------------
+The VSIB setting is used for vectors that multiply the displacement by the Element size of the vectors.
+The B32, and B64 settings are used with VSIB for the displacement multiply size.
 -------------------------------------------------------------------------------------------------------------------------*/
 
 var VectS = 0x00;
@@ -2131,7 +2138,7 @@ An instruction that has 4 opcode combinations based on SIMD can use another 4 in
 which selects the opcode based on extension used. This is used to separate codes that can be Vector adjusted, and not.
 Some codes can only be used in VEX, but not EVEX, also MMX instruction can not be used with vector adjustments.
 ---------------------------------------------------------------------------------------------------------------------------
-By default Extension is 0 for decoding of instructions normally.
+By default Extension is 0 for decoding instructions normally.
 ---------------------------------------------------------------------------------------------------------------------------
 Used by function ^DecodeOpcode()^ adds the letter "V" to the instruction name to show it uses Vector adjustments.
 When the Function ^DecodeOpcode()^ completes if Vect is not true and an Extension is active the instruction is invalid.
@@ -2281,18 +2288,24 @@ REG = [
   name listings that is used with the "RValue" number given to the function ^DecodeRegValue()^.
   -------------------------------------------------------------------------------------------------------------------------*/
   [
-    //8 bit registers without any rex prefix active is the normal low byte to high byte order of the
-    //first 4 general use registers "A, C, D, and B" using 8 bits.
+    /*-------------------------------------------------------------------------------------------------------------------------
+    8 bit registers without any rex prefix active is the normal low byte to high byte order of the
+    first 4 general use registers "A, C, D, and B" using 8 bits.
+    -------------------------------------------------------------------------------------------------------------------------*/
     [
       //Registers 8 bit names without any rex prefix index 0 to 7.
       "AL", "CL", "DL", "BL", "AH", "CH", "DH", "BH"
     ],
-    //8 bit registers with any rex prefix active uses all 15 registers in low byte order.
+    /*-------------------------------------------------------------------------------------------------------------------------
+    8 bit registers with any rex prefix active uses all 15 registers in low byte order.
+    -------------------------------------------------------------------------------------------------------------------------*/
     [
       //Registers 8 bit names with any rex prefix index 0 to 7.
       "AL", "CL", "DL", "BL", "SPL", "BPL", "SIL", "DIL",
-      /*Registers 8 bit names Extended using the REX.R extend setting in the Rex prefix, or VEX.R bit, or EVEX.R.
-      What ever RegExtend is set based on prefix settings is added to the select Reg Index*/
+      /*-------------------------------------------------------------------------------------------------------------------------
+      Registers 8 bit names Extended using the REX.R extend setting in the Rex prefix, or VEX.R bit, or EVEX.R.
+      What ever RegExtend is set based on prefix settings is added to the select Reg Index
+      -------------------------------------------------------------------------------------------------------------------------*/
       "R8B", "R9B", "R10B", "R11B", "R12B", "R13B", "R14B", "R15B"
     ]
   ],
@@ -2327,8 +2340,10 @@ REG = [
   [
     //Register XMM names index 0 to 15.
     "XMM0", "XMM1", "XMM2", "XMM3", "XMM4", "XMM5", "XMM6", "XMM7", "XMM8", "XMM9", "XMM10", "XMM11", "XMM12", "XMM13", "XMM14", "XMM15",
-    //Register XMM names index 16 to 31.
-    //Note different bit settings in the EVEX prefixes allow higher Extension values in the Register Extend variables.
+    /*-------------------------------------------------------------------------------------------------------------------------
+    Register XMM names index 16 to 31.
+    Note different bit settings in the EVEX prefixes allow higher Extension values in the Register Extend variables.
+    -------------------------------------------------------------------------------------------------------------------------*/
     "XMM16", "XMM17", "XMM18", "XMM19", "XMM20", "XMM21", "XMM22", "XMM23", "XMM24", "XMM25", "XMM26", "XMM27", "XMM28", "XMM29", "XMM30", "XMM31"
   ],
   /*-------------------------------------------------------------------------------------------------------------------------
@@ -2338,8 +2353,10 @@ REG = [
   [
     //Register YMM names index 0 to 15.
     "YMM0", "YMM1", "YMM2", "YMM3", "YMM4", "YMM5", "YMM6", "YMM7", "YMM8", "YMM9", "YMM10", "YMM11", "YMM12", "YMM13", "YMM14", "YMM15",
-    //Register YMM names index 16 to 31.
-    //Note different bit settings in the EVEX prefixes allow higher Extension values in the Register Extend variables.
+    /*-------------------------------------------------------------------------------------------------------------------------
+    Register YMM names index 16 to 31.
+    Note different bit settings in the EVEX prefixes allow higher Extension values in the Register Extend variables.
+    -------------------------------------------------------------------------------------------------------------------------*/
     "YMM16", "YMM17", "YMM18", "YMM19", "YMM20", "YMM21", "YMM22", "YMM23", "YMM24", "YMM25", "YMM26", "YMM27", "YMM28", "YMM29", "YMM30", "YMM31"
   ],
   /*-------------------------------------------------------------------------------------------------------------------------
@@ -2349,8 +2366,10 @@ REG = [
   [
     //Register ZMM names index 0 to 15.
     "ZMM0", "ZMM1", "ZMM2", "ZMM3", "ZMM4", "ZMM5", "ZMM6", "ZMM7", "ZMM8", "ZMM9", "ZMM10", "ZMM11", "ZMM12", "ZMM13", "ZMM14", "ZMM15",
-    //Register ZMM names index 16 to 31.
-    //Note different bit settings in the EVEX prefixes allow higher Extension values in the Register Extend variables.
+    /*-------------------------------------------------------------------------------------------------------------------------
+    Register ZMM names index 16 to 31.
+    Note different bit settings in the EVEX prefixes allow higher Extension values in the Register Extend variables.
+    -------------------------------------------------------------------------------------------------------------------------*/
     "ZMM16", "ZMM17", "ZMM18", "ZMM19", "ZMM20", "ZMM21", "ZMM22", "ZMM23", "ZMM24", "ZMM25", "ZMM26", "ZMM27", "ZMM28", "ZMM29", "ZMM30", "ZMM31"
   ],
   /*-------------------------------------------------------------------------------------------------------------------------
@@ -2359,8 +2378,10 @@ REG = [
   [
     //Register unknowable names index 0 to 15.
     "?MM0", "?MM1", "?MM2", "?MM3", "?MM4", "?MM5", "?MM6", "?MM7", "?MM8", "?MM9", "?MM10", "?MM11", "?MM12", "?MM13", "?MM14", "?MM15",
-    //Register unknowable names index 16 to 31.
-    //Note different bit settings in the EVEX prefixes allow higher Extension values in the Register Extend variables.
+    /*-------------------------------------------------------------------------------------------------------------------------
+    Register unknowable names index 16 to 31.
+    Note different bit settings in the EVEX prefixes allow higher Extension values in the Register Extend variables.
+    -------------------------------------------------------------------------------------------------------------------------*/
     "?MM16", "?MM17", "?MM18", "?MM19", "?MM20", "?MM21", "?MM22", "?MM23", "?MM24", "?MM25", "?MM26", "?MM27", "?MM28", "?MM29", "?MM30", "?MM31"
   ],
   /*-------------------------------------------------------------------------------------------------------------------------
@@ -2452,33 +2473,49 @@ Used by the function ^Decode_ModRM_SIB_Address()^.
 -------------------------------------------------------------------------------------------------------------------------*/
 
 PTR = [
-  //Pointer array index 0 when GetOperandSize returns size 0 then times 2 for 8 bit pointer.
-  //In plus 16 bit shift array index 0 is added by 1 making 0+1=1 no pointer name is used.
-  //The blank pointer is used for instructions like LEA which loads the effective address.
-  "BYTE PTR ", "",
-  //Pointer array index 2 when GetOperandSize returns size 1 then times 2 for 16 bit pointer alignment.
-  //In plus 16 bit shift index 2 is added by 1 making 2+1=3 The 32 bit pointer name is used (mathematically 16+16=32).
-  "WORD PTR ", "DWORD PTR ",
-  //Pointer array index 4 when GetOperandSize returns size 2 then multiply by 2 for index 4 for the 32 bit pointer.
-  //In plus 16 bit shift index 4 is added by 1 making 4+1=5 the 48 bit Far pointer name is used (mathematically 32+16=48).
-  "DWORD PTR ", "FWORD PTR ",
-  //Pointer array index 6 when GetOperandSize returns size 3 then multiply by 2 gives index 6 for the 64 bit pointer.
-  //The Non shifted 64 bit pointer has two types the 64 bit vector "MM", and regular "QWORD" the same as the REG array.
-  //In plus 16 bit shift index 6 is added by 1 making 6+1=7 the 80 bit TBYTE pointer name is used (mathematically 64+16=80).
-  "QWORD PTR ", "TBYTE PTR ",
-  //Pointer array index 8 when GetOperandSize returns size 4 then multiply by 2 gives index 8 for the 128 bit Vector pointer.
-  //In far pointer shift the MMX vector pointer is used.
-  //MM is designed to be used when the by size system is false using index 9 for Pointer, and index 10 for Reg.
-  "XMMWORD PTR ",  "MMWORD PTR ",
-  //Pointer array index 10 when GetOperandSize returns size 5 then multiply by 2 gives index 10 for the 256 bit SIMD pointer.
-  //In far pointer shift the OWORD pointer is used with the bounds instructions it is also designed to be used when the by size is set false same as MM.
-  "YMMWORD PTR ", "OWORD PTR ",
-  //Pointer array index 12 when GetOperandSize returns size 6 then multiply by 2 gives index 12 for the 512 bit pointer.
-  //In plus 16 bit shift index 12 is added by 1 making 12+1=13 there is no 528 bit pointer name (mathematically 5126+16=528).
-  "ZMMWORD PTR ", "ERROR PTR ",
-  //Pointer array index 14 when GetOperandSize returns size 7 then multiply by 2 gives index 12 for the 1024 bit pointer.
-  //In plus 16 bit shift index 14 is added by 1 making 12+1=13 there is no 1 bit pointer name (mathematically 5126+16=528).
-  "?MMWORD PTR ", "ERROR PTR "];
+  /*-------------------------------------------------------------------------------------------------------------------------
+  Pointer array index 0 when GetOperandSize returns size 0 then times 2 for 8 bit pointer.
+  In plus 16 bit shift array index 0 is added by 1 making 0+1=1 no pointer name is used.
+  The blank pointer is used for instructions like LEA which loads the effective address.
+  -------------------------------------------------------------------------------------------------------------------------*/
+  "BYTE PTR ","",
+  /*-------------------------------------------------------------------------------------------------------------------------
+  Pointer array index 2 when GetOperandSize returns size 1 then times 2 for 16 bit pointer alignment.
+  In plus 16 bit shift index 2 is added by 1 making 2+1=3 The 32 bit pointer name is used (mathematically 16+16=32).
+  -------------------------------------------------------------------------------------------------------------------------*/
+  "WORD PTR ","DWORD PTR ",
+  /*-------------------------------------------------------------------------------------------------------------------------
+  Pointer array index 4 when GetOperandSize returns size 2 then multiply by 2 for index 4 for the 32 bit pointer.
+  In plus 16 bit shift index 4 is added by 1 making 4+1=5 the 48 bit Far pointer name is used (mathematically 32+16=48).
+  -------------------------------------------------------------------------------------------------------------------------*/
+  "DWORD PTR ","FWORD PTR ",
+  /*-------------------------------------------------------------------------------------------------------------------------
+  Pointer array index 6 when GetOperandSize returns size 3 then multiply by 2 gives index 6 for the 64 bit pointer.
+  The Non shifted 64 bit pointer has two types the 64 bit vector "MM", and regular "QWORD" the same as the REG array.
+  In plus 16 bit shift index 6 is added by 1 making 6+1=7 the 80 bit TBYTE pointer name is used (mathematically 64+16=80).
+  -------------------------------------------------------------------------------------------------------------------------*/
+  "QWORD PTR ","TBYTE PTR ",
+  /*-------------------------------------------------------------------------------------------------------------------------
+  Pointer array index 8 when GetOperandSize returns size 4 then multiply by 2 gives index 8 for the 128 bit Vector pointer.
+  In far pointer shift the MMX vector pointer is used.
+  MM is designed to be used when the by size system is false using index 9 for Pointer, and index 10 for Reg.
+  -------------------------------------------------------------------------------------------------------------------------*/
+  "XMMWORD PTR ","MMWORD PTR ",
+  /*-------------------------------------------------------------------------------------------------------------------------
+  Pointer array index 10 when GetOperandSize returns size 5 then multiply by 2 gives index 10 for the 256 bit SIMD pointer.
+  In far pointer shift the OWORD pointer is used with the bounds instructions it is also designed to be used when the by size is set false same as MM.
+  -------------------------------------------------------------------------------------------------------------------------*/
+  "YMMWORD PTR ","OWORD PTR ",
+  /*-------------------------------------------------------------------------------------------------------------------------
+  Pointer array index 12 when GetOperandSize returns size 6 then multiply by 2 gives index 12 for the 512 bit pointer.
+  In plus 16 bit shift index 12 is added by 1 making 12+1=13 there is no 528 bit pointer name (mathematically 5126+16=528).
+  -------------------------------------------------------------------------------------------------------------------------*/
+  "ZMMWORD PTR ","ERROR PTR ",
+  /*-------------------------------------------------------------------------------------------------------------------------
+  Pointer array index 14 when GetOperandSize returns size 7 then multiply by 2 gives index 12 for the 1024 bit pointer.
+  In plus 16 bit shift index 14 is added by 1 making 12+1=13 there is no 1 bit pointer name (mathematically 5126+16=528).
+  -------------------------------------------------------------------------------------------------------------------------*/
+  "?MMWORD PTR ","ERROR PTR "];
 
 /*-------------------------------------------------------------------------------------------------------------------------
 SIB byte scale Note the Scale bits value is the selected index of the array bellow only used under
@@ -2591,18 +2628,22 @@ if set 36, or higher. Effects instruction location in memory when decoding a pro
 function SetBasePosition( Address )
 {
   //Split the Segment:offset.
+
   var t = Address.split(":");
 
   //Set the 16 bit code segment position if there is one.
+
   if ( t.length >= 1 ){ CodeSeg = parseInt(t[0].slice( -4 ), 16); Address = t[1]; }
   t = null;
 
   //Adjust the Instruction pointer 16(IP)/32(EIP)/64(RIP). Also varies based on Bit Mode.
+
   if( Address.length >= 9 & BitMode == 2 ){ Pos64 = parseInt((Address.slice(-16)).substring(0, 8), 16); }
   if( Address.length >= 5 & BitMode >= 1 & !( BitMode == 1 & CodeSeg >= 36 ) ){ Pos32 = parseInt(Address.slice(-8), 16); }
   else if( Address.length >= 1 & BitMode >= 0 ){ Pos32 = ( Pos32 & 0xFFFF0000 ) | ( parseInt(Address.slice(-4), 16) ); }
 
   //Convert Pos64, and Pos32 to undignified integer.
+
   if ( Pos64 < 0 ) { Pos64 += Math.pow( 2, 32 ); }
   if ( Pos32 < 0 ) { Pos32 += Math.pow( 2, 32 ); }
 }
@@ -2957,14 +2998,36 @@ function DecodeImmediate( type, BySize, SizeSetting )
       {
           var Sing = false; //the sing value for if the Displacement is added or subtracted from center.
 
+          /*-------------------------------------------------------------------------------------------------------------------------
+          Calculate the VSIB displacment size if it is a VSIB Disp8.
+          -------------------------------------------------------------------------------------------------------------------------*/
+
+          var VScale = 1;
+
+          if( ( VectS & 0x80 ) == 0x80 & B32 == 1 )
+          {
+            VScale = ([ 4 , 8 ])[ WidthBit ];
+
+            //Check memory vector size.
+
+            if( ( VScale == 8 & ( ( VectS & 0x08 ) != 0x08 ) ) & ( VScale == 4 & ( ( VectS & 0x04 ) != 0x04 ) ) )
+            {
+              VScale = 1;
+            }
+          }
+
           //Simulate negative positive integers using values bigger than 32.
 
-          var Half32 = Math.pow(2, (B32 * 8) - 1); //calculate the 32 bit value center for integers smaller than 32 or are 32.
+          var Half32 = Math.pow(2, ( B32 * 8 ) - 1); //calculate the 32 bit value center for integers smaller than 32 or are 32.
+
+          Half32 *= VScale; Imm32Int32 *= VScale; //VSIB calculation.
+          
           if (Imm32Int32 >= Half32) //when the value is higher than the center it is negative.
           {
               Sing = true; //set sing true for negative.
               HexStr32 = (Half32 - (-(Half32 - Imm32Int32))).toString(16); //simulate the integer center point give the value as a positive number sizes 32 and bellow
           }
+          else{ HexStr32 = Imm32Int32.toString(16); }
 
           for (var HTB = B32 * 2; HexStr32.length < HTB; HexStr32 = "0" + HexStr32); //pad to the number of bytes for the integer that is 32 or bellow
           imm = HexStr32; //set IMM the new center for this hex string
@@ -3265,6 +3328,13 @@ function Decode_ModRM_SIB_Address( ModRM, BySize, Setting )
     //Finally the Immediate displacement is put into the Address last.
 
     if(Disp >= 0 ) { out += DecodeImmediate(DispType, false, Disp); }
+
+    //If VSIB is active deactivate it.
+
+    if( ( VectS & 0x80 ) == 0x80 )
+    {
+      VectS &= 0xE3;
+    }
 
     //If Broadcast round is active from an EVEX extension instruction.
 
@@ -3760,7 +3830,7 @@ function DecodeOperandString( OperandString )
     {
       if(BySize) //Vector adjustment settings.
       {
-        VectS = Setting & 0x3F;
+        VectS = Setting & 0xFF;
         if( ( Setting & 0x40 ) == 0x40 ) { Vect = false; } //If Non vector instruction set Vect false.
       }
       else //Instruction Prefix types.
