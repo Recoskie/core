@@ -1,20 +1,19 @@
-X86 Disassembler
+X86 Disassembler.
 ==========================
 -----------------------------------------------------------------------------------------------
 This disassembler is mainly designed as an X86 Disassembly library for JavaScript that can run on any system.
------------------------------------------------------------------------------------------------
 Supports decoding 64 bit programs, and 32 bit, also is completely backwards compatible to 16 bit 8086.
 -----------------------------------------------------------------------------------------------
 Supports Instruction sets:
-MMX.
-SSE1, SSE2, SSE3, SSSE3, SSE4, SSE4a, SSE4.1, SSE4.2.
-SMX, VMX, AES, ADX, HLE, MPX.
-AVX2.
-BMI1,BMI2, FMA,FMA4, SHA.
-AVX512F,AVX512VL, AVX512DQ,AVX512BW,AVX512CD, AVX512ER,AVX512PF, AVX512VBMI,AVX512IFMA.
------------------------------------------------------------------------------------------------
-This disassembler supports every instruction ever made for all Intel, and AMD X86 processors.
+MMX.<br />
+SSE1,SSE2,SSE3,SSSE3,SSE4,SSE4a,SSE4.1,SSE4.2.<br />
+SMX,VMX, AES,ADX, HLE,MPX.<br />
+AVX2.<br />
+BMI1,BMI2, FMA,FMA4, SHA.<br />
+AVX512F,AVX512VL, AVX512DQ,AVX512BW,AVX512CD, AVX512ER,AVX512PF, AVX512VBMI,AVX512IFMA.<br />
 
+This disassembler supports every instruction ever made for all Intel, and AMD X86 processors.
+-----------------------------------------------------------------------------------------------
 Except:
 
 (1) DREX, but DREX never even shipped to any systems so there is no software that used DREX.
@@ -25,8 +24,9 @@ SSE instructions. I will only add 3DNow if there is a high enough demand for it.
 
 (3) XOP, AMD invented XOP which is almost the same as Intel's AVX2, but lacks far behind AVX2.
 I Might add XOP in the near future.
------------------------------------------------------------------------------------------------
+
 This dissembler can take apart Microsoft binary programs, and Linux binaries.
+-----------------------------------------------------------------------------------------------
 This is because both Linux, and Windows run on X86 machine code native binary language.
 
 (1) For Microsoft programs one would have to decode the program memory, and DLL table setup in the PE header of an exe.
@@ -41,6 +41,6 @@ By reading the binary at sector 0 in hex you could give the code to the disassem
 Thus you could follow the boot process of the operating system.
 It is standard for a computer to start in 16 bit mode then search for a disk to load at sector 0.
 In the past there use to be viruses that wrote to sector 0 on memory cards, and internal disks to infect other computers when the disk was inserted.
------------------------------------------------------------------------------------------------
+
 The disassembler can be tried by running the Basic Live View file, but you would first need to download this project as a zip, or clone it.
 -----------------------------------------------------------------------------------------------
