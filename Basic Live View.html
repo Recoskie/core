@@ -1,10 +1,10 @@
 <html>
   <body onload="Setup()">
-    <script type="text/javascript" src="DisassembleX86-64.js"></script>
+    <script type="text/javascript" src="X86Decoder.js"></script>
     <script type="text/javascript">
       function Setup()
       {
-        //Update disassembler controls to the current default settings.
+        //Update disassembler controls to the currnt default settings.
 
         if( BitMode == 0 ) { document.getElementById("B16").checked = true; }
         if( BitMode == 1 ) { document.getElementById("B32").checked = true; }
@@ -26,7 +26,7 @@
 
       function Decode(e)
       {
-        //Read the X86 hex code entered by user.
+        //Read the X86 hex code enterded by user.
 
         var Hex = e.replace(/\n|\r\n|\r/g, ""); //Remove enters.
         Hex = Hex.replace(/ /g, ""); //Remove spaces.
@@ -54,13 +54,10 @@
         {
           document.getElementById("ERR").innerHTML = "<hr />Only numbers 0 though 9, and alphabetical letters A to F are allowed. Any other characters will result in invalid instructions.";
         }
-
-        //Reset the base address after disassembly.
-
-        UpdateBase();
+  
       }
 
-      //Updates the disassembly output when a setting changes.
+      //Updates the dissasembly output when a setting changes.
 
       function Update()
       {
@@ -76,12 +73,12 @@
         ShowInstructionHex = document.getElementById("DHex").checked;
         ShowInstructionPos = document.getElementById("DPos").checked;
 
-        //Decode the binary using the new settings.
+        //Decode the binary whith the new settings.
 
         Decode(document.getElementById('T').value);
       }
 
-      //Update Base Position.
+      //Update Base Psoition.
 
       function UpdateBase()
       {
@@ -108,13 +105,12 @@
           Seg = P[0];
         }
 
-        //The Instruction offset size is the Instruction pointer size.
+        //The Instruction ofsset size is the Instruction pointer size.
 
         if (Offset.length == 16)
         {
           document.getElementById("XIP").innerHTML = "RIP:";
         }
-
         else if (Offset.length == 8)
         {
           document.getElementById("XIP").innerHTML = "EIP:";
@@ -127,7 +123,7 @@
         document.getElementById("RIP").value = Offset; //Update the instruction pointer size based on CPU format type.
         document.getElementById("CS").value = Seg; //Update the CodeSegment.
 
-        //Update the disassembly output.
+        //Update the dissasembly output.
 
         Decode(document.getElementById('T').value);
       }
