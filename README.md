@@ -2,15 +2,20 @@ X86 Disassembler.
 ==========================
 -----------------------------------------------------------------------------------------------
 This disassembler is mainly designed as an X86 Disassembly library for JavaScript that can run on any system.
-Supports decoding 64 bit programs, and 32 bit, also is completely backwards compatible to 16 bit 8086.
+Supports decoding 64 bit, and 32 bit programs, also is completely backwards compatible to 16 bit 8086.
 -----------------------------------------------------------------------------------------------
-Supports Instruction sets:
+Supports Instruction sets:<br />
 MMX.<br />
 SSE1,SSE2,SSE3,SSSE3,SSE4,SSE4a,SSE4.1,SSE4.2.<br />
-SMX,VMX, AES,ADX, HLE,MPX.<br />
+SMX,VMX,<br />AES,ADX,<br />HLE,MPX.<br />
 AVX2.<br />
-BMI1,BMI2, FMA,FMA4, SHA.<br />
-AVX512F,AVX512VL, AVX512DQ,AVX512BW,AVX512CD, AVX512ER,AVX512PF, AVX512VBMI,AVX512IFMA.<br />
+BMI1,BMI2,<br />
+FMA,FMA4,<br />
+SHA.<br />
+AVX512F,AVX512VL,<br />
+AVX512DQ,AVX512BW,AVX512CD,<br />
+AVX512ER,AVX512PF,<br />
+AVX512VBMI,AVX512IFMA.<br />
 
 This disassembler supports every instruction ever made for all Intel, and AMD X86 processors.
 -----------------------------------------------------------------------------------------------
