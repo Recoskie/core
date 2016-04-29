@@ -30,7 +30,7 @@ SSE instructions. I will only add 3DNow if there is a high enough demand for it.
 (3) XOP, AMD invented XOP which is almost the same as Intel's AVX2, but lacks far behind AVX2.
 I Might add XOP in the near future.
 
-This dissembler can take apart Microsoft binary programs, and Linux binaries.
+This disassembler can take apart Microsoft binary programs, and Linux binaries.
 -----------------------------------------------------------------------------------------------
 This is because both Linux, and Windows run on X86 machine code native binary language.
 
