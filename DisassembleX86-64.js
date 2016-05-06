@@ -1,5 +1,5 @@
 /*-------------------------------------------------------------------------------------------------------------------------
-Binary byte code array. It is limited to an Uint32 number because JavaScript does not use 64 bit array indexes.
+Binary byte code array.
 ---------------------------------------------------------------------------------------------------------------------------
 Function ^LoadBinCode()^ takes a string input of hex and loads it into the BinCode array it is recommended that the location
 the hex string is read from a file, or sector matches the disassemblers set base address using function ^SetBasePosition()^.
@@ -27,9 +27,6 @@ The Pos64, and Pos32 is the actual base address that instructions are supposed t
 into the BinCode array using the Function ^LoadBinCode()^.
 ---------------------------------------------------------------------------------------------------------------------------
 The function ^SetBasePosition()^ sets the base location in Pos64, and Pos32, and Code Segment.
-The function ^SetBasePosition()^ uses a hex string it can be 16 bit's, 32 bit's, and 64 bit's long depends on BitMode.
-The Colon ":" is also used to set the code segment which is only calculated in 16 bit binaries, or In 32 bit binaries if
-Code segment is set 36 or higher.
 -------------------------------------------------------------------------------------------------------------------------*/
 
 var Pos64 = 0x00000000, Pos32 = 0x00000000;
@@ -1971,7 +1968,7 @@ const Operands = [
 
 /*-------------------------------------------------------------------------------------------------------------------------
 This object stores a single decoded Operand, and gives it an number in "Operand Number" (OperandNum) for the order they are
-read in the operand string. It also stores all of the Settings for the operands.
+read in the operand string. It also stores all of the Settings for the operand.
 ---------------------------------------------------------------------------------------------------------------------------
 Each Operand is sorted into an decoder array in the order they are decoded by the CPU in series.
 ---------------------------------------------------------------------------------------------------------------------------
@@ -2635,18 +2632,21 @@ const scale = [
  ];
 
 /*-------------------------------------------------------------------------------------------------------------------------
-This function loads the BinCode array using a hex string as input. If input is is invalid returns false.
+This function loads the BinCode array using an hex string as input, and Resets the Code position along the array, but does not
+reset the base address. This allows programs to be decoded in sections well maintaining the acurate 64 bit base address.
+---------------------------------------------------------------------------------------------------------------------------
+The function "SetBasePosition()" sets the location that the Code is from in memory.
+The function "GotoPosition()" tests if the address is within rage of the current loaded binary.
+The function "GetPosition()" Gives back the current base address in it's proper format for the current BitMode.
+---------------------------------------------------------------------------------------------------------------------------
+If the hex input is invalid returns false.
 -------------------------------------------------------------------------------------------------------------------------*/
 
 function LoadBinCode( HexStr )
 {
-  //Reset Code Position in Bin Code array.
+  //Clear BinCode, and Reset Code Position in Bin Code array.
 
-  CodePos = 0;
-
-  //Clear BinCode.
-
-  BinCode = [];
+  BinCode = []; CodePos = 0;
 
   //Iterate though the hex string and covert to 0 to 255 byte values into the BinCode array.
 
@@ -2654,7 +2654,6 @@ function LoadBinCode( HexStr )
 
   for( var i = 0, el = 0, Sing = 0, int32 = 0; i < len; i += 8 )
   {
-
     //It is faster to read 8 hex digits at a time if possible.
 
     int32 = parseInt( HexStr.slice( i, i + 8 ), 16 );
@@ -2663,23 +2662,19 @@ function LoadBinCode( HexStr )
 
     if( isNaN( int32 ) ){ return ( false ); }
 
-    //Logical and forces the number to be int32 also logical and is nessacary to read each byte.
-
-    int32 &= 0xFFFFFFFF;
-
     //If the end of the Hex string is reached and is not 8 digits the number has to be lined up.
 
-    ( ( len - i ) < 8 ) && ( int32 <<= ( 8 - ( ( len - i ) << 2 ) ) );
+    ( ( len - i ) < 8 ) && ( int32 <<= ( 8 - len - i ) << 2 );
 
     //The variable sing corrects the unusable sing bits during the 4 byte rotation algorithm.
 
     Sing = int32;
 
-    //Remove the Sing bit if active.
+    //Remove the Sing bit value if active for when the number is changed to int32 during rotation.
 
-    ( int32 < 0 ) && ( int32 = ( int32 + Math.pow( 2, 32 ) ) & 0x7FFFFFFF );
+    int32 ^= int32 & 0x80000000;
 
-    //Rotate the 32 bit int so that each number is put in order in the BinCode array. Add the Sing Bit back though each rotation.
+    //Rotate the 32 bit int so that each number is put in order in the BinCode array. Add the Sing Bit positions back though each rotation.
 
     int32 = ( int32 >> 24 ) | ( ( int32 << 8 ) & 0x7FFFFFFF );
     BinCode[el++] = ( ( ( Sing >> 24 ) & 0x80 ) | int32 ) & 0xFF;
@@ -2703,9 +2698,10 @@ function LoadBinCode( HexStr )
 }
 
 /*-------------------------------------------------------------------------------------------------------------------------
-This function moves the address by one and caries to 64 section for the address. The BitMode setting limits how much of
-the 64 bit address is used, for the type of binary being disassemble. This function also moves the binary code array
-position CodePos by one basically this function is used to progress the disassembler as it is decoding a sequence of bytes.
+This function moves the address by one and caries to 64 section for the Base address. The BitMode settings limit how much of
+the 64 bit address is used in functions "GetPosition()", and "GotoPosition()", for the type of binary being disassemble.
+This function also moves the binary code array position CodePos by one basically this function is used to progress the
+disassembler as it is decoding a sequence of bytes.
 -------------------------------------------------------------------------------------------------------------------------*/
 
 function NextByte()
@@ -2723,7 +2719,7 @@ function NextByte()
 
     InstructionHex += t;
 
-    //Continue the real address.
+    //Continue the Base address.
 
     ( ( Pos32 += 1 ) > 0xFFFFFFFF ) && ( Pos32 = 0, ( ( Pos64 += 1 ) > 0xFFFFFFFF ) && ( Pos64 = 0 ) );
   }
@@ -2761,7 +2757,7 @@ function SetBasePosition( Address )
 /*-------------------------------------------------------------------------------------------------------------------------
 Gives back the current Instruction address position.
 In 16 bit an instruction location is Bound to the code segment location in memory, and the first 16 bit of the instruction pointer 0 to 65535.
-In 32 bit an instruction location uses the first 32 bit's of the instruction pointer
+In 32 bit an instruction location uses the first 32 bit's of the instruction pointer.
 -------------------------------------------------------------------------------------------------------------------------*/
 
 function GetPosition()
@@ -2969,7 +2965,7 @@ function GetOperandSize( SizeAttribute )
 }
 
 /*-------------------------------------------------------------------------------------------------------------------------
-This function returns an int array with three elements.
+This function returns an array with three numbers.
 ---------------------------------------------------------------------------------------------------------------------------
 The first element is the two bits for the ModR/M byte, or the SIB byte scale as a number value 0 to 3.
 The second element is the three bits for the ModR/M byte Opcode/Reg bits, or the SIB Index Register value as a number value 0 to 7.
@@ -3079,7 +3075,7 @@ function DecodeImmediate( type, BySize, SizeSetting )
   The Number of bytes to read is 2 to the power of S.
   -------------------------------------------------------------------------------------------------------------------------*/
 
-  var n = Math.pow( 2, S );
+  var n = 1 << S;
 
   //Adjust Pad32, and Pad64.
 
@@ -3102,7 +3098,7 @@ function DecodeImmediate( type, BySize, SizeSetting )
   If the IMM type is used with an register operand on the upper four bit's then the IMM byte does not use the upper 4 bit's.
   ---------------------------------------------------------------------------------------------------------------------------*/
 
-  if( type === 1 ) { V32 -= 0; }
+  if( type === 1 ) { V32 &= ( 1 << ( ( n << 3 ) - 4 ) ) - 1; }
 
   /*---------------------------------------------------------------------------------------------------------------------------
   If the Immediate is an relative address calculation.
@@ -3112,7 +3108,7 @@ function DecodeImmediate( type, BySize, SizeSetting )
   {
     //Calculate the Padded size for at the end of the function an Relative is padded to the size of the address based on bit mode.
 
-    Pad32 = ( Math.min( BitMode, 1 ) << 2 ) + 4; ( BitMode === 2 ) && ( Pad64 = Math.max( Math.min( BitMode, 2 ), 1 ) << 3 );
+    Pad32 = ( Math.min( BitMode, 1 ) << 2 ) + 4; Pad64 = Math.max( Math.min( BitMode, 2 ), 1 ) << 3;
 
     //Add the 32 bit section to V32.
 
@@ -3147,7 +3143,7 @@ function DecodeImmediate( type, BySize, SizeSetting )
 
     //Now calculate the Center Point.
 
-    var Center = Math.pow( 2 , ( n << 3 ) - 1 );
+    var Center = 2 * ( 1 << ( n << 3 ) - 2 );
 
     //By default the Sing is Positive.
 
@@ -3157,15 +3153,13 @@ function DecodeImmediate( type, BySize, SizeSetting )
     Calculate the VSIB displacement size if it is a VSIB Disp8.
     -------------------------------------------------------------------------------------------------------------------------*/
 
-    var VScale = 0;
-
     if ( ( VectS & 0x80 ) === 0x80 && S === 0 )
     {
-      VScale = WidthBit + 2;
+      var VScale = WidthBit | 2;
 
       //Check memory vector size.
 
-      if ( ( VScale !== 8 && ( ( VectS & 0x08 ) === 0x08 ) ) && ( VScale !== 4 && ( ( VectS && 0x04 ) === 0x04 ) ) )
+      if ( ( VScale !== 3 && ( ( VectS & 0x08 ) === 0x08 ) ) && ( VScale !== 2 && ( ( VectS && 0x04 ) === 0x04 ) ) )
       {
           Center <<= VScale; V32 <<= VScale;
       }
@@ -3178,13 +3172,12 @@ function DecodeImmediate( type, BySize, SizeSetting )
     {
       //Convert the number to the negative side of the center point.
 
-      V32 = ( Center - ( - ( Center - V32 ) ) );
+      V32 = Center * 2 - V32;
 
       //The Sing is negative.
 
       Sing = 2;
     }
-
   }
 
   /*---------------------------------------------------------------------------------------------------------------------------
@@ -3204,7 +3197,7 @@ function DecodeImmediate( type, BySize, SizeSetting )
   {
     //Calculate number of bytes to Extend till by size.
 
-    Extend = Math.pow( 2, Extend ) << 1;
+    Extend = Math.pow( 2, Extend ) * 2;
 
     //Setup the Signified pad value.
 
@@ -3603,7 +3596,7 @@ function DecodePrefixAdjustments()
 
       //some bits are inverted, so uninvert them arithmetically.
 
-      Opcode = ( 0xF8 - ( Opcode & 0xF8 ) ) | ( Opcode & 0x07 );
+      Opcode ^= 0xF8;
 
       //Decode bit settings.
 
@@ -3640,7 +3633,7 @@ function DecodePrefixAdjustments()
 
       //Some bits are inverted, so uninvert them arithmetically.
 
-      Opcode = ( 0x78E0 - ( Opcode & 0x78E0 ) ) | ( Opcode & 0x871F );
+      Opcode ^= 0x78E0;
 
       //Decode bit settings.
 
@@ -3679,11 +3672,11 @@ function DecodePrefixAdjustments()
 
       //Some bits are inverted, so uninvert them arithmetically.
 
-      Opcode = ( 0x087CF0 - ( Opcode & 0x087CF0 ) ) | ( Opcode & 0xF7830F );
+      Opcode ^= 0x087CF0;
 
       //Check if Reserved bits are 0 if they are not 0 the EVEX instruction is invalid.
 
-      if( ( Opcode & 0x00040C ) > 0 ) { InvalidOp = true; }
+      InvalidOp = ( Opcode & 0x00040C ) > 0;
 
       //Decode bit settings.
 
@@ -3797,46 +3790,18 @@ function DecodeOpcode()
   var ModRMByte = BinCode[CodePos]; //Read the byte but do not move to the next byte.
 
   //If the current Mnemonic is an array two in size then Register Mode, and memory mode are separate from each other.
-  //Used in combination of the ModR/M with Group opcode, and Static opcode.
+  //Used in combination with Grouped opcodes, and Static opcodes.
 
-  if(Name instanceof Array && Name.length == 2)
-  {
-     //if Register mode
-
-     if( ( ModRMByte & 0xC0 ) === 0xC0 )
-     {
-       Name = Name[1];
-       Type = Type[1];
-     }
-
-     //else Address mode
-
-     else
-     {
-       Name = Name[0];
-       Type = Type[0];
-     }
-  }
+  if(Name instanceof Array && Name.length == 2) { var bits = ( ModRMByte >> 6 ) & ( ModRMByte >> 7 ); Name = Name[bits]; Type = Type[bits]; }
 
   //Arithmetic unit 8x8 combinational logic array combinations.
   //If the current Mnemonic is an array 8 in length It is a group opcode instruction may repeat previous instructions in different forums.
 
-  if(Name instanceof Array && Name.length == 8)
-  {
-    //Group opcode.
-
-    Name = Name[ ( ModRMByte & 0x38 ) >> 3 ];
-    Type = Type[ ( ModRMByte & 0x38 ) >> 3 ];
+  if(Name instanceof Array && Name.length == 8) { var bits = ( ModRMByte & 0x38 ) >> 3; Name = Name[bits]; Type = Type[bits];
 
     //if The select Group opcode is another array 8 in size it is a static opcode selection which makes the last three bits of the ModR/M byte combination.
 
-    if(Name instanceof Array && Name.length == 8)
-    {
-      Name = Name[ ( ModRMByte & 0x07 ) ];
-      Type = Type[ ( ModRMByte & 0x07 ) ];
-      NextByte(); //Progress one byte across, because the full ModR/M is used as an static Opcode.
-    }
-  }
+    if(Name instanceof Array && Name.length == 8) { var bits = ( ModRMByte & 0x07 ); Name = Name[bits]; Type = Type[bits]; NextByte(); } }
 
   //Vector unit 4x4 combinational array logic.
   //if the current Mnemonic is an array 4 in size it is an SIMD instruction with four possible modes N/A, 66, F3, F2.
@@ -3847,16 +3812,10 @@ function DecodeOpcode()
     Vect = true; //Set Vector Encoding true.
 
     //Reset the prefix string G1 because prefix codes F2, and F3 are used with SSE which forum the repeat prefix.
-    //Some SSE instructions can use the REP, RENP prefixes.
-    //The Vectors that do support the repeat prefix uses Packed Single format.
+    //Some SSE instructions can use the REP, RENP prefixes. The Vectors that do support Default to Packed Single format.
 
-    if(Name[SIMD] !== "")
-    {
-      PrefixG1 = "";
-      Name = Name[SIMD];
-      Type = Type[SIMD];
-    }
-    else{Name = Name[0];Type = Type[0];} //pack single.
+    if(Name[SIMD] !== "") { PrefixG1 = ""; Name = Name[SIMD]; Type = Type[SIMD]; }
+    else { Name = Name[0]; Type = Type[0]; } //pack single.
 
     //If the SIMD instruction uses another array 4 in length in the Selected SIMD vector Instruction.
     //Then each vector Extension is separate. The first extension is used if no extension is active for Regular instructions, and vector instruction septation.
@@ -3866,58 +3825,28 @@ function DecodeOpcode()
     {
       //Get the correct Instruction for the Active Extension type.
 
-      if(Name[Extension] !== "")
-      {
-        Name = Name[Extension];
-        Type = Type[Extension];
-      }
-      else{Name = "???"; Type = "";}
+      if(Name[Extension] !== "") { Name = Name[Extension]; Type = Type[Extension]; }
+      else{ Name = "???"; Type = ""; }
     }
   }
 
   //If the current Mnemonic is an array two in size then Register Mode, and memory mode are separate from each other.
   //Used in combination with vector instructions.
 
-  if(Name instanceof Array && Name.length == 2)
-  {
-     //if Register mode
-
-     if( ( ModRMByte & 0xC0 ) === 0xC0 )
-     {
-       Name = Name[1];
-       Type = Type[1];
-     }
-
-     //else Address mode
-
-     else
-     {
-       Name = Name[0];
-       Type = Type[0];
-     }
-  }
+  if(Name instanceof Array && Name.length == 2) { var bits = ( ModRMByte >> 6 ) & ( ModRMByte >> 7 ); Name = Name[bits]; Type = Type[bits]; }
 
   //if Any Mnemonic is an array 3 in size the instruction name goes by size.
 
   if(Name instanceof Array && Name.length == 3)
   {
-    var s = ( SizeAttrSelect > 0 ) & 1; //The first bit for size 32/16.
-    if( Extension === 0 & BitMode !== 0 ) { s = 1 - s; } //Flip Default size for 16 bit, and Vector length value.
-    ( WidthBit ) && ( s = 2 ); //Goes 64 using the Width bit.
+    var bits = ( Extension === 0 & BitMode !== 0 ) ^ ( SizeAttrSelect & 1 ); //The first bit in SizeAttrSelect for size 32/16 Flips if 16 bit mode.
+    ( WidthBit ) && ( bits = 2 ); //Goes 64 using the Width bit.
 
-    if (Name[ s ] !== "")
-    {
-      Name = Name[ s ]; //set it to the Mnemonic
-      Type = Type[ s ]; //Operand array always matches the Mnemonic structure
-    }
+    if (Name[bits] !== "") { Name = Name[bits]; Type = Type[bits]; }
 
-    //else no size prefix name then use the default size Mnemonic name
+    //else no size prefix name then use the default size Mnemonic name.
 
-    else
-    {
-      Name = Name[0]; //set it to the Mid default Mnemonic
-      Type = Type[0]; //Operand array always matches the Mnemonic structure
-    }
+    else { Name = Name[0]; Type = Type[0]; }
   }
 
   //If Extension is not 0 then add the vector extend "V" to the instruction.
@@ -3929,10 +3858,7 @@ function DecodeOpcode()
 
   //In 32 bit mode, or bellow only one instruction MOVSXD is replaced with ARPL.
 
-  if( BitMode <= 1 )
-  {
-    if( Name === "MOVSXD" ) { Name = "ARPL"; Type = "06020A01"; }
-  }
+  if( BitMode <= 1 && Name === "MOVSXD" ) { Name = "ARPL"; Type = "06020A01"; }
 
   //return the instruction name, and operand encoding type.
 
@@ -4404,9 +4330,9 @@ function DecodeInstruction()
 
       Dif32 = Pos32 - Dif32;
 
-      //Convert Dif to unsignified numbers.
+      //Convert Dif to unsignified number.
 
-      if( Dif32 < 0 ) { Dif32 += Math.pow( 2, 32 ); }
+      if( Dif32 < 0 ) { Dif32 += 0x100000000; }
 
       //Convert to strings.
 
@@ -4415,7 +4341,7 @@ function DecodeInstruction()
 
       //Go to the Calculated address right after the Instruction UD.
 
-      GotoPosition(  S64 + S32 );
+      GotoPosition( S64 + S32 );
 
       //Set prefixes, and operands to empty strings, and set Instruction to UD.
 
