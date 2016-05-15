@@ -2881,61 +2881,93 @@ function GotoPosition( Address )
 }
 
 /*-------------------------------------------------------------------------------------------------------------------------
-Finds bit positions to the Size attribute indexes in REG array, and Pointer Array. For the Size Attribute variations.
+Finds bit positions to the Size attribute indexes in REG array, and the Pointer Array. For the Size Attribute variations.
+---------------------------------------------------------------------------------------------------------------------------
+The SizeAttribute settings is 8 digits big consisting of 1, or 0 to specify the the extended size that an operand can be made.
+In which an value of 01100100 is decoded as "0 = 1024, 1 = 512, 1 = 256, 0 = 128, 0 = 64, 1 = 32, 0 = 16, 0 = 8".
+In which the largest bit position is 512, and is the 6th number "0 = 7, 1 = 6, 1 = 5, 0 = 4, 0 = 3, 1 = 2, 0 = 1, 0 = 0".
+In which 6 is the bit position for 512 as the returned Size . Each size is in order from 0 to 7, thus the size given back
+from this function Lines up With the Pinter array, and Register array indexes for the register names by size, and Pointers.
+---------------------------------------------------------------------------------------------------------------------------
+The variable SizeAttrSelect is separate from this function it is adjusted by prefixes that adjust Vector size, and General purpose registers.
 -------------------------------------------------------------------------------------------------------------------------*/
 
 function GetOperandSize( SizeAttribute )
 {
-  //Log 2.
 
-  var p2 = Math.log(2);
-  var S0 = -1; //Vector size 1024 is unused.
+  /*----------------------------------------------------------------------------------------------------------------------------------------
+  Each S value goes in order to the vector length value in EVEX, and VEX Smallest to biggest in perfect alignment.
+  SizeAttrSelect is set 1 by default, unless it is set 0 to 3 by the vector length bit's in the EVEX prefix, or 0 to 1 in the VEX prefix.
+  In which if it is not an Vector instruction S2 acts as the mid default size attribute in 32 bit mode, and 64 bit mode for all instructions.
+  ----------------------------------------------------------------------------------------------------------------------------------------*/
 
-  //----------------------------------------------------------------------------------------------------------------------------------------
-  //Most Significant bit is the log of 2 Floored, thus gives bit position.
-  //The highest size setting attribute biggest to smallest order S1 to S3.
-  //----------------------------------------------------------------------------------------------------------------------------------------
+  var S4 = 0, S3 = 0, S2 = 0, S1 = 0, S0 = -1; //Note S0 is Vector size 1024, which is unused.
 
-  var S1 = (Math.floor((Math.log(SizeAttribute) / p2)));
+  /*----------------------------------------------------------------------------------------------------------------------------------------
+  Lookup the Highest active bit in the SizeAttribute value giving the position the bit is in the number. S1 will be the biggest size attribute.
+  In which this size attribute is only used when the extended size is active from the Rex prefix using the W (width) bit setting.
+  In which sets variable SizeAttrSelect to 2 in value when the Width bit prefix setting is decoded, or if it is an Vector this is the
+  Max vector size 512 in which when the EVEX.V'V bit's are set 10 = 2 sets SizeAttrSelect 2, note 11 = 3 is reserved for vectors 1024 in size.
+  ----------------------------------------------------------------------------------------------------------------------------------------*/
 
-  //convert the Bit Position of the log into it's value and remove it by subtracting it.
+  S1 = SizeAttribute; S1 = ( ( S1 & 0xF0 ) !== 0 ? ( S1 >>= 4, 4 ) : 0 ) | ( ( S1 & 0xC ) !== 0 ? ( S1 >>= 2, 2 ) : 0 ) | ( ( S1 >>= 1 ) !== 0 );
 
-  SizeAttribute -= Math.pow(2, S1);
+  /*----------------------------------------------------------------------------------------------------------------------------------------
+  Convert the Bit Position of S1 into it's value and remove it by subtracting it into the SizeAttribute settings.
+  ----------------------------------------------------------------------------------------------------------------------------------------*/
 
-  //find the Second Most Significant bit Size setting.
+  SizeAttribute -= ( 1 << S1 );
 
-  var S2 = (Math.floor((Math.log(SizeAttribute) / p2)));
+  /*----------------------------------------------------------------------------------------------------------------------------------------
+  If there is no size attributes then set S1 to -1 then the rest are set to S1 as they should have no size setting.
+  ----------------------------------------------------------------------------------------------------------------------------------------*/
 
-  //Remove the found bit position size.
+  if( SizeAttribute === 0 ) { S1 = -1; }
 
-  SizeAttribute -= Math.pow(2, S2);
+  /*----------------------------------------------------------------------------------------------------------------------------------------
+  Lookup the Highest Second active bit in the SizeAttribute value giving the position the bit is in the number.
+  In which S2 will be the default size attribute when SizeAttrSelect is 1 and has not been changed by prefixes, or If this is an vector
+  SizeAttrSelect is set one by the EVEX.V'V bit's 01 = 1, or VEX.V is active 1 = 1 in which the Mid vector size is used.
+  In which 256 is the Mid vector size some vectors are smaller some go 64/128/256 in which the mid size is 128.
+  ----------------------------------------------------------------------------------------------------------------------------------------*/
 
-  //find the third Most Significant bit Size setting.
+  S2 = SizeAttribute; S2 = ( ( S2 & 0xF0 ) !== 0 ? ( S2 >>= 4, 4 ) : 0 ) | ( ( S2 & 0xC ) !== 0 ? ( S2 >>= 2, 2 ) : 0 ) | ( ( S2 >>= 1 ) !== 0 );
 
-  var S3 = (Math.floor((Math.log(SizeAttribute) / p2)));
+  /*----------------------------------------------------------------------------------------------------------------------------------------
+  Convert the Bit Position of S2 into it's value and remove it by subtracting it if it is not 0.
+  ----------------------------------------------------------------------------------------------------------------------------------------*/
 
-  //----------------------------------------------------------------------------------------------------------------------------------------
-  //If there is no size attributes then set S1 to -1 then the rest are set to S1 as they should have no size setting.
-  //----------------------------------------------------------------------------------------------------------------------------------------
+  if( S2 !== 0 ) { SizeAttribute -= ( 1 << S2 ); }
 
-  if (S1 == Number.NEGATIVE_INFINITY) { S1 = -1; }
+  /*----------------------------------------------------------------------------------------------------------------------------------------
+  If it is 0 The highest size attribute is set as the default operand size. So S2 is aliased to S1, if there is no other Size setting attributes.
+  ----------------------------------------------------------------------------------------------------------------------------------------*/
 
-  //----------------------------------------------------------------------------------------------------------------------------------------
-  //The Operand Override Size attribute is aliased to S1 if no Size setting attribute for S2.
-  //----------------------------------------------------------------------------------------------------------------------------------------
+  else { S2 = S1; }
 
-  if (S2 == Number.NEGATIVE_INFINITY) { S2 = S1; }
+  /*----------------------------------------------------------------------------------------------------------------------------------------
+  Lookup the Highest third active bit in the SizeAttribute value giving the position the bit is in the number.
+  The third Size is only used if the Operand override prefix is used setting SizeAttrSelect to 0, or if this is an vector the
+  EVEX.V'V bit's are 00 = 0 sets SizeAttrSelect 0, or VEX.V = 0 in which SizeAttrSelect is 0 using the smallest vector size.
+  ----------------------------------------------------------------------------------------------------------------------------------------*/
 
-  //----------------------------------------------------------------------------------------------------------------------------------------
-  //If there is no Third size attribute then Size attributes shift down.
-  //This is so the smaller size is the lower size attribute.
-  //----------------------------------------------------------------------------------------------------------------------------------------
+  S3 = SizeAttribute; S3 = ( ( S3 & 0xF0 ) !== 0 ? ( S3 >>= 4, 4 ) : 0 ) | ( ( S3 & 0xC ) !== 0 ? ( S3 >>= 2, 2 ) : 0 ) | ( ( S3 >>= 1 ) !== 0 );
 
-  if ( S3 == Number.NEGATIVE_INFINITY ) { S3 = S2; if( S2 !== 2 ){ S2 = S1;} }
+  /*----------------------------------------------------------------------------------------------------------------------------------------
+  Convert the Bit Position of S3 into it's value and remove it by subtracting it if it is not 0.
+  ----------------------------------------------------------------------------------------------------------------------------------------*/
+
+  if( S3 !== 0 ) { SizeAttribute -= ( 1 << S3 ); }
+
+  /*----------------------------------------------------------------------------------------------------------------------------------------
+  If it is 0 The second size attribute is set as the operand size. So S3 is aliased to S2, if there is no other Size setting attributes.
+  ----------------------------------------------------------------------------------------------------------------------------------------*/
+
+  else { S3 = S2; if( S2 !== 2 ) { S2 = S1; } };
 
   //In 32/16 bit mode the operand size must never exceed 32.
 
-  if (BitMode <= 1 & S2 >= 3 && !Vect )
+  if ( BitMode <= 1 && S2 >= 3 && !Vect )
   {
     if( ( S1 | S2 | S3 ) === S3 ){ S1 = 2; S3 = 2; } //If single size all adjust 32.
     S2 = 2; //Default operand size 32.
@@ -2944,11 +2976,11 @@ function GetOperandSize( SizeAttribute )
   //In 16 bit mode The operand override is always active until used. This makes all operands 16 bit size.
   //When Operand override is used it is the default 32 size. Flip S3 with S2.
 
-  if( BitMode === 0 && !Vect ) { var t = S3; S3 = S2; S2 = t; t = null; }
+  if( BitMode === 0 && !Vect ) { var t = S3; S3 = S2; S2 = t; }
 
   //If an Vect is active, then EVEX.W, VEX.W bit acts as 32/64.
 
-  if( Vect && ( ( S1 + S2 + S3 ) == 7 | ( S1 + S2 + S3 ) == 5 ) ) { Vect = false; return( ( [ S2, S1 ] )[ WidthBit & 1 ] ); }
+  if( Vect && ( ( S1 + S2 + S3 ) === 7 | ( S1 + S2 + S3 ) === 5 ) ) { Vect = false; return( ( [ S2, S1 ] )[ WidthBit & 1 ] ); }
 
   //If it is an vector, and Bround is active vector goes max size.
 
@@ -2957,7 +2989,7 @@ function GetOperandSize( SizeAttribute )
     S0 = S1; S3 = S1; S2 = S1;
   }
 
-  //note the fourth size that is -1 in the returned size attribute is Vector length 11=3 which is invalid unless Intel decides to add 1024 bit vectors.
+  //Note the fourth size that is -1 in the returned size attribute is Vector length 11=3 which is invalid unless Intel decides to add 1024 bit vectors.
   //The only time S0 is not negative one is if vector broadcast round is active.
 
   return( ( [ S3, S2, S1, S0 ] )[ SizeAttrSelect ] );
@@ -2967,7 +2999,8 @@ function GetOperandSize( SizeAttribute )
 /*-------------------------------------------------------------------------------------------------------------------------
 This function returns an array with three numbers.
 ---------------------------------------------------------------------------------------------------------------------------
-The first element is the two bits for the ModR/M byte, or the SIB byte scale as a number value 0 to 3.
+The first element is the two bits for the ModR/M byte for Register mode, Memory mode and Displacemnt setting, or the SIB byte
+scale as a number value 0 to 3 if it is not an ModR/M byte sice they both use the same bit gouping.
 The second element is the three bits for the ModR/M byte Opcode/Reg bits, or the SIB Index Register value as a number value 0 to 7.
 The third element is the last three bits for the ModR/M byte the R/M bits, or the SIB Base Register value as a number value 0 to 7.
 -------------------------------------------------------------------------------------------------------------------------*/
@@ -3812,7 +3845,8 @@ function DecodeOpcode()
     Vect = true; //Set Vector Encoding true.
 
     //Reset the prefix string G1 because prefix codes F2, and F3 are used with SSE which forum the repeat prefix.
-    //Some SSE instructions can use the REP, RENP prefixes. The Vectors that do support Default to Packed Single format.
+    //Some SSE instructions can use the REP, RENP prefixes.
+    //The Vectors that do support the repeat prefix uses Packed Single format.
 
     if(Name[SIMD] !== "") { PrefixG1 = ""; Name = Name[SIMD]; Type = Type[SIMD]; }
     else { Name = Name[0]; Type = Type[0]; } //pack single.
@@ -4330,7 +4364,7 @@ function DecodeInstruction()
 
       Dif32 = Pos32 - Dif32;
 
-      //Convert Dif to unsignified number.
+      //Convert Dif to unsignified numbers.
 
       if( Dif32 < 0 ) { Dif32 += 0x100000000; }
 
