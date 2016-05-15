@@ -2999,8 +2999,8 @@ function GetOperandSize( SizeAttribute )
 /*-------------------------------------------------------------------------------------------------------------------------
 This function returns an array with three numbers.
 ---------------------------------------------------------------------------------------------------------------------------
-The first element is the two bits for the ModR/M byte for Register mode, Memory mode and Displacemnt setting, or the SIB byte
-scale as a number value 0 to 3 if it is not an ModR/M byte sice they both use the same bit gouping.
+The first element is the two bits for the ModR/M byte for Register mode, Memory mode, and Displacement settings, or the SIB byte
+scale as a number value 0 to 3 if it is not an ModR/M byte since they both use the same bit grouping.
 The second element is the three bits for the ModR/M byte Opcode/Reg bits, or the SIB Index Register value as a number value 0 to 7.
 The third element is the last three bits for the ModR/M byte the R/M bits, or the SIB Base Register value as a number value 0 to 7.
 -------------------------------------------------------------------------------------------------------------------------*/
