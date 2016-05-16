@@ -321,12 +321,12 @@ const Mnemonics = [
   [["PREFETCH","PREFETCHW","???","???","???","???","???","???"],"???"],
   "FEMMS","???",
   [
-    "MOVUPS","MOVUPD",
-    ["MOVSS","MOVSS"],["MOVSD","MOVSD"]
+    ["MOVUPS","MOVUPD","MOVSS","MOVSD"],
+    ["MOVUPS","MOVUPD","MOVSS","MOVSD"]
   ],
   [
-    "MOVUPS","MOVUPD",
-    ["MOVSS","MOVSS"],["MOVSD","MOVSD"]
+    ["MOVUPS","MOVUPD","MOVSS","MOVSD"],
+    ["MOVUPS","MOVUPD","MOVSS","MOVSD"]
   ],
   [
     ["MOVLPS","MOVLPD","MOVSLDUP","MOVDDUP"],
@@ -501,15 +501,15 @@ const Mnemonics = [
   [["EMMS",["ZEROUPPER","ZEROALL",""],"",""],"???","???","???"],
   [
     ["VMREAD","",["CVTTPS2UDQ","","CVTTPD2UDQ"],""],
-    [["???","EXTRQ"],"",["CVTTPS2UQQ","","CVTTPD2UQQ"],""],
+    ["EXTRQ","",["CVTTPS2UQQ","","CVTTPD2UQQ"],""],
     ["???","","CVTTSS2USI",""],
-    [["???","INSERTQ"],"","CVTTSD2USI",""]
+    ["INSERTQ","","CVTTSD2USI",""]
   ],
   [
     ["VMWRITE","",["CVTPS2UDQ","","CVTPD2UDQ"], ""],
-    [["???","EXTRQ"],"",["CVTPS2UQQ","","CVTPD2UQQ"],""],
+    ["EXTRQ","",["CVTPS2UQQ","","CVTPD2UQQ"],""],
     ["???","","CVTSS2USI",""],
-    [["???","INSERTQ"],"","CVTSD2USI",""]
+    ["INSERTQ","","CVTSD2USI",""]
   ],
   [
     "???",
@@ -652,7 +652,10 @@ const Mnemonics = [
   [["PSRLQ","","",""],"PSRLQ","",""],
   [["PADDQ","","",""],"PADDQ","",""],
   [["PMULLW","","",""],"PMULLW","",""],
-  ["???","MOVQ",[["???","MOVQ2DQ"],"","",""],[["???","MOVDQ2Q"],"","",""]],
+  [
+    ["???","MOVQ","???","???"],
+    ["???","MOVQ",["MOVQ2DQ","","",""],["MOVDQ2Q","","",""]]
+  ]
   ["???",[["PMOVMSKB","","",""],["PMOVMSKB","PMOVMSKB","",""],"???","???"]],
   [["PSUBUSB","","",""],"PSUBUSB","",""],
   [["PSUBUSW","","",""],"PSUBUSW","",""],
@@ -1246,12 +1249,12 @@ const Operands = [
   [["0601","0601","","","","","",""],""],
   "","",
   [
-    "0B7007700120","0B7007700110",
-    ["0A0406030120","0A04120406040120"],["0A0406090110","0A04120406040110"]
+    ["0B7007700120","0B7007700110","0A0406030120","0A0406090110"],
+    ["0B7007700120","0B7007700110","0A04120406040120","0A04120406040110"]
   ],
   [
-    "07700B700120","07700B700110",
-    ["06030A040120","060412040A040120"],["06090A040110","060412040A040110"]
+    ["07700B700120","07700B700110","06030A040120","06090A040110"],
+    ["07700B700120","07700B700110","060412040A040120","060412040A040110"]
   ],
   [
     ["0A04120406060120","0A04120406060110","0B7007700120","0B7007680110"],
@@ -1424,15 +1427,15 @@ const Operands = [
   [["",["","",""],"",""],"","",""],
   [
     ["07080B080140","",["0B7007700125","","0B3807700119"],""],
-    [["","0A040C000C00"],"",["0B7007380125","","0B7007700119"],""],
+    ["064F0C000C00","",["0B7007380125","","0B7007700119"],""],
     ["","","0B0C06440131",""],
-    [["","0A0406040C000C00"],"","0B0C06460131",""]
+    ["0A04064F0C000C00","","0B0C06460131",""]
   ],
   [
     ["0B0807080140","",["0B7007700126","","0B380770011A"],""],
-    [["","0A040604"],"",["0B7007380126","","0B700770011A"],""],
+    ["0A04064F","",["0B7007380126","","0B700770011A"],""],
     ["","","0B0C06440132",""],
-    [["","0A040640"],"","0B0C06460132",""]
+    ["0A04064F","","0B0C06460132",""]
   ],
   [
     "",
@@ -1574,7 +1577,10 @@ const Operands = [
   [["0A0A06A9","","",""],"0B70137006480110","",""],
   [["0A0A06A9","","",""],"0B70137007700118","",""],
   [["0A0A06A9","","",""],"0B70137007700130","",""],
-  ["","06490A040110",[["","0A040649"],"","",""],[["","0A040649"],"","",""]],
+  [
+    ["","06490A040110","",""],
+    ["","06490A040110",["0A040649","","",""],["0A040649","","",""]]
+  ],
   ["",[["0B0C06A0","","",""],["0B0C0640","0B0C0730","",""],"",""]],
   [["0A0A06A9","","",""],"0B70137007700130","",""],
   [["0A0A06A9","","",""],"0B70137007700130","",""],
@@ -3192,7 +3198,7 @@ function DecodeImmediate( type, BySize, SizeSetting )
 
       //Check memory vector size.
 
-      if ( ( VScale !== 3 && ( ( VectS & 0x08 ) === 0x08 ) ) && ( VScale !== 2 && ( ( VectS && 0x04 ) === 0x04 ) ) )
+      if ( ( VScale === 3 && ( ( VectS & 0x08 ) === 0x08 ) ) || ( VScale === 2 && ( ( VectS && 0x04 ) === 0x04 ) ) )
       {
           Center <<= VScale; V32 <<= VScale;
       }
@@ -3505,7 +3511,7 @@ function Decode_ModRM_SIB_Address( ModRM, BySize, Setting )
 
     //If VSIB is active deactivate it.
 
-    if( ( VectS && 0x80 ) === 0x80 )
+    if( ( VectS & 0x80 ) === 0x80 )
     {
       VectS &= 0xE3;
     }
@@ -3863,11 +3869,6 @@ function DecodeOpcode()
       else{ Name = "???"; Type = ""; }
     }
   }
-
-  //If the current Mnemonic is an array two in size then Register Mode, and memory mode are separate from each other.
-  //Used in combination with vector instructions.
-
-  if(Name instanceof Array && Name.length == 2) { var bits = ( ModRMByte >> 6 ) & ( ModRMByte >> 7 ); Name = Name[bits]; Type = Type[bits]; }
 
   //if Any Mnemonic is an array 3 in size the instruction name goes by size.
 
@@ -4233,7 +4234,7 @@ The main Instruction decode function plugs everything in together for the steps 
 
 function DecodeInstruction()
 {
-  //Reset Prefix adjustments, and vector setting adjustments. Adjust base address based on BitMode setting.
+  //Reset Prefix adjustments, and vector setting adjustments.
 
   Reset();
 
@@ -4273,10 +4274,10 @@ function DecodeInstruction()
 
     //The Width Bit setting can create an invalid operation codes in EVEX.
 
-    if( Vect && Extension == 2 )
+    if( Vect && Extension === 2 )
     {
-      if( ( ( VectS && 0x10 ) === 0 ) && WidthBit ){ InvalidOp = true; }
-      if( ( ( VectS && 0x20 ) === 0 ) && !WidthBit ){ InvalidOp = true; }
+      if( ( ( VectS & 0x10 ) === 0 ) && WidthBit ){ InvalidOp = true; }
+      if( ( ( VectS & 0x20 ) === 0 ) && !WidthBit ){ InvalidOp = true; }
     }
 
     //InvalidOp = ( ( ( SIMD & 1 ) != WidthBit ) ) & ( VectS & 0x10 ); Note use, and ignore width bit pastern EVEX.
@@ -4324,7 +4325,7 @@ function DecodeInstruction()
 
     if((PrefixG1 === "XRELEASE" || PrefixG1 === "XACQUIRE") && HLEFlipG1G2)
     {
-      t = PrefixG1; PrefixG1 = PrefixG2; PrefixG2 = t; t = null;
+      t = PrefixG1; PrefixG1 = PrefixG2; PrefixG2 = t;
     }
 
     //if HT is active then it is a jump instruction check and adjust for the HT,and HNT prefix.
