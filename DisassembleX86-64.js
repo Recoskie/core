@@ -3226,7 +3226,7 @@ function DecodeImmediate( type, BySize, SizeSetting )
   ---------------------------------------------------------------------------------------------------------------------------*/
 
   for( var Imm = V32.toString(16), L = Pad32; Imm.length < L; Imm = "0" + Imm );
-  if( Pad64 >= 8 ) { for( Imm = V64.toString(16) + Imm, L = Pad64; Imm.length < L; Imm = "0" + Imm ); }
+  if( Pad64 > 8 ) { for( Imm = V64.toString(16) + Imm, L = Pad64; Imm.length < L; Imm = "0" + Imm ); }
 
   /*---------------------------------------------------------------------------------------------------------------------------
   Extend Imm if it's extend size is bigger than the Current Imm size.
