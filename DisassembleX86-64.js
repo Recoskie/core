@@ -2234,8 +2234,8 @@ Some AVX512 vectors can also broadcast round to there extend data size controlle
 ---------------------------------------------------------------------------------------------------------------------------
 The VSIB setting is used for vectors that multiply the displacement by the Element size of the vectors.
 ---------------------------------------------------------------------------------------------------------------------------
-AVX512 also has error suppression modes ({ER}) controlled by vector length, and if the broadcast round is active in register mode.
-Unless the vector suppresses all exceptions then it only uses ({SAE}) and can not change rounding mode by vector length.
+AVX512 also has error suppression modes ({ER}) controlled by vector length, and if the broadcast round is active in register mode,
+or the vector suppresses all exceptions then it only uses ({SAE}) and can not change rounding mode by vector length.
 -------------------------------------------------------------------------------------------------------------------------*/
 
 var VectS = 0x00;
