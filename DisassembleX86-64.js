@@ -99,24 +99,35 @@ instruction code value 0 to 1023 inducing escape codes. Opcode is Used by functi
 var Opcode = 0;
 
 /*-------------------------------------------------------------------------------------------------------------------------
-The Mnemonic array.
+Opcode is used as the index for the point in the structure to land on in the "Mnemonics".
 ---------------------------------------------------------------------------------------------------------------------------
-Each opcode value 0 to 1023 has an indexable Instruction Name except for codes that are used as adjustment settings called
-Prefixes. Some Opcodes like segment overrides are read and stored into the SegOveride string for the
-left bracket of the ModR/M address by the function ^DecodePrefixAdjustments()^.
+The factorial like branched structured for the X86 encoding keeping things compact, and small, and fast for the X86 architecture.
 ---------------------------------------------------------------------------------------------------------------------------
-An ModR/M address is a format that is used after an select instruction in which the byte value after an select
-instruction is used for selecting an address location to do the operation, or an select variable in the cpu called a register.
-Registers are used to do multi step code without having to write to memory constantly, and more.
-The ModR/M format has it's limitations so some opcodes are also sacrificed again to change how the ModR/M works.
+X86 has an amazing architectural pattern that is factorial in many ways. Previously an experiment was done to make
+this an one dimensional array, but after testing it proved that it was slower because each of the branches had to be
+calculated to an unique index in memory in which lots of combinations map to the same instructions well some changed.
+The calculation took more time than comparing if an index is an reference to another array to optionally use an encoding.
 ---------------------------------------------------------------------------------------------------------------------------
-Instruction codes may appear multiple times, but use different size attribute adjustments, or change the direction registers, and
-memory are used. Some opcode indexes also use Arrays as separators for different bit encodings, and prefixes combinations.
-The length of the arrays separators are to do with encoding format. Depending on how complex the opcode is it may use more than
-one combination.
+The first branch is an array 2 in size which separates opcodes that changes between register, and memory mode.
+---------------------------------------------------------------------------------------------------------------------------
+The second branch is an array 8 in size which uses an register as an 0 to 7 value for the selected instruction code called grouped opcodes.
+The second branch can be branched into another array 8 in size this covers the last three bits of the ModR/M byte for static opcodes.
+---------------------------------------------------------------------------------------------------------------------------
+The third branch is an array 4 in size which is the SIMD modes. The third branch can branch to an array 4 in size again under
+any of the 4 elements in the SIMD modes for instructions that change by vector extension type.
+---------------------------------------------------------------------------------------------------------------------------
+The fifth branch is an array 3 in size which branches to encoding's that change by the set size attribute.
+---------------------------------------------------------------------------------------------------------------------------
+Each branch can be combined in any combination, but only in order. If we branch to an array 2 in size under an specific opcode
+like this ["",""] then decide to branch memory mode to an array 4 in size we end up with ["",["","","",""]] for making it only
+active in memory mode and controlled by SIMD modes, but then if we decide to branch one of the 4 SIMD modes to an array 8
+in size for register opcode separation under one SIMD mode, or an few we can't. We can only branch to an array 3 in size
+as that comes next after the array 4 in size. WE also do not need the first branch to be an array it can be an single opcode
+encoding. We also do not need the first branch to be an array 2 in size it can be any starting branch then the rest must go
+in order from that branch point.
 ---------------------------------------------------------------------------------------------------------------------------
 Opcode is used by the function ^DecodeOpcode()^ after ^DecodePrefixAdjustments()^.
-The function ^DecodeOpcode()^ Gives back the instructions name plus some opcodes can have more than one instruction in combination.
+The function ^DecodeOpcode()^ Gives back the instructions name.
 --------------------------------------------------------------------------------------------------------------------------*/
 
 const Mnemonics = [
@@ -476,14 +487,14 @@ const Mnemonics = [
   [
     "???",
     [
-      ["",["","",["PRORD","","PRORQ"],""],"",""],
-      ["",["","",["PROLD","","PROLQ"],""],"",""],
+      ["???",["","",["PRORD","","PRORQ"],""],"???","???"],
+      ["???",["","",["PROLD","","PROLQ"],""],"???","???"],
       [["PSRLD","","",""],"PSRLD","",""],
-      "",
+      "???",
       [["PSRAD","","",""],["PSRAD","PSRAD",["PSRAD","","PSRAQ"],""],"",""],
-      "",
+      "???",
       [["PSLLD","","",""],"PSLLD","",""],
-      ""
+      "???"
     ]
   ],
   [
@@ -1076,14 +1087,14 @@ const Operands = [
   //------------------------------------------------------------------------------------------------------------------------
   //First Byte operations.
   //------------------------------------------------------------------------------------------------------------------------
-  "06000A000003","070E0B0E0003","0A0006000003","0B0E070E0003","16000C000003","170E0D060003","","",
-  "06000A000003","070E0B0E0003","0A0006000003","0B0E070E0003","16000C000003","170E0D060003","","",
-  "06000A000003","070E0B0E0003","0A0006000003","0B0E070E0003","16000C000003","170E0D060003","","",
-  "06000A000003","070E0B0E0003","0A0006000003","0B0E070E0003","16000C000003","170E0D060003","","",
-  "06000A000003","070E0B0E0003","0A0006000003","0B0E070E0003","16000C000003","170E0D060003","","",
-  "06000A000003","070E0B0E0003","0A0006000003","0B0E070E0003","16000C000003","170E0D060003","","",
-  "06000A000003","070E0B0E0003","0A0006000003","0B0E070E0003","16000C000003","170E0D060003","","",
-  "06000A00","070E0B0E","0A000600","0B0E070E","16000C00","170E0D06","","",
+  "06000A000003","070E0B0E0003","0A0006000003","0B0E070E0003","16000C000003","170E0DE60003","","",
+  "06000A000003","070E0B0E0003","0A0006000003","0B0E070E0003","16000C000003","170E0DE60003","","",
+  "06000A000003","070E0B0E0003","0A0006000003","0B0E070E0003","16000C000003","170E0DE60003","","",
+  "06000A000003","070E0B0E0003","0A0006000003","0B0E070E0003","16000C000003","170E0DE60003","","",
+  "06000A000003","070E0B0E0003","0A0006000003","0B0E070E0003","16000C000003","170E0DE60003","","",
+  "06000A000003","070E0B0E0003","0A0006000003","0B0E070E0003","16000C000003","170E0DE60003","","",
+  "06000A000003","070E0B0E0003","0A0006000003","0B0E070E0003","16000C000003","170E0DE60003","","",
+  "06000A00","070E0B0E","0A000600","0B0E070E","16000C00","170E0DE6","","",
   "03060003","03060003","03060003","03060003","03060003","03060003","03060003","03060003",
   "03060003","03060003","03060003","03060003","03060003","03060003","03060003","03060003",
   "030A","030A","030A","030A","030A","030A","030A","030A",
@@ -1092,15 +1103,15 @@ const Operands = [
   [["0A020606","0A010604",""],""],
   "0B0E0704",
   "","","","",
-  "0D06","0B0E070E0D06",
-  "0C00","0B0E070E0C00",
+  "0DE6","0B0E070E0DE6",
+  "0DA1","0B0E070E0DE1",
   "22001A01","230E1A01","1A012000","1A01210E",
   "10000002000C","10000002000C","10000002000C","10000002000C","10000002000C","10000002000C","10000002000C","10000002000C",
   "10000002000C","10000002000C","10000002000C","10000002000C","10000002000C","10000002000C","10000002000C","10000002000C",
   ["06000C000003","06000C000003","06000C000003","06000C000003","06000C000003","06000C000003","06000C000003","06000C00"],
-  ["070E0D060003","070E0D060003","070E0D060003","070E0D060003","070E0D060003","070E0D060003","070E0D060003","070E0D06"],
+  ["070E0DE60003","070E0DE60003","070E0DE60003","070E0DE60003","070E0DE60003","070E0DE60003","070E0DE60003","070E0DE6"],
   ["06000C000003","06000C000003","06000C000003","06000C000003","06000C000003","06000C000003","06000C000003","06000C00"],
-  ["070E0C000003","070E0C000003","070E0C000003","070E0C000003","070E0C000003","070E0C000003","070E0C000003","070E0C00"],
+  ["070E0DE10003","070E0DE10003","070E0DE10003","070E0DE10003","070E0DE10003","070E0DE10003","070E0DE10003","070E0DE1"],
   "06000A00","070E0B0E",
   "0A0006000003","0B0E070E0003",
   "06000A000001","070E0B0E0001",
@@ -1120,7 +1131,7 @@ const Operands = [
   "040016000001","050E170E0001",
   "22002000","230E210E",
   "22002000","230E210E",
-  "16000C00","170E0D06",
+  "16000C00","170E0DE6",
   "22001600","230E170E","16002000","170E210E","16002200","170E230E",
   "02000C000001","02000C000001","02000C000001","02000C000001","02000C000001","02000C000001","02000C000001","02000C000001",
   "030E0D0E0001","030E0D0E0001","030E0D0E0001","030E0D0E0001","030E0D0E0001","030E0D0E0001","030E0D0E0001","030E0D0E0001",
@@ -1269,11 +1280,11 @@ const Operands = [
   "",
   [
     [["0A0B0708","","",""],["0A0B060B","","",""],["0A0B0708","","",""],["0A0B0708","","",""]],
-    ["",["0A0B060B","","",""],["0A0B0708","","",""],["0A0B0708","","",""]]
+    ["",["0A0B060B","","",""],["0A0B07080110","","",""],["0A0B07080110","","",""]]
   ],
   [
     [["07080A0B","","",""],["060B0A0B","","",""],["0A0B0708","","",""],["0A0B0708","","",""]],
-    ["",["060B0A0B","","",""],"",["0A0B0708","","",""]]
+    ["",["060B0A0B","","",""],"",["0A0B07080110","","",""]]
   ],
   "","","",
   "070E",
@@ -1385,7 +1396,7 @@ const Operands = [
   [["0A0A070C","","",""],"0A04070C0108","",""],
   [
     ["0A0A06A9","", "",""],
-    ["0B700770","0B700770",["0B700770","","0B7007700108"],""],
+    ["0B700770","0B700770",["0B7007700108","","0B700770"],""],
     ["0A040710","0B700770",["0B700770","","0B7007700108"],""],
     ["","",["0B7007700108","","0B700770"],""]
   ],
@@ -1972,7 +1983,7 @@ const Operands = [
   "","","","","","","","","","","","","","",""];
 
 /*-------------------------------------------------------------------------------------------------------------------------
-This object stores a single decoded Operand, and gives it an number in "Operand Number" (OperandNum) for the order they are
+This object stores a single decoded Operand, and gives it an number in OperandNum (Operand Number) for the order they are
 read in the operand string. It also stores all of the Settings for the operand.
 ---------------------------------------------------------------------------------------------------------------------------
 Each Operand is sorted into an decoder array in the order they are decoded by the CPU in series.
@@ -2643,7 +2654,7 @@ const scale = [
 
 /*-------------------------------------------------------------------------------------------------------------------------
 This function loads the BinCode array using an hex string as input, and Resets the Code position along the array, but does not
-reset the base address. This allows programs to be decoded in sections well maintaining the acurate 64 bit base address.
+reset the base address. This allows programs to be decoded in sections well maintaining the accurate 64 bit base address.
 ---------------------------------------------------------------------------------------------------------------------------
 The function "SetBasePosition()" sets the location that the Code is from in memory.
 The function "GotoPosition()" tests if the address is within rage of the current loaded binary.
@@ -3087,7 +3098,7 @@ function DecodeImmediate( type, BySize, SizeSetting )
 
   var Sing = 0;
 
-  //*Initialize the Sing Extend variable size as 0 Some Immidate numbers Sing extend.
+  //*Initialize the Sing Extend variable size as 0 Some Immediate numbers Sing extend.
 
   var Extend = 0;
 
@@ -3135,7 +3146,7 @@ function DecodeImmediate( type, BySize, SizeSetting )
 
   //*Adjust Pad32 so it matches the length the Immediate should be in hex for number of bytes read.
 
-  Pad32 <<= 1;
+  Pad32 <<= 1; Pad64 <<= 1;
 
   /*---------------------------------------------------------------------------------------------------------------------------
   If the IMM type is used with an register operand on the upper four bit's then the IMM byte does not use the upper 4 bit's.
@@ -3161,7 +3172,7 @@ function DecodeImmediate( type, BySize, SizeSetting )
 
     ( BitMode <= 0 || SizeAttrSelect <= 0 ) && ( V32 &= 0xFFFF );
 
-    //Adjust the 32 bit relative address section if it was not croped to 16 bit's.
+    //Adjust the 32 bit relative address section if it was not cropped to 16 bit's.
 
     ( C64 = ( ( V32 ) > 0xFFFFFFFF ) ) && ( V32 -= 0x100000000 );
 
@@ -3180,7 +3191,7 @@ function DecodeImmediate( type, BySize, SizeSetting )
     Calculate the displacement center point based on Immediate size.
     -------------------------------------------------------------------------------------------------------------------------*/
 
-    //An displacment can not be bigger than 32 bit's, so Pad64 is set 0.
+    //An displacement can not be bigger than 32 bit's, so Pad64 is set 0.
 
     Pad64 = 0;
 
@@ -3217,9 +3228,9 @@ function DecodeImmediate( type, BySize, SizeSetting )
   }
 
   /*---------------------------------------------------------------------------------------------------------------------------
-  Pad Imm based on the calculated Immidate size, because when an value is converted to an number as text that can be displayed
-  the 0 digits to the left are removed. Think of this as like the number 000179 the aculal length of the number is 6 digits,
-  but is displayed as 179, because the unused disgits are not displayed, but they still exist in the memory.
+  Pad Imm based on the calculated Immediate size, because when an value is converted to an number as text that can be displayed
+  the 0 digits to the left are removed. Think of this as like the number 000179 the actual length of the number is 6 digits,
+  but is displayed as 179, because the unused digits are not displayed, but they still exist in the memory.
   ---------------------------------------------------------------------------------------------------------------------------*/
 
   for( var Imm = V32.toString(16), L = Pad32; Imm.length < L; Imm = "0" + Imm );
@@ -3602,11 +3613,11 @@ function DecodePrefixAdjustments()
     if( Opcode >= 0x40 & Opcode <= 0x4F)
     {
       RexActive = 1; //Set Rex active uses 8 bit registers in lower order as 0 to 15.
-      BaseExtend = (Opcode & 0x01) << 3; //Base Register extend setting.
-      IndexExtend = ( ( Opcode & 0x02 ) ) << 2; //Index Register extend setting.
-      RegExtend = ( ( Opcode & 0x04 ) ) << 1; //Register Extend Setting.
-      SizeAttrSelect = ( ( Opcode & 0x08 ) >> 2 ); //The width Bit open all 64 bits.
-      WidthBit = SizeAttrSelect >> 1; //Set The Width Bit setting if active.
+      BaseExtend = ( Opcode & 0x01 ) << 3; //Base Register extend setting.
+      IndexExtend = ( Opcode & 0x02 ) << 2; //Index Register extend setting.
+      RegExtend = ( Opcode & 0x04 ) << 1; //Register Extend Setting.
+      WidthBit = ( Opcode & 0x08 ) >> 3; //Set The Width Bit setting if active.
+      SizeAttrSelect = WidthBit ? 2 : 1; //The width Bit open all 64 bits.
       return(DecodePrefixAdjustments()); //restart function decode more prefix settings that can effect the decode instruction.
     }
 
@@ -3876,7 +3887,7 @@ function DecodeOpcode()
   //Vector mask instructions start with K instead of V any instruction that starts with K and is an
   //vector mask Instruction which starts with K instead of V.
 
-  if( Extension > 0 && Name.charAt(0) !== "K" ) { Name = "V" + Name; }
+  if( Extension > 0 && Name.charAt(0) !== "K" && Name !== "???" ) { Name = "V" + Name; }
 
   //In 32 bit mode, or bellow only one instruction MOVSXD is replaced with ARPL.
 
