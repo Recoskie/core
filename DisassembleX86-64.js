@@ -652,7 +652,7 @@ const Mnemonics = [
     ],
     [
       "???",
-      "SSS", //Synthetic virtual machine operation codes.
+      ["SSS","???","???","???","???","???","???","???"], //Synthetic virtual machine operation codes.
       "???","???","???","???",
       "RDRAND","RDSEED"
     ]
@@ -1060,44 +1060,6 @@ const Mnemonics = [
   "???","???","???","???","???","???","???","???","???","???","???","???","???","???","???","???",
   ["???","???","???",["","RORX","",""]],
   "???","???","???","???","???","???","???","???","???","???","???","???","???","???","???"];
-
-/*-------------------------------------------------------------------------------------------------------------------------
-3DNow uses on operand input type as the selected 3DNow instruction code rather then using the Opcode value.
-Operation code 0F0F two byte opcode 0100001111 automatically takes an ModR/M, and IMM8 Without an instruction name.
-Once the operands are decoded the IMM8 value is the selected instruction that goes with the operands.
-The IMM8 value is an 0 to 255 byte value.
--------------------------------------------------------------------------------------------------------------------------*/
-
-const M3DNow = [
-  "???","???","???","???","???","???","???","???","???","???","???","???","PI2FW","PI2FD","???","???",
-  "???","???","???","???","???","???","???","???","???","???","???","???","???","???","???","???",
-  "???","???","???","???","???","???","???","???","???","???","???","???","???","???","???","???",
-  "???","???","???","???","???","???","???","???","???","???","???","???","???","???","???","???",
-  "???","???","???","???","???","???","???","???","???","???","???","???","???","???","???","???",
-  "???","???","???","???","???","???","???","???","???","???","???","???","???","???","???","???",
-  "???","???","???","???","???","???","???","???","???","???","???","???","???","???","???","???",
-  "???","???","???","???","???","???","???","???","???","???","???","???","???","???","???","???",
-  "???","???","???","???","???","???","???","???","???","???","PFNACC","???","???","???","PFPNACC","???",
-  "PFCMPGE","???","???","???","PFMIN","???","PFRCP","PFRSQRT","???","???","FPSUB","???","???","???","FPADD","???",
-  "PFCMPGT","???","???","???","PFMAX","???","PFRCPIT1","PFRSQIT1","???","???","PFSUBR","???","???","???","PFACC","???",
-  "PFCMPEQ","???","???","???","PFMUL","???","PFRCPIT2","PMULHRW","???","???","???","PSWAPD","???","???","???","PAVGUSB",
-  "???","???","???","???","???","???","???","???","???","???","???","???","???","???","???","???",
-  "???","???","???","???","???","???","???","???","???","???","???","???","???","???","???","???",
-  "???","???","???","???","???","???","???","???","???","???","???","???","???","???","???","???",
-  "???","???","???","???","???","???","???","???","???","???","???","???","???","???","???","???"
-];
-
-/*-------------------------------------------------------------------------------------------------------------------------
-Virtual machine synthetic operation codes. link to the patent https://www.google.com/patents/US7552426
--------------------------------------------------------------------------------------------------------------------------*/
-
-const MSynthetic = [
-  "VMGETINFO","VMSETINFO","VMDXDSBL","VMDXENBL","???",
-  "VMCPUID","VMHLT","VMSPLAF","???","???",
-  "VMPUSHFD","VMPOPFD","VMCLI","VMSTI","VMIRETD",
-  "VMSGDT","VMSIDT","VMSLDT","VMSTR","???",
-  "VMSDTE","???","???","???","???"
-];
 
 /*-------------------------------------------------------------------------------------------------------------------------
 The Operand type array each operation code can use different operands that must be decoded after the select Opcode.
@@ -1612,7 +1574,7 @@ const Operands = [
     ],
     [
       "",
-      "",
+      ["","","","","","","",""],
       "","","","",
       "070E","070E"
     ]
@@ -2017,6 +1979,60 @@ const Operands = [
   "","","","","","","","","","","","","","","","",
   ["","","",["","0B0C070C0C00","",""]],
   "","","","","","","","","","","","","","",""];
+
+/*-------------------------------------------------------------------------------------------------------------------------
+3DNow uses the byte after the operands as the select instruction code, so in the Mnemonics there is no instruction name, but
+in the Operands array the operation code 0F0F which is two byte opcode 0x10F (using the disassemblers opcode value system)
+automatically takes operands ModR/M, and MM register. Once the operands are decoded the byte value after the operands is
+the selected instruction code for 3DNow. The byte value is an 0 to 255 value so the listing is 0 to 255.
+---------------------------------------------------------------------------------------------------------------------------
+At the very end of the function ^DecodeInstruction()^ an undefined instruction name with the operands MM, and MM/MMWORD is
+compared for if the operation code is 0x10F then the next byte is read and is used as the selected 3DNow instruction.
+-------------------------------------------------------------------------------------------------------------------------*/
+
+const M3DNow = [
+  "","","","","","","","","","","","","PI2FW","PI2FD","","",
+  "","","","","","","","","","","","","","","","",
+  "","","","","","","","","","","","","","","","",
+  "","","","","","","","","","","","","","","","",
+  "","","","","","","","","","","","","","","","",
+  "","","","","","","","","","","","","","","","",
+  "","","","","","","","","","","","","","","","",
+  "","","","","","","","","","","","","","","","",
+  "","","","","","","","","","","PFNACC","","","","PFPNACC","",
+  "PFCMPGE","","","","PFMIN","","PFRCP","PFRSQRT","","","FPSUB","","","","FPADD","",
+  "PFCMPGT","","","","PFMAX","","PFRCPIT1","PFRSQIT1","","","PFSUBR","","","","PFACC","",
+  "PFCMPEQ","","","","PFMUL","","PFRCPIT2","PMULHRW","","","","PSWAPD","","","","PAVGUSB",
+  "","","","","","","","","","","","","","","","",
+  "","","","","","","","","","","","","","","","",
+  "","","","","","","","","","","","","","","","",
+  "","","","","","","","","","","","","","","",""
+];
+
+/*-------------------------------------------------------------------------------------------------------------------------
+Virtual machine synthetic operation codes is under two byte operation code 0FC7 which is opcode 0x1C7 using the disassemblers
+opcode value system. The operation code 0x1C7 is an group opcode containing 3 operation codes, but only one of the codes
+is used in the ModR/M grouped opcode for synthetic virtual machine operation codes. The ModR/M byte has to be in register mode
+using register code 001 for the virtual machine synthetic operation codes. The effective address has to be set 000 which uses
+the full ModR/M byte as an static opcode encoding under the group opcode 001. This makes the operation code 0F C7 C8.
+The resulting instruction name in the Mnemonics map is "SSS", and takes no Operands in the Operands array. The two bytes after
+0F C7 C8 are used as the select synthetic operation code. Only the first 4 values of both bytes have an select operation code,
+so an 5x5 map is used to keep the mapping small.
+---------------------------------------------------------------------------------------------------------------------------
+When the operation code is 0F C7 and takes the ModR/M byte value C8 the operation code is "SSS" with no operands.
+At the very end of the function ^DecodeInstruction()^ an instruction that is "SSS" is compared if it is instruction "SSS".
+If it is operation "SSS" then the two bytes are then read as two codes which are used as the selected operation code in the 5x5 map.
+---------------------------------------------------------------------------------------------------------------------------
+link to the patent https://www.google.com/patents/US7552426
+-------------------------------------------------------------------------------------------------------------------------*/
+
+  const MSynthetic = [
+    "VMGETINFO","VMSETINFO","VMDXDSBL","VMDXENBL","",
+    "VMCPUID","VMHLT","VMSPLAF","","",
+    "VMPUSHFD","VMPOPFD","VMCLI","VMSTI","VMIRETD",
+    "VMSGDT","VMSIDT","VMSLDT","VMSTR","",
+    "VMSDTE","","","",""
+  ];
 
 /*-------------------------------------------------------------------------------------------------------------------------
 This object stores a single decoded Operand, and gives it an number in OperandNum (Operand Number) for the order they are
@@ -4343,7 +4359,9 @@ function DecodeInstruction()
 
     Operands = DecodeOperands();
 
-    //3DNow Instruction name is encoded by the IMM8 byte.
+    /*-------------------------------------------------------------------------------------------------------------------------
+    3DNow Instruction name is encoded by the next byte after the ModR/M, and Reg operands.
+    -------------------------------------------------------------------------------------------------------------------------*/
 
     if( Opcode === 0x10F )
     {
@@ -4353,25 +4371,40 @@ function DecodeInstruction()
 
       //If Invalid instruction.
 
-      if( Instruction[0] === "???" )
+      if( Instruction[0] === "" || Instruction[0] == null )
       {
-        Operands = "";
+        Instruction[0] = "???"; Operands = "";
       }
     }
 
-    //Synthetic virtual machine operation codes.
+    /*-------------------------------------------------------------------------------------------------------------------------
+    Synthetic virtual machine operation codes.
+    -------------------------------------------------------------------------------------------------------------------------*/
 
     else if( Instruction[0] === "SSS" )
     {
-      //Lookup operation code.
-
-      NextByte();
+      //The Next two bytes after the static opcode is the select synthetic virtual machine operation code.
 
       var Code1 = BinCode[CodePos]; NextByte();
       var Code2 = BinCode[CodePos]; NextByte();
 
+      //No operations exist past 4 in value for both bytes that combine to the operation code.
+
       if( Code1 >= 5 || Code2 >= 5 ) { Instruction[0] = "???"; }
-      else { Instruction[0] = MSynthetic[ ( Code1 * 5 ) + Code2 ]; }
+
+      //Else calculate the operation code in the 5x5 map.
+
+      else
+      {
+        Instruction[0] = MSynthetic[ ( Code1 * 5 ) + Code2 ];
+
+        //If Invalid instruction.
+
+        if( Instruction[0] === "" || Instruction[0] == null )
+        {
+          Instruction[0] = "???";
+        }
+      }
     }
 
     //32/16 bit instructions 9A, and EA use Segment, and offset with Immediate format.
