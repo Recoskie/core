@@ -6,7 +6,7 @@ Supports decoding 64 bit, and 32 bit programs, also is completely backwards comp
 -----------------------------------------------------------------------------------------------
 
 Supports Instruction sets:<br />
-MMX.<br />
+MMX, 3DNow.<br />
 SSE, SSE2, SSE3, SSSE3, SSE4, SSE4a, SSE4.1, SSE4.2.<br />
 SMX, VMX, AMD-V, Intel VT-x.<br />
 AES, ADX.<br />
@@ -24,11 +24,7 @@ Except:
 
 (1) DREX, but DREX never even shipped to any systems so there is no software that used DREX.
 
-(2) 3DNow, but 3DNow was abandoned by AMD, thus will never be used again in any X86 AMD cores.
-Also AMD removed the 3DNow Instructions from there X86 cores, and replaced them with Intel's
-SSE instructions. I will only add 3DNow if there is a high enough demand for it.
-
-(3) XOP, AMD invented XOP which is almost the same as Intel's AVX2, but lacks far behind AVX2.
+(2) XOP, AMD invented XOP which is almost the same as Intel's AVX2, but lacks far behind AVX2.
 I Might add XOP in the near future.
 
 This disassembler can take apart Microsoft binary programs, and Linux binaries.
