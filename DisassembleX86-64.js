@@ -652,7 +652,7 @@ const Mnemonics = [
     ],
     [
       "???",
-      "VMGETINFO",
+      "SSS", //Synthetic virtual machine operation codes.
       "???","???","???","???",
       "RDRAND","RDSEED"
     ]
@@ -1085,6 +1085,18 @@ const M3DNow = [
   "???","???","???","???","???","???","???","???","???","???","???","???","???","???","???","???",
   "???","???","???","???","???","???","???","???","???","???","???","???","???","???","???","???",
   "???","???","???","???","???","???","???","???","???","???","???","???","???","???","???","???"
+];
+
+/*-------------------------------------------------------------------------------------------------------------------------
+Virtual machine synthetic operation codes. link to the patent https://www.google.com/patents/US7552426
+-------------------------------------------------------------------------------------------------------------------------*/
+
+const MSynthetic = [
+  "VMGETINFO","VMSETINFO","VMDXDSBL","VMDXENBL","???",
+  "VMCPUID","VMHLT","VMSPLAF","???","???",
+  "VMPUSHFD","VMPOPFD","VMCLI","VMSTI","VMIRETD",
+  "VMSGDT","VMSIDT","VMSLDT","VMSTR","???",
+  "VMSDTE","???","???","???","???"
 ];
 
 /*-------------------------------------------------------------------------------------------------------------------------
@@ -4345,6 +4357,21 @@ function DecodeInstruction()
       {
         Operands = "";
       }
+    }
+
+    //Synthetic virtual machine operation codes.
+
+    else if( Instruction[0] === "SSS" )
+    {
+      //Lookup operation code.
+
+      NextByte();
+
+      var Code1 = BinCode[CodePos]; NextByte();
+      var Code2 = BinCode[CodePos]; NextByte();
+
+      if( Code1 >= 5 || Code2 >= 5 ) { Instruction[0] = "???"; }
+      else { Instruction[0] = MSynthetic[ ( Code1 * 5 ) + Code2 ]; }
     }
 
     //32/16 bit instructions 9A, and EA use Segment, and offset with Immediate format.
