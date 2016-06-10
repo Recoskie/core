@@ -101,14 +101,12 @@ var Opcode = 0;
 /*-------------------------------------------------------------------------------------------------------------------------
 Opcode is used as the index for the point in the structure to land on in the "Mnemonics".
 ---------------------------------------------------------------------------------------------------------------------------
-The factorial like branched structured for the X86 encoding keeping things compact, and small, and fast for the X86 architecture.
----------------------------------------------------------------------------------------------------------------------------
-X86 has an amazing architectural pattern that is factorial in many ways. Previously an experiment was done to make
+X86 has an amazing architectural pattern that is like an fractal in many ways. Previously an experiment was done to make
 this an one dimensional array, but after testing it proved that it was slower because each of the branches had to be
 calculated to an unique index in memory in which lots of combinations map to the same instructions well some changed.
 The calculation took more time than comparing if an index is an reference to another array to optionally use an encoding.
 ---------------------------------------------------------------------------------------------------------------------------
-The first branch is an array 2 in size which separates opcodes that changes between register, and memory mode.
+The first branch is an array 2 in size which separates opcodes that change between register, and memory mode.
 ---------------------------------------------------------------------------------------------------------------------------
 The second branch is an array 8 in size which uses an register as an 0 to 7 value for the selected instruction code called grouped opcodes.
 The second branch can be branched into another array 8 in size this covers the last three bits of the ModR/M byte for static opcodes.
