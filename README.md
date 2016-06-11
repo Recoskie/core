@@ -13,7 +13,7 @@ AES, ADX.<br />
 HLE, MPX.<br />
 ABM, BMI1, BMI2, TBM.<br />
 FMA, SHA.<br />
-AVX2.<br />
+XOP, AVX2.<br />
 AVX512F, AVX512CD, AVX512ER, AVX512PF.<br />
 AVX512BW, AVX512DQ, AVX512VL.<br />
 AVX512IFMA, AVX512VBMI.<br />
@@ -22,10 +22,7 @@ This disassembler supports every instruction ever made for all Intel, and AMD X8
 -----------------------------------------------------------------------------------------------
 Except:
 
-(1) DREX, but DREX never even shipped to any systems so there is no software that used DREX.
-
-(2) XOP, AMD invented XOP which is almost the same as Intel's AVX2, but lacks far behind AVX2.
-I Might add XOP in the near future.
+DREX, but DREX never even shipped to any systems so there is no software that used DREX.
 
 This disassembler can take apart Microsoft binary programs, and Linux binaries.
 -----------------------------------------------------------------------------------------------
