@@ -6,14 +6,14 @@ Supports decoding 64 bit, and 32 bit programs, also is completely backwards comp
 -----------------------------------------------------------------------------------------------
 
 Supports Instruction sets:<br />
-MMX, 3DNow.<br />
+MMX, F16C, 3DNow.<br />
 SSE, SSE2, SSE3, SSSE3, SSE4, SSE4a, SSE4.1, SSE4.2.<br />
 SMX, VMX, AMD-V, Intel VT-x.<br />
 AES, ADX.<br />
 HLE, MPX.<br />
 ABM, BMI1, BMI2, TBM.<br />
 FMA, SHA.<br />
-XOP, AVX2.<br />
+XOP, TBM, LWP, AVX2.<br />
 AVX512F, AVX512CD, AVX512ER, AVX512PF.<br />
 AVX512BW, AVX512DQ, AVX512VL.<br />
 AVX512IFMA, AVX512VBMI.<br />
@@ -22,7 +22,7 @@ This disassembler supports every instruction ever made for all Intel, and AMD X8
 -----------------------------------------------------------------------------------------------
 Except:
 
-DREX, but DREX never even shipped to any systems so there is no software that used DREX.
+DREX, but DREX never even shipped to any systems, so there is no software that used DREX.
 
 This disassembler can take apart Microsoft binary programs, and Linux binaries.
 -----------------------------------------------------------------------------------------------
