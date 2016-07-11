@@ -128,7 +128,7 @@ Opcode is used by the function ^DecodeOpcode()^ after ^DecodePrefixAdjustments()
 The function ^DecodeOpcode()^ Gives back the instructions name.
 --------------------------------------------------------------------------------------------------------------------------*/
 
-const Mnemonics = [
+var Mnemonics = [
   /*------------------------------------------------------------------------------------------------------------------------
   First Byte operations 0 to 255.
   ------------------------------------------------------------------------------------------------------------------------*/
@@ -182,7 +182,7 @@ const Mnemonics = [
   ["LEA","???"], //*ModR/M Register, and memory mode separation.
   "MOV",
   ["POP","???","???","???","???","???","???","???"],
-  [["NOP","","",""],["NOP","","",""],["PAUSE","","",""],["NOP","","",""]],
+  ["NOP","NOP","PAUSE","NOP"],
   "XCHG","XCHG","XCHG","XCHG","XCHG","XCHG","XCHG",
   ["CWDE","CBW","CDQE"], //*Opcode 0 to 3 for instructions that change name by size setting.
   ["CDQ","CWD","CQO"],
@@ -349,52 +349,27 @@ const Mnemonics = [
   [["MOVHPS","MOVHPD","???","???"],"???"],
   [["PREFETCHNTA","PREFETCHT0","PREFETCHT1","PREFETCHT2","???","???","???","???"],"???"],
   "???",
-  [[["BNDLDX","","",""],["BNDMOV","","",""],["BNDCL","","",""],["BNDCU","","",""]],
-  ["???",["BNDMOV","","",""],["BNDCL","","",""],["BNDCU","","",""]]],
-  [[["BNDSTX","","",""],["BNDMOV","","",""],["BNDMK","","",""],["BNDCN","","",""]],
-  ["???",["BNDMOV","","",""],"???",["BNDCN","","",""]]],
+  [["BNDLDX","BNDMOV","BNDCL","BNDCU"],["???","BNDMOV","BNDCL","BNDCU"]],
+  [["BNDSTX","BNDMOV","BNDMK","BNDCN"],["???","BNDMOV","???","BNDCN"]],
   "???","???","???",
   "NOP",
   ["???","MOV"],["???","MOV"], //CR and DR register Move
   ["???","MOV"],["???","MOV"], //CR and DR register Move
   ["???","MOV"],"???", //TR (TEST REGISTER) register Move
   ["???","MOV"],"???", //TR (TEST REGISTER) register Move
-  [
-    ["MOVAPS","MOVAPS","MOVAPS","MOVAPS"],
-    ["MOVAPD","MOVAPD","MOVAPD","MOVAPD"],
-    "???","???"
-  ],
+  ["MOVAPS","MOVAPD","???","???"],
   [
     [
-      ["MOVAPS","MOVAPS","MOVAPS","MOVAPS"],
-      ["MOVAPD","MOVAPD","MOVAPD","MOVAPD"],
-      ["","","",["MOVNRAPS","MOVNRNGOAPS","MOVNRAPS"]],
-      ["","","",["MOVNRAPD","MOVNRNGOAPD","MOVNRAPD"]]
+      "MOVAPS","MOVAPD",
+      ["MOVNRAPS","MOVNRNGOAPS","MOVNRAPS"],
+      ["MOVNRAPD","MOVNRNGOAPD","MOVNRAPD"]
     ],
-    [
-      ["MOVAPS","MOVAPS","MOVAPS","MOVAPS"],
-      ["MOVAPD","MOVAPD","MOVAPD","MOVAPD"],
-      "???","???"
-    ]
+    ["MOVAPS","MOVAPD","???","???"]
   ],
-  [
-    ["CVTPI2PS","","",""],["CVTPI2PD","","",""], //Is not allowed to be Vector encoded.
-    "CVTSI2SS","CVTSI2SD"
-  ],
-  [
-    [
-      "MOVNTPS","MOVNTPD",
-      ["MOVNTSS","","",""],["MOVNTSD","","",""] //SSE4a can not be vector encoded.
-    ],"???"
-  ],
-  [
-    ["CVTTPS2PI","","",""],["CVTTPD2PI","","",""], //Is not allowed to be Vector encoded.
-    "CVTTSS2SI","CVTTSD2SI"
-  ],
-  [
-    ["CVTPS2PI","","",""],["CVTPD2PI","","",""], //Is not allowed to be Vector encoded.
-    "CVTSS2SI","CVTSD2SI"
-  ],
+  ["CVTPI2PS","CVTPI2PD","CVTSI2SS","CVTSI2SD"],
+  [["MOVNTPS","MOVNTPD","MOVNTSS","MOVNTSD"],"???"],
+  ["CVTTPS2PI","CVTTPD2PI","CVTTSS2SI","CVTTSD2SI"],
+  ["CVTPS2PI","CVTPD2PI","CVTSS2SI","CVTSD2SI"],
   ["UCOMISS","UCOMISD","???","???"],
   ["COMISS","COMISD","???","???"],
   "WRMSR","RDTSC","RDMSR","RDPMC",
@@ -441,150 +416,110 @@ const Mnemonics = [
     ["CMOVNP",["KUNPCKBW","","???"],"",""],"",""
   ],
   "CMOVL","CMOVGE","CMOVLE","CMOVG",
-  [
-    "???",
-    [
-      ["MOVMSKPS","MOVMSKPS","",""],["MOVMSKPD","MOVMSKPD","",""],
-      "???","???"
-    ]
-  ],
+  ["???",["MOVMSKPS","MOVMSKPD","???","???"]],
   ["SQRTPS","SQRTPD","SQRTSS","SQRTSD"],
-  [
-    ["RSQRTPS","RSQRTPS","",""],"???",
-    ["RSQRTSS","RSQRTSS","",""],"???"
-  ],
-  [
-    ["RCPPS","RCPPS","",""],"???",
-    ["RCPSS","RCPSS","",""],"???"
-  ],
+  ["RSQRTPS","???","RSQRTSS","???"],
+  ["RCPPS","???","RCPSS","???"],
   ["ANDPS","ANDPD","???","???"],
   ["ANDNPS","ANDNPD","???","???"],
   ["ORPS","ORPD","???","???"],
   ["XORPS","XORPD","???","???"],
-  [
-    ["ADDPS","ADDPS","ADDPS","ADDPS"],
-    ["ADDPD","ADDPD","ADDPD","ADDPD"],
-    "ADDSS","ADDSD"
-  ],
-  [
-    ["MULPS","MULPS","MULPS","MULPS"],
-    ["MULPD","MULPD","MULPD","MULPD"],
-    "MULSS","MULSD"
-  ],
-  [
-    ["CVTPS2PD","CVTPS2PD","CVTPS2PD","CVTPS2PD"],
-    ["CVTPD2PS","CVTPD2PS","CVTPD2PS","CVTPD2PS"],
-    "CVTSS2SD","CVTSD2SS"
-  ],
+  ["ADDPS","ADDPD","ADDSS","ADDSD"],
+  ["MULPS","MULPD","MULSS","MULSD"],
+  ["CVTPS2PD","CVTPD2PS","CVTSS2SD","CVTSD2SS"],
   [["CVTDQ2PS","","CVTQQ2PS"],["CVTPS2DQ","","???"],"CVTTPS2DQ","???"],
-  [
-    ["SUBPS","SUBPS","SUBPS","SUBPS"],
-    ["SUBPD","SUBPD","SUBPD","SUBPD"],
-    "SUBSS","SUBSD"
-  ],
+  ["SUBPS","SUBPD","SUBSS","SUBSD"],
   ["MINPS","MINPD","MINSS","MINSD"],
   ["DIVPS","DIVPD","DIVSS","DIVSD"],
   ["MAXPS","MAXPD","MAXSS","MAXSD"],
-  [["PUNPCKLBW","","",""],"PUNPCKLBW","",""],
-  [["PUNPCKLWD","","",""],"PUNPCKLWD","",""],
-  [["PUNPCKLDQ","","",""],"PUNPCKLDQ","",""],
-  [["PACKSSWB","","",""],"PACKSSWB","",""],
-  [["PCMPGTB","","",""],["PCMPGTB","PCMPGTB","PCMPGTB",""],"",""],
-  [["PCMPGTW","","",""],["PCMPGTW","PCMPGTW","PCMPGTW",""],"",""],
-  [["PCMPGTD","","",""],["PCMPGTD","PCMPGTD",["PCMPGTD","","???"],["PCMPGTD","","???"]],"",""],
-  [["PACKUSWB","","",""],"PACKUSWB","",""],
-  [["PUNPCKHBW","","",""],"PUNPCKHBW","",""],
-  [["PUNPCKHWD","","",""],"PUNPCKHWD","",""],
-  [["PUNPCKHDQ","","",""],["PUNPCKHDQ","","???"],"",""],
-  [["PACKSSDW","","",""],["PACKSSDW","","???"],"",""],
+  ["PUNPCKLBW","PUNPCKLBW","",""],
+  ["PUNPCKLWD","PUNPCKLWD","",""],
+  ["PUNPCKLDQ","PUNPCKLDQ","",""],
+  ["PACKSSWB","PACKSSWB","",""],
+  ["PCMPGTB",["PCMPGTB","","PCMPGTB",""],"",""],
+  ["PCMPGTW",["PCMPGTW","","PCMPGTW",""],"",""],
+  ["PCMPGTD",["PCMPGTD","",["PCMPGTD","","???"],""],"",""],
+  ["PACKUSWB","PACKUSWB","",""],
+  ["PUNPCKHBW","PUNPCKHBW","",""],
+  ["PUNPCKHWD","PUNPCKHWD","",""],
+  ["PUNPCKHDQ",["PUNPCKHDQ","","???"],"",""],
+  ["PACKSSDW",["PACKSSDW","","???"],"",""],
   ["???","PUNPCKLQDQ","???","???"],
   ["???","PUNPCKHQDQ","???","???"],
-  [["MOVD","","",""],"MOVD","",""],
+  ["MOVD","MOVD","",""],
   [
-    ["MOVQ","","",""],
-    ["MOVDQA","MOVDQA",["MOVDQA32","","MOVDQA64"],["MOVDQA32","","MOVDQA64"]],
-    ["MOVDQU","MOVDQU",["MOVDQU32","","MOVDQU64"],""],
-    ["","",["MOVDQU8","","MOVDQU16"],""]
+    "MOVQ",
+    ["MOVDQA","",["MOVDQA32","","MOVDQA64"],""],
+    ["MOVDQU","",["MOVDQU32","","MOVDQU64"],""],
+    ["MOVDQU8","","MOVDQU16"]
   ],
-  [
-    ["PSHUFW","","",""],
-    ["PSHUFD","PSHUFD",["PSHUFD","","???"],["PSHUFD","","???"]],
-    "PSHUFHW",
-    "PSHUFLW"
-  ],
+  ["PSHUFW",["PSHUFD","","???"],"PSHUFHW","PSHUFLW"],
   [
     "???",
     [
       "???","???",
-      [["PSRLW","","",""],"PSRLW","",""],"???",
-      [["PSRAW","","",""],"PSRAW","",""],"???",
-      [["PSLLW","","",""],"PSLLW","",""],"???"
+      ["PSRLW","PSRLW","",""],"???",
+      ["PSRAW","PSRAW","",""],"???",
+      ["PSLLW","PSLLW","",""],"???"
     ]
   ],
   [
-    ["???",["","",["PRORD","","PRORQ"],""],"???","???"],
-    ["???",["","",["PROLD","","PROLQ"],""],"???","???"],
-    [["PSRLD","","",""],["PSRLD","PSRLD",["PSRLD","","???"],["PSRLD","","???"]],"",""],
+    ["???",["PRORD","","PRORQ"],"???","???"],
+    ["???",["PROLD","","PROLQ"],"???","???"],
+    ["PSRLD",["PSRLD","","???"],"",""],
     "???",
-    [["PSRAD","","",""],["PSRAD","PSRAD",["PSRAD","","PSRAQ"],["PSRAD","","???"]],"",""],
+    ["PSRAD",["PSRAD","","PSRAQ"],"",""],
     "???",
-    [["PSLLD","","",""],["PSLLD","PSLLD",["PSLLD","","???"],["PSLLD","","???"]],"",""],
+    ["PSLLD",["PSLLD","","???"],"",""],
     "???"
   ],
   [
     "???",
     [
       "???","???",
-      [["PSRLQ","PSRLQ","",""],"PSRLQ","",""],["???","PSRLDQ","???","???"],
+      ["PSRLQ","PSRLQ","???","???"],["???","PSRLDQ","???","???"],
       "???","???",
-      [["PSLLQ","PSLLQ","",""],"PSLLQ","",""],["???","PSLLDQ","???","???"]
+      ["PSLLQ","PSLLQ","???","???"],["???","PSLLDQ","???","???"]
     ]
   ],
-  [["PCMPEQB","","",""],["PCMPEQB","PCMPEQB","PCMPEQB",""],"",""],
-  [["PCMPEQW","","",""],["PCMPEQW","PCMPEQW","PCMPEQW",""],"",""],
-  [["PCMPEQD","","",""],["PCMPEQD","PCMPEQD",["PCMPEQD","","???"],["PCMPEQD","","???"]],"",""],
+  ["PCMPEQB",["PCMPEQB","","PCMPEQB",""],"",""],
+  ["PCMPEQW",["PCMPEQW","","PCMPEQW",""],"",""],
+  ["PCMPEQD",["PCMPEQD","","???"],"",""],
   [["EMMS",["ZEROUPPER","ZEROALL",""],"",""],"???","???","???"],
   [
     ["VMREAD","",["CVTTPS2UDQ","","CVTTPD2UDQ"],""],
     ["EXTRQ","",["CVTTPS2UQQ","","CVTTPD2UQQ"],""],
-    ["???","","CVTTSS2USI",""],
+    "CVTTSS2USI",
     ["INSERTQ","","CVTTSD2USI",""]
   ],
   [
     ["VMWRITE","",["CVTPS2UDQ","","CVTPD2UDQ"], ""],
     ["EXTRQ","",["CVTPS2UQQ","","CVTPD2UQQ"],""],
-    ["???","","CVTSS2USI",""],
+    "CVTSS2USI",
     ["INSERTQ","","CVTSD2USI",""]
   ],
   [
     "???",
-    ["","",["CVTTPS2QQ","","CVTTPD2QQ"],""],
-    ["","",["CVTUDQ2PD","","CVTUQQ2PD"],"CVTUDQ2PD"],
-    ["","",["CVTUDQ2PS","","CVTUQQ2PS"],""]
+    ["CVTTPS2QQ","","CVTTPD2QQ"],
+    ["CVTUDQ2PD","","CVTUQQ2PD"],
+    ["CVTUDQ2PS","","CVTUQQ2PS"]
   ],
   [
     "???",
-    ["","",["CVTPS2QQ","","CVTPD2QQ"],""],
-    ["","","CVTUSI2SS",""],
-    ["","","CVTUSI2SD",""]
+    ["CVTPS2QQ","","CVTPD2QQ"],
+    "CVTUSI2SS","CVTUSI2SD"
   ],
+  ["???","HADDPD","???","HADDPS"],
+  ["???","HSUBPD","???","HSUBPS"],
+  ["MOVD",["MOVD","","MOVQ"],["MOVQ","","MOVQ"],"???"],
   [
-    "???",["HADDPD","HADDPD","",""],
-    "???",["HADDPS","HADDPS","",""]
-  ],
-  [
-    "???",["HSUBPD","HSUBPD","",""],
-    "???",["HSUBPS","HSUBPS","",""]
-  ],
-  [["MOVD","","",""],["MOVD","","MOVQ"],["MOVQ","MOVQ",["???","","MOVQ"],""],"???"],
-  [
-    ["MOVQ","","",""],
-    ["MOVDQA","MOVDQA",["MOVDQA32","","MOVDQA64"],["MOVDQA32","","MOVDQA64"]],
-    ["MOVDQU","MOVDQU",["MOVDQU32","","MOVDQU64"],""],
-    ["???","",["MOVDQU8","","MOVDQU16"],""]
+    "MOVQ",
+    ["MOVDQA","",["MOVDQA32","","MOVDQA64"],""],
+    ["MOVDQU","",["MOVDQU32","","MOVDQU64"],""],
+    ["MOVDQU8","","MOVDQU16"]
   ],
   "JO","JNO","JB","JAE",
-  [["JE","JKZD","",""],"","",""],[["JNE","JKNZD","",""],"","",""], //K1OM.
+  [["JE","JKZD","",""],"","",""],[["JNE","JKNZD","",""],"","",""],
   "JBE","JA","JS","JNS","JP","JNP","JL","JGE","JLE","JG",
   [
     ["SETO",["KMOVW","","KMOVQ"],"",""],
@@ -633,8 +568,8 @@ const Mnemonics = [
       ["CLFLUSHOPT","CLFLUSH",""]
     ],
     [
-      ["???","???",["RDFSBASE","","",""],"???"],["???","???",["RDGSBASE","","",""],"???"],
-      ["???","???",["WRFSBASE","","",""],"???"],["???","???",["WRGSBASE","","",""],"???"],
+      ["???","???","RDFSBASE","???"],["???","???","RDGSBASE","???"],
+      ["???","???","WRFSBASE","???"],["???","???","WRGSBASE","???"],
       "???",
       ["LFENCE","???","???","???","???","???","???","???"],
       ["MFENCE","???","???","???","???","???","???","???"],
@@ -648,15 +583,11 @@ const Mnemonics = [
   ["LFS","???"],
   ["LGS","???"],
   "MOVZX","MOVZX",
-  [
-    ["JMPE","","",""],"???",
-    ["POPCNT","POPCNT","",""],"???"
-  ],
-  "???",
+  ["JMPE","???","POPCNT","???"],"???",
   ["???","???","???","???","BT","BTS","BTR","BTC"],
   "BTC",
   [
-    ["BSF","","",""],"???",
+    "BSF","???",
     ["TZCNT","TZCNT","",""],["BSF","TZCNTI","",""]
   ],
   [
@@ -665,15 +596,10 @@ const Mnemonics = [
   ],
   "MOVSX","MOVSX",
   "XADD","XADD",
-  [
-    ["CMPPS","CMPPS","CMPPS","CMPPS"],
-    ["CMPPD","CMPPD","CMPPD","CMPPD"],
-    ["CMPSS","CMPSS","CMPSS",""],
-    ["CMPSD","CMPSD","CMPSD",""]
-  ],
+  ["CMPPS","CMPPD","CMPSS","CMPSD"],
   ["MOVNTI","???"],
-  [["PINSRW","","",""],"PINSRW","",""],
-  ["???",[["PEXTRW","","",""],"PEXTRW","",""]],
+  ["PINSRW","PINSRW","",""],
+  ["???",["PEXTRW","PEXTRW","",""]],
   ["SHUFPS","SHUFPD","???","???"],
   [
     [
@@ -693,437 +619,409 @@ const Mnemonics = [
     ]
   ],
   "BSWAP","BSWAP","BSWAP","BSWAP","BSWAP","BSWAP","BSWAP","BSWAP",
-  ["???",["ADDSUBPD","ADDSUBPD","",""],"???",["ADDSUBPS","ADDSUBPS","",""]],
-  [["PSRLW","","",""],"PSRLW","",""],
-  [["PSRLD","","",""],["PSRLD","PSRLD",["PSRLD","","???"],""],"",""],
-  [["PSRLQ","","",""],"PSRLQ","",""],
-  [["PADDQ","","",""],"PADDQ","",""],
-  [["PMULLW","","",""],"PMULLW","",""],
+  ["???","ADDSUBPD","???","ADDSUBPS"],
+  ["PSRLW","PSRLW","",""],
+  ["PSRLD",["PSRLD","","PSRLD"],"",""],
+  ["PSRLQ","PSRLQ","",""],
+  ["PADDQ","PADDQ","",""],
+  ["PMULLW","PMULLW","",""],
   [
     ["???","MOVQ","???","???"],
-    ["???","MOVQ",["MOVQ2DQ","","",""],["MOVDQ2Q","","",""]]
+    ["???","MOVQ","MOVQ2DQ","MOVDQ2Q"]
   ],
-  ["???",[["PMOVMSKB","","",""],["PMOVMSKB","PMOVMSKB","",""],"???","???"]],
-  [["PSUBUSB","","",""],"PSUBUSB","",""],
-  [["PSUBUSW","","",""],"PSUBUSW","",""],
-  [["PMINUB","","",""],"PMINUB","",""],
-  [["PAND","","",""],["PAND","PAND",["PANDD","","PANDQ"],["PANDD","","PANDQ"]],"",""],
-  [["PADDUSB","","",""],"PADDUSB","",""],
-  [["PADDUSW","","",""],"PADDUSW","",""],
-  [["PMAXUB","","",""],"PMAXUB","",""],
-  [["PANDN","","",""],["PANDN","PANDN",["PANDND","","PANDNQ"],["PANDND","","PANDNQ"]],"",""],
-  [["PAVGB","","",""],"PAVGB","",""],
-  [["PSRAW","","",""],"PSRAW","",""],
-  [["PSRAD","","",""],["PSRAD","PSRAD",["PSRAD","","PSRAQ"],""],"",""],
-  [["PAVGW","","",""],"PAVGW","",""],
-  [["PMULHUW","","",""],"PMULHUW","",""],
-  [["PMULHW","","",""],"PMULHW","",""],
-  [
-    "???",
-    ["CVTTPD2DQ","CVTTPD2DQ","CVTTPD2DQ",""],
-    ["CVTDQ2PD","CVTDQ2PD",["CVTDQ2PD","","CVTQQ2PD"],"CVTDQ2PD"],
-    "CVTPD2DQ"
-  ],
-  [[["MOVNTQ","","",""],["MOVNTDQ","","???"],"???","???"],"???"],
-  [["PSUBSB","","",""],"PSUBSB","",""],
-  [["PSUBSW","","",""],"PSUBSW","",""],
-  [["PMINSW","","",""],"PMINSW","",""],
-  [["POR","","",""],["POR","POR",["PORD","","PORQ"],["PORD","","PORQ"]],"",""],
-  [["PADDSB","","",""],"PADDSB","",""],
-  [["PADDSW","","",""],"PADDSW","",""],
-  [["PMAXSW","","",""],"PMAXSW","",""],
-  [["PXOR","","",""],["PXOR","PXOR",["PXORD","","PXORQ"],["PXORD","","PXORQ"]],"",""],
-  [["???","???","???",["LDDQU","LDDQU","",""]],"???"],
-  [["PSLLW","","",""],"PSLLW","",""],
-  [["PSLLD","","",""],["PSLLD","","???"],"",""],
-  [["PSLLQ","","",""],"PSLLQ","",""],
-  [["PMULUDQ","","",""],"PMULUDQ","",""],
-  [["PMADDWD","","",""],"PMADDWD","",""],
-  [["PSADBW","","",""],"PSADBW","",""],
-  ["???",[["MASKMOVQ","","",""],["MASKMOVDQU","MASKMOVDQU","",""],"???","???"]],
-  [["PSUBB","","",""],"PSUBB","",""],
-  [["PSUBW","","",""],"PSUBW","",""],
-  [["PSUBD","","",""],["PSUBD","PSUBD",["PSUBD","","???"],["PSUBD","","???"]],"",""],
-  [["PSUBQ","","",""],"PSUBQ","",""],
-  [["PADDB","","",""],"PADDB","",""],
-  [["PADDW","","",""],"PADDW","",""],
-  [["PADDD","","",""],["PADDD","PADDD",["PADDD","","???"],["PADDD","","???"]],"",""],
+  ["???",["???","PMOVMSKB","???","???"]],
+  ["PSUBUSB","PSUBUSB","",""],
+  ["PSUBUSW","PSUBUSW","",""],
+  ["PMINUB","PMINUB","",""],
+  ["PAND",["PAND","",["PANDD","","PANDQ"],""],"",""],
+  ["PADDUSB","PADDUSB","",""],
+  ["PADDUSW","PADDUSW","",""],
+  ["PMAXUB","PMAXUB","",""],
+  ["PANDN",["PANDN","",["PANDND","","PANDNQ"],""],"",""],
+  ["PAVGB","PAVGB","",""],
+  ["PSRAW","PSRAW","",""],
+  ["PSRAD",["PSRAD","",["PSRAD","","PSRAQ"],""],"",""],
+  ["PAVGW","PAVGW","",""],
+  ["PMULHUW","PMULHUW","",""],
+  ["PMULHW","PMULHW","",""],
+  ["???","CVTTPD2DQ",["CVTDQ2PD","","CVTQQ2PD"],"CVTPD2DQ"],
+  [["MOVNTQ",["MOVNTDQ","","???"],"???","???"],"???"],
+  ["PSUBSB","PSUBSB","",""],
+  ["PSUBSW","PSUBSW","",""],
+  ["PMINSW","PMINSW","",""],
+  ["POR",["POR","",["PORD","","PORQ"],""],"",""],
+  ["PADDSB","PADDSB","",""],
+  ["PADDSW","PADDSW","",""],
+  ["PMAXSW","PMAXSW","",""],
+  ["PXOR",["PXOR","",["PXORD","","PXORQ"],""],"",""],
+  [["???","???","???","LDDQU"],"???"],
+  ["PSLLW","PSLLW","",""],
+  ["PSLLD",["PSLLD","","???"],"",""],
+  ["PSLLQ","PSLLQ","",""],
+  ["PMULUDQ","PMULUDQ","",""],
+  ["PMADDWD","PMADDWD","",""],
+  ["PSADBW","PSADBW","",""],
+  ["???",["MASKMOVQ","MASKMOVDQU","???","???"]],
+  ["PSUBB","PSUBB","",""],
+  ["PSUBW","PSUBW","",""],
+  ["PSUBD",["PSUBD","","PSUBD"],"",""],
+  ["PSUBQ","PSUBQ","",""],
+  ["PADDB","PADDB","",""],
+  ["PADDW","PADDW","",""],
+  ["PADDD",["PADDD","","PADDD"],"",""],
   "???",
   /*------------------------------------------------------------------------------------------------------------------------
   Three Byte operations 0F38. Opcodes plus 512 goes to 767 used by escape codes "0F,38", Or
   set directly by adding map bits "10" because "10 00000000" bin = 512 plus opcode.
   ------------------------------------------------------------------------------------------------------------------------*/
-  [["PSHUFB","","",""],"PSHUFB","???","???"],
-  [["PHADDW","","",""],["PHADDW","PHADDW","",""],"???","???"],
-  [["PHADDD","","",""],["PHADDD","PHADDD","",""],"???","???"],
-  [["PHADDSW","","",""],["PHADDSW","PHADDSW","",""],"???","???"],
-  [["PMADDUBSW","","",""],"PMADDUBSW","???","???"],
-  [["PHSUBW","","",""],["PHSUBW","PHSUBW","",""],"???","???"],
-  [["PHSUBD","","",""],["PHSUBD","PHSUBD","",""],"???","???"],
-  [["PHSUBSW","","",""],["PHSUBSW","PHSUBSW","",""],"???","???"],
-  [["PSIGNB","","",""],["PSIGNB","PSIGNB","",""],"???","???"],
-  [["PSIGNW","","",""],["PSIGNW","PSIGNW","",""],"???","???"],
-  [["PSIGND","","",""],["PSIGND","PSIGND","",""],"???","???"],
-  [["PMULHRSW","","",""],"PMULHRSW","???","???"],
-  ["???",["","PERMILPS",["PERMILPS","","???"],""],"???","???"],
-  ["???",["","PERMILPD","PERMILPD",""],"???","???"],
-  ["???",["","TESTPS","",""],"???","???"],
-  ["???",["","TESTPD","",""],"???","???"],
-  ["???",["PBLENDVB","PBLENDVB","PSRLVW",""],["","","PMOVUSWB",""],"???"],
-  ["???",["","","PSRAVW",""],["","","PMOVUSDB",""],"???"],
-  ["???",["","","PSLLVW",""],["","","PMOVUSQB",""],"???"],
-  ["???",["","CVTPH2PS",["CVTPH2PS","","???"],""],["","","PMOVUSDW",""],"???"],
-  ["???",["BLENDVPS","BLENDVPS",["PRORVD","","PRORVQ"],""],["","","PMOVUSQW",""],"???"],
-  ["???",["BLENDVPD","BLENDVPD",["PROLVD","","PROLVQ"],""],["","","PMOVUSQD",""],"???"],
-  ["???",["","PERMPS",["PERMPS","","PERMPD"],""],"???","???"],
-  ["???",["PTEST","PTEST","",""],"???","???"],
-  ["???",["","BROADCASTSS",["BROADCASTSS","","???"],["BROADCASTSS","","???"]],"???","???"],
-  ["???",["","BROADCASTSD",["BROADCASTF32X2","","BROADCASTSD"],["???","","BROADCASTSD"]],"???","???"],
-  ["???",["","BROADCASTF128",["BROADCASTF32X4","","BROADCASTF64X2"],["BROADCASTF32X4","","???"]],"???","???"],
-  ["???",["","",["BROADCASTF32X8","","BROADCASTF64X4"],["???","","BROADCASTF64X4"]],"???","???"],
-  [["PABSB","","",""],"PABSB","???","???"],
-  [["PABSW","","",""],"PABSW","???","???"],
-  [["PABSD","","",""],["PABSD","","???"],"???","???"],
-  ["???",["","","PABSQ",""],"???","???"],
-  ["???","PMOVSXBW",["","","PMOVSWB",""],"???"],
-  ["???","PMOVSXBD",["","","PMOVSDB",""],"???"],
-  ["???","PMOVSXBQ",["","","PMOVSQB",""],"???"],
-  ["???","PMOVSXWD",["","","PMOVSDW",""],"???"],
-  ["???","PMOVSXWQ",["","","PMOVSQW",""],"???"],
-  ["???","PMOVSXDQ",["","","PMOVSQD",""],"???"],
-  ["???",["","",["PTESTMB","","PTESTMW"],""],["","",["PTESTNMB","","PTESTNMW"],""],"???"],
-  ["???",["","",["PTESTMD","","PTESTMQ"],["PTESTMD","","???"]],["","",["PTESTNMD","","PTESTNMQ"],""],"???"],
-  ["???","PMULDQ",["","",["PMOVM2B","","PMOVM2W"],""],"???"],
-  ["???",["PCMPEQQ","PCMPEQQ","PCMPEQQ",""],["","",["PMOVB2M","","PMOVW2M"],""],"???"],
-  [["???",["MOVNTDQA","","???"],"???","???"],["???","???",["","",["???","","PBROADCASTMB2Q"],""],"???"]],
+  ["PSHUFB","PSHUFB","???","???"],
+  ["PHADDW","PHADDW","???","???"],
+  ["PHADDD","PHADDD","???","???"],
+  ["PHADDSW","PHADDSW","???","???"],
+  ["PMADDUBSW","PMADDUBSW","???","???"],
+  ["PHSUBW","PHSUBW","???","???"],
+  ["PHSUBD","PHSUBD","???","???"],
+  ["PHSUBSW","PHSUBSW","???","???"],
+  ["PSIGNB","PSIGNB","???","???"],
+  ["PSIGNW","PSIGNW","???","???"],
+  ["PSIGND","PSIGND","???","???"],
+  ["PMULHRSW","PMULHRSW","???","???"],
+  ["???",["PERMILPS","","PERMILPS"],"???","???"],
+  ["???","PERMILPD","???","???"],
+  ["???","TESTPS","???","???"],
+  ["???","TESTPD","???","???"],
+  ["???",["PBLENDVB","PBLENDVB","PSRLVW",""],"PMOVUSWB","???"],
+  ["???","PSRAVW","PMOVUSDB","???"],
+  ["???","PSLLVW","PMOVUSQB","???"],
+  ["???",["CVTPH2PS","","???"],"PMOVUSDW","???"],
+  ["???",["BLENDVPS","BLENDVPS",["PRORVD","","PRORVQ"],""],"PMOVUSQW","???"],
+  ["???",["BLENDVPD","BLENDVPD",["PROLVD","","PROLVQ"],""],"PMOVUSQD","???"],
+  ["???",["PERMPS","","PERMPD"],"???","???"],
+  ["???","PTEST","???","???"],
+  ["???",["BROADCASTSS","","???"],"???","???"],
+  ["???",["BROADCASTF32X2","","BROADCASTSD"],"???","???"],
+  ["???",["BROADCASTF128","",["BROADCASTF32X4","","BROADCASTF64X2"],""],"???","???"],
+  ["???",["BROADCASTF32X8","","BROADCASTF64X4"],"???","???"],
+  ["PABSB","PABSB","???","???"],
+  ["PABSW","PABSW","???","???"],
+  ["PABSD",["PABSD","","???"],"???","???"],
+  ["???","PABSQ","???","???"],
+  ["???","PMOVSXBW","PMOVSWB","???"],
+  ["???","PMOVSXBD","PMOVSDB","???"],
+  ["???","PMOVSXBQ","PMOVSQB","???"],
+  ["???","PMOVSXWD","PMOVSDW","???"],
+  ["???","PMOVSXWQ","PMOVSQW","???"],
+  ["???","PMOVSXDQ","PMOVSQD","???"],
+  ["???",["PTESTMB","","PTESTMW"],["PTESTNMB","","PTESTNMW"],"???"],
+  ["???",["PTESTMD","","PTESTMQ"],["PTESTNMD","","PTESTNMQ"],"???"],
+  ["???","PMULDQ",["PMOVM2B","","PMOVM2W"],"???"],
+  ["???",["PCMPEQQ","","PCMPEQQ",""],["PMOVB2M","","PMOVW2M"],"???"],
+  [["???",["MOVNTDQA","","???"],["???","","PBROADCASTMB2Q"],"???"],"???"],
   ["???",["PACKUSDW","","???"],"???","???"],
-  ["???",["","MASKMOVPS",["SCALEFPS","","SCALEFPD"],""],"???","???"],
-  ["???",["","MASKMOVPD",["SCALEFSS","","SCALEFSD"],""],"???","???"],
-  ["???",["","MASKMOVPS","",""],"???","???"],
-  ["???",["","MASKMOVPD","",""],"???","???"],
-  ["???","PMOVZXBW",["","","PMOVWB",""],"???"],
-  ["???","PMOVZXBD",["","","PMOVDB",""],"???"],
-  ["???","PMOVZXBQ",["","","PMOVQB",""],"???"],
-  ["???","PMOVZXWD",["","","PMOVDW",""],"???"],
-  ["???","PMOVZXWQ",["","","PMOVQW",""],"???"],
-  ["???","PMOVZXDQ",["","","PMOVQD",""],"???"],
-  ["???",["","PERMD",["PERMD","","PERMQ"],["PERMD","","???"]],"???","???"],
-  ["???",["PCMPGTQ","PCMPGTQ","PCMPGTQ",""],"???","???"],
-  ["???","PMINSB",["","",["PMOVM2D","","PMOVM2Q"],""],"???"],
-  ["???",["PMINSD","PMINSD",["PMINSD","","PMINSQ"],["PMINSD","","???"]],["","",["PMOVD2M","","PMOVQ2M"],""],"???"],
-  ["???","PMINUW",["","","PBROADCASTMW2D",""],"???"],
-  ["???",["PMINUD","PMINUD",["PMINUD","","PMINUQ"],["PMINUD","","???"]],"???","???"],
+  ["???",["MASKMOVPS","",["SCALEFPS","","SCALEFPD"],""],"???","???"],
+  ["???",["MASKMOVPD","",["SCALEFSS","","SCALEFSD"],""],"???","???"],
+  ["???","MASKMOVPS","???","???"],
+  ["???","MASKMOVPD","???","???"],
+  ["???","PMOVZXBW","PMOVWB","???"],
+  ["???","PMOVZXBD","PMOVDB","???"],
+  ["???","PMOVZXBQ","PMOVQB","???"],
+  ["???","PMOVZXWD","PMOVDW","???"],
+  ["???","PMOVZXWQ","PMOVQW","???"],
+  ["???","PMOVZXDQ","PMOVQD","???"],
+  ["???",["PERMD","","PERMQ"],"???","???"],
+  ["???",["PCMPGTQ","","PCMPGTQ",""],"???","???"],
+  ["???","PMINSB",["PMOVM2D","","PMOVM2Q"],"???"],
+  ["???",["PMINSD","","PMINSQ"],["PMOVD2M","","PMOVQ2M"],"???"],
+  ["???","PMINUW","PBROADCASTMW2D","???"],
+  ["???",["PMINUD","","PMINUQ"],"???","???"],
   ["???","PMAXSB","???","???"],
-  ["???",["PMAXSD","PMAXSD",["PMAXSD","","PMAXSQ"],["PMAXSD","","???"]],"???","???"],
+  ["???",["PMAXSD","","PMAXSQ"],"???","???"],
   ["???","PMAXUW","???","???"],
-  ["???",["PMAXUD","PMAXUD",["PMAXUD","","PMAXUQ"],["PMAXUD","","???"]],"???","???"],
-  ["???",["PMULLD","PMULLD",["PMULLD","","PMULLQ"],["PMULLD","",""]],"???","???"],
-  ["???",["PHMINPOSUW",["PHMINPOSUW","PHMINPOSUW",""],"",""],"???","???"],
-  ["???",["","",["GETEXPPS","","GETEXPPD"],["GETEXPPS","","GETEXPPD"]],"???","???"],
-  ["???",["","",["GETEXPSS","","GETEXPSD"],""],"???","???"],
-  ["???",["","",["PLZCNTD","","PLZCNTQ"],""],"???","???"],
-  ["???",["",["PSRLVD","","PSRLVQ"],["PSRLVD","","PSRLVQ"],["PSRLVD","","???"]],"???","???"],
-  ["???",["",["PSRAVD","",""],["PSRAVD","","PSRAVQ"],["PSRAVD","","???"]],"???","???"],
-  ["???",["",["PSLLVD","","PSLLVQ"],["PSLLVD","","PSLLVQ"],["PSLLVD","","???"]],"???","???"],
+  ["???",["PMAXUD","","PMAXUQ"],"???","???"],
+  ["???",["PMULLD","","PMULLQ"],"???","???"],
+  ["???",["PHMINPOSUW","PHMINPOSUW",""],"???","???"],
+  ["???",["GETEXPPS","","GETEXPPD"],"???","???"],
+  ["???",["GETEXPSS","","GETEXPSD"],"???","???"],
+  ["???",["PLZCNTD","","PLZCNTQ"],"???","???"],
+  ["???",["PSRLVD","","PSRLVQ"],"???","???"],
+  ["???",["PSRAVD","","PSRAVQ"],"???","???"],
+  ["???",["PSLLVD","","PSLLVQ"],"???","???"],
   "???","???","???","???",
-  ["???",["","",["RCP14PS","","RCP14PD"],""],"???","???"],
-  ["???",["","",["RCP14SS","","RCP14SD"],""],"???","???"],
-  ["???",["","",["RSQRT14PS","","RSQRT14PD"],""],"???","???"],
-  ["???",["","",["RSQRT14SS","","RSQRT14SD"],""],"???","???"],
-  ["???",["","","",["ADDNPS","","ADDNPD"]],"???","???"],
-  ["???",["","","",["GMAXABSPS","","???"]],"???","???"],
-  ["???",["","","",["GMINPS","","GMINPD"]],"???","???"],
-  ["???",["","","",["GMAXPS","","GMAXPD"]],"???","???"],
+  ["???",["RCP14PS","","RCP14PD"],"???","???"],
+  ["???",["RCP14SS","","RCP14SD"],"???","???"],
+  ["???",["RSQRT14PS","","RSQRT14PD"],"???","???"],
+  ["???",["RSQRT14SS","","RSQRT14SD"],"???","???"],
+  ["???",["ADDNPS","","ADDNPD"],"???","???"],
+  ["???",["GMAXABSPS","","???"],"???","???"],
+  ["???",["GMINPS","","GMINPD"],"???","???"],
+  ["???",["GMAXPS","","GMAXPD"],"???","???"],
   "",
-  ["",["","","",["FIXUPNANPS","","FIXUPNANPD"]],"",""],
+  ["",["FIXUPNANPS","","FIXUPNANPD"],"",""],
   "","",
-  ["???",["","PBROADCASTD",["PBROADCASTD","","???"],["PBROADCASTD","","???"]],"???","???"],
-  ["???",["","PBROADCASTQ",["BROADCASTI32X2","","PBROADCASTQ"],["???","","PBROADCASTQ"]],"???","???"],
-  ["???",["","BROADCASTI128",["BROADCASTI32X4","","BROADCASTI64X2"],["BROADCASTI32X4","","???"]],"???","???"],
-  ["???",["","",["BROADCASTI32X8","","BROADCASTI64X4"],["???","","BROADCASTI64X4"]],"???","???"],
-  ["???",["","","",["PADCD","","???"]],"???","???"],
-  ["???",["","","",["PADDSETCD","","???"]],"???","???"],
-  ["???",["","","",["PSBBD","","???"]],"???","???"],
-  ["???",["","","",["PSUBSETBD","","???"]],"???","???"],
+  ["???",["PBROADCASTD","","???"],"???","???"],
+  ["???",["BROADCASTI32X2","","PBROADCASTQ"],"???","???"],
+  ["???",["BROADCASTI128","",["BROADCASTI32X4","","BROADCASTI64X2"],""],"???","???"],
+  ["???",["BROADCASTI32X8","","BROADCASTI64X4"],"???","???"],
+  ["???",["PADCD","","???"],"???","???"],
+  ["???",["PADDSETCD","","???"],"???","???"],
+  ["???",["PSBBD","","???"],"???","???"],
+  ["???",["PSUBSETBD","","???"],"???","???"],
   "???","???","???","???",
-  ["???",["","",["PBLENDMD","","PBLENDMQ"],["PBLENDMD","","PBLENDMQ"]],"???","???"],
-  ["???",["","",["BLENDMPS","","BLENDMPD"],["BLENDMPS","","BLENDMPD"]],"???","???"],
-  ["???",["","",["PBLENDMB","","PBLENDMW"],""],"???","???"],
+  ["???",["PBLENDMD","","PBLENDMQ"],"???","???"],
+  ["???",["BLENDMPS","","BLENDMPD"],"???","???"],
+  ["???",["PBLENDMB","","PBLENDMW"],"???","???"],
   "???","???","???","???","???",
-  ["???",["","","",["PSUBRD","","???"]],"???","???"],
-  ["???",["","","",["SUBRPS","","SUBRPD"]],"???","???"],
-  ["???",["","","",["PSBBRD","","???"]],"???","???"],
-  ["???",["","","",["PSUBRSETBD","","???"]],"???","???"],
+  ["???",["PSUBRD","","???"],"???","???"],
+  ["???",["SUBRPS","","SUBRPD"],"???","???"],
+  ["???",["PSBBRD","","???"],"???","???"],
+  ["???",["PSUBRSETBD","","???"],"???","???"],
   "???","???","???","???",
-  ["???",["","","",["PCMPLTD","","???"]],"???","???"],
-  ["???",["","",["PERMI2B","","PERMI2W"],""],"???","???"],
-  ["???",["","",["PERMI2D","","PERMI2Q"],""],"???","???"],
-  ["???",["","",["PERMI2PS","","PERMI2PD"],""],"???","???"],
-  ["???",["","PBROADCASTB",["PBROADCASTB","","???"],""],"???","???"],
-  ["???",["","PBROADCASTW",["PBROADCASTW","","???"],""],"???","???"],
-  ["???",["???",["","",["PBROADCASTB","","???"],""],"???","???"]],
-  ["???",["???",["","",["PBROADCASTW","","???"],""],"???","???"]],
-  ["???",["","",["PBROADCASTD","","PBROADCASTQ"],""],"???","???"],
-  ["???",["","",["PERMT2B","","PERMTW"],""],"???","???"],
-  ["???",["","",["PERMT2D","","PERMT2Q"],""],"???","???"],
-  ["???",["","",["PERMT2PS","","PERMT2PD"],""],"???","???"],
+  ["???",["PCMPLTD","","???"],"???","???"],
+  ["???",["PERMI2B","","PERMI2W"],"???","???"],
+  ["???",["PERMI2D","","PERMI2Q"],"???","???"],
+  ["???",["PERMI2PS","","PERMI2PD"],"???","???"],
+  ["???",["PBROADCASTB","","PBROADCASTB"],"???","???"],
+  ["???",["PBROADCASTW","","PBROADCASTW"],"???","???"],
+  ["???",["???",["PBROADCASTB","","???"],"???","???"]],
+  ["???",["???",["PBROADCASTW","","???"],"???","???"]],
+  ["???",["PBROADCASTD","","PBROADCASTQ"],"???","???"],
+  ["???",["PERMT2B","","PERMTW"],"???","???"],
+  ["???",["PERMT2D","","PERMT2Q"],"???","???"],
+  ["???",["PERMT2PS","","PERMT2PD"],"???","???"],
   [["???","INVEPT","???","???"],"???"],
   [["???","INVVPID","???","???"],"???"],
   [["???","INVPCID","???","???"],"???"],
-  ["???",["???","???","PMULTISHIFTQB","???"],"???","???"],
-  ["???",["","","",["SCALEPS","","???"]],"???","???"],
+  ["???","PMULTISHIFTQB","???","???"],
+  ["???",["SCALEPS","","???"],"???","???"],
   "???",
-  ["???",["","","",["PMULHUD","","???"]],"???","???"],
-  ["???",["","","",["PMULHD","","???"]],"???","???"],
-  ["???",["","",["EXPANDPS","","EXPANDPD"],""],"???","???"],
-  ["???",["","",["PEXPANDD","","PEXPANDQ"],""],"???","???"],
-  ["???",["","",["COMPRESSPS","","COMPRESSPD"],""],"???","???"],
-  ["???",["","",["PCOMPRESSD","","PCOMPRESSQ"],""],"???","???"],
+  ["???",["PMULHUD","","???"],"???","???"],
+  ["???",["PMULHD","","???"],"???","???"],
+  ["???",["EXPANDPS","","EXPANDPD"],"???","???"],
+  ["???",["PEXPANDD","","PEXPANDQ"],"???","???"],
+  ["???",["COMPRESSPS","","COMPRESSPD"],"???","???"],
+  ["???",["PCOMPRESSD","","PCOMPRESSQ"],"???","???"],
   "???",
-  ["???",["","",["PERMB","","PERMW"],""],"???","???"],
+  ["???",["PERMB","","PERMW"],"???","???"],
   "???","???",
-  ["???",["",["PGATHERDD","","PGATHERDQ"],["PGATHERDD","","PGATHERDQ"],["PGATHERDD","","PGATHERDQ"]],"???","???"],
-  ["???",["",["PGATHERQD","","PGATHERQQ"],["PGATHERQD","","PGATHERQQ"],""],"???","???"],
-  ["???",["",["GATHERDPS","","GATHERDPD"],["GATHERDPS","","GATHERDPD"],["GATHERDPS","","GATHERDPD"]],"???","???"],
-  ["???",["",["GATHERQPS","","GATHERQPD"],["GATHERQPS","","GATHERQPD"],""],"???","???"],
+  ["???",[["PGATHERDD","","PGATHERDQ"],"",["PGATHERDD","","PGATHERDQ"],""],"???","???"],
+  ["???",[["PGATHERQD","","PGATHERQQ"],"",["PGATHERQD","","PGATHERQQ"],""],"???","???"],
+  ["???",[["GATHERDPS","","GATHERDPD"],"",["GATHERDPS","","GATHERDPD"],""],"???","???"],
+  ["???",[["GATHERQPS","","GATHERQPD"],"",["GATHERQPS","","GATHERQPD"],""],"???","???"],
   "???","???",
-  ["???",["",["FMADDSUB132PS","","FMADDSUB132PD"],["FMADDSUB132PS","","FMADDSUB132PD"],""],"???","???"],
-  ["???",["",["FMSUBADD132PS","","FMSUBADD132PD"],["FMSUBADD132PS","","FMSUBADD132PD"],""],"???","???"],
-  ["???",["",["FMADD132PS","","FMADD132PD"],["FMADD132PS","","FMADD132PD"],["FMADD132PS","","FMADD132PD"]],"???","???"],
-  ["???",["",["FMADD132SS","","FMADD132SD"],["FMADD132SS","","FMADD132SD"],""],"???","???"],
-  ["???",["",["FMSUB132PS","","FMSUB132PD"],["FMSUB132PS","","FMSUB132PD"],["FMSUB132PS","","FMSUB132PD"]],"???","???"],
-  ["???",["",["FMSUB132SS","","FMSUB132SD"],["FMSUB132SS","","FMSUB132SD"],""],"???","???"],
-  ["???",["",["FNMADD132PS","","FNMADD132PD"],["FNMADD132PS","","FNMADD132PD"],["NMADD132PS","","FNMADD132PD"]],"???","???"],
-  ["???",["",["FNMADD132SS","","FNMADD132SD"],["FNMADD132SS","","FNMADD132SD"],""],"???","???"],
-  ["???",["",["FNMSUB132PS","","FNMSUB132PD"],["FNMSUB132PS","","FNMSUB132PD"],["FNMSUB132PS","","FNMSUB132PS"]],"???","???"],
-  ["???",["",["FNMSUB132SS","","FNMSUB132SD"],["FNMSUB132SS","","FNMSUB132SD"],""],"???","???"],
-  ["???",["","",["PSCATTERDD","","PSCATTERDQ"],["PSCATTERDD","","PSCATTERDQ"]],"???","???"],
-  ["???",["","",["PSCATTERQD","","PSCATTERQQ"],""],"???","???"],
-  ["???",["","",["SCATTERDPS","","SCATTERDPD"],["SCATTERDPS","","SCATTERDPD"]],"???","???"],
-  ["???",["","",["SCATTERQPS","","SCATTERQPD"],""],"???","???"],
-  ["???",["","","",["FMADD233PS","","???"]],"???","???"],
+  ["???",["FMADDSUB132PS","","FMADDSUB132PD"],"???","???"],
+  ["???",["FMSUBADD132PS","","FMSUBADD132PD"],"???","???"],
+  ["???",["FMADD132PS","","FMADD132PD"],"???","???"],
+  ["???",["FMADD132SS","","FMADD132SD"],"???","???"],
+  ["???",["FMSUB132PS","","FMSUB132PD"],"???","???"],
+  ["???",["FMSUB132SS","","FMSUB132SD"],"???","???"],
+  ["???",["NMADD132PS","","FNMADD132PD"],"???","???"],
+  ["???",["FNMADD132SS","","FNMADD132SD"],"???","???"],
+  ["???",["FNMSUB132PS","","FNMSUB132PS"],"???","???"],
+  ["???",["FNMSUB132SS","","FNMSUB132SD"],"???","???"],
+  ["???",["PSCATTERDD","","PSCATTERDQ"],"???","???"],
+  ["???",["PSCATTERQD","","PSCATTERQQ"],"???","???"],
+  ["???",["SCATTERDPS","","SCATTERDPD"],"???","???"],
+  ["???",["SCATTERQPS","","SCATTERQPD"],"???","???"],
+  ["???",["FMADD233PS","","???"],"???","???"],
   "???",
-  ["???",["",["FMADDSUB213PS","","FMADDSUB213PD"],["FMADDSUB213PS","","FMADDSUB213PD"],""],"???","???"],
-  ["???",["",["FMSUBADD213PS","","FMSUBADD213PD"],["FMSUBADD213PS","","FMSUBADD213PD"],""],"???","???"],
-  ["???",["",["FMADD213PS","","FMADD213PD"],["FMADD213PS","","FMADD213PD"],["FMADD213PS","","FMADD213PD"]],"???","???"],
-  ["???",["",["FMADD213SS","","FMADD213SD"],["FMADD213SS","","FMADD213SD"],""],"???","???"],
-  ["???",["",["FMSUB213PS","","FMSUB213PD"],["FMSUB213PS","","FMSUB213PD"],["FMSUB213PS","","FMSUB213PD"]],"???","???"],
-  ["???",["",["FMSUB213SS","","FMSUB213SD"],["FMSUB213SS","","FMSUB213SD"],""],"???","???"],
-  ["???",["",["FNMADD213PS","","FNMADD213PD"],["FNMADD213PS","","FNMADD213PD"],["FNMADD213PS","","FNMADD213PD"]],"???","???"],
-  ["???",["",["FNMADD213SS","","FNMADD213SD"],["FNMADD213SS","","FNMADD213SD"],""],"???","???"],
-  ["???",["",["FNMSUB213PS","","FNMSUB213PD"],["FNMSUB213PS","","FNMSUB213PD"],["FNMSUB213PS","","FNMSUB213PD"]],"???","???"],
-  ["???",["",["FNMSUB213SS","","FNMSUB213SD"],["FNMSUB213SS","","FNMSUB213SD"],""],"???","???"],
+  ["???",["FMADDSUB213PS","","FMADDSUB213PD"],"???","???"],
+  ["???",["FMSUBADD213PS","","FMSUBADD213PD"],"???","???"],
+  ["???",["FMADD213PS","","FMADD213PD"],"???","???"],
+  ["???",["FMADD213SS","","FMADD213SD"],"???","???"],
+  ["???",["FMSUB213PS","","FMSUB213PD"],"???","???"],
+  ["???",["FMSUB213SS","","FMSUB213SD"],"???","???"],
+  ["???",["FNMADD213PS","","FNMADD213PD"],"???","???"],
+  ["???",["FNMADD213SS","","FNMADD213SD"],"???","???"],
+  ["???",["FNMSUB213PS","","FNMSUB213PD"],"???","???"],
+  ["???",["FNMSUB213SS","","FNMSUB213SD"],"???","???"],
   "???","???","???","???",
-  ["???",["","","PMADD52LUQ",["PMADD233D","","???"]],"???","???"],
-  ["???",["","","PMADD52HUQ",["PMADD231D","","???"]],"???","???"],
-  ["???",["",["FMADDSUB231PS","","FMADDSUB231PD"],["FMADDSUB231PS","","FMADDSUB231PD"],""],"???","???"],
-  ["???",["",["FMSUBADD231PS","","FMSUBADD231PD"],["FMSUBADD231PS","","FMSUBADD231PD"],""],"???","???"],
-  ["???",["",["FMADD231PS","","FMADD231PD"],["FMADD231PS","","FMADD231PD"],["FMADD231PS","","FMADD231PD"]],"???","???"],
-  ["???",["",["FMADD231SS","","FMADD231SD"],["FMADD231SS","","FMADD231SD"],""],"???","???"],
-  ["???",["",["FMSUB231PS","","FMSUB231PD"],["FMSUB231PS","","FMSUB231PD"],["FMSUB231PS","","FMSUB231PD"]],"???","???"],
-  ["???",["",["FMSUB231SS","","FMSUB231SD"],["FMSUB231SS","","FMSUB231SD"],""],"???","???"],
-  ["???",["",["FNMADD231PS","","FNMADD231PD"],["FNMADD231PS","","FNMADD231PD"],["FNMADD231PS","","FNMADD231PD"]],"???","???"],
-  ["???",["",["FNMADD231SS","","FNMADD231SD"],["FNMADD231SS","","FNMADD231SD"],""],"???","???"],
-  ["???",["",["FNMSUB231PS","","FNMSUB231PD"],["FNMSUB231PS","","FNMSUB231PD"],["FNMSUB231PS","","FNMSUB231PD"]],"???","???"],
-  ["???",["",["FNMSUB231SS","","FNMSUB231SD"],["FNMSUB231SS","","FNMSUB231SD"],""],"???","???"],
+  ["???",["PMADD233D","","PMADD52LUQ"],"???","???"],
+  ["???",["PMADD231D","","PMADD52HUQ"],"???","???"],
+  ["???",["FMADDSUB231PS","","FMADDSUB231PD"],"???","???"],
+  ["???",["FMSUBADD231PS","","FMSUBADD231PD"],"???","???"],
+  ["???",["FMADD231PS","","FMADD231PD"],"???","???"],
+  ["???",["FMADD231SS","","FMADD231SD"],"???","???"],
+  ["???",["FMSUB231PS","","FMSUB231PD"],"???","???"],
+  ["???",["FMSUB231SS","","FMSUB231SD"],"???","???"],
+  ["???",["FNMADD231PS","","FNMADD231PD"],"???","???"],
+  ["???",["FNMADD231SS","","FNMADD231SD"],"???","???"],
+  ["???",["FNMSUB231PS","","FNMSUB231PD"],"???","???"],
+  ["???",["FNMSUB231SS","","FNMSUB231SD"],"???","???"],
   "???","???","???","???",
-  ["???",["","",["PCONFLICTD","","PCONFLICTQ"],""],"???","???"],
+  ["???",["PCONFLICTD","","PCONFLICTQ"],"???","???"],
   "???",
   [
     [
       "???",
-      ["???",["","",["GATHERPF0DPS","","GATHERPF0DPD"],""],"???","???"],
-      ["???",["","",["GATHERPF1DPS","","GATHERPF1DPD"],""],"???","???"],
+      ["???",["GATHERPF0DPS","","GATHERPF0DPD"],"???","???"],
+      ["???",["GATHERPF1DPS","","GATHERPF1DPD"],"???","???"],
       "???","???",
-      ["???",["","",["SCATTERPF0DPS","","SCATTERPF0DPD"],""],"???","???"],
-      ["???",["","",["SCATTERPF1DPS","","SCATTERPF1DPD"],""],"???","???"],
+      ["???",["SCATTERPF0DPS","","SCATTERPF0DPD"],"???","???"],
+      ["???",["SCATTERPF1DPS","","SCATTERPF1DPD"],"???","???"],
       "???"
     ],"???"
   ],
   [
     [
       "???",
-      ["???",["","",["GATHERPF0QPS","","GATHERPF0QPD"],""],"???","???"],
-      ["???",["","",["GATHERPF1QPS","","GATHERPF1QPD"],""],"???","???"],
+      ["???",["GATHERPF0QPS","","GATHERPF0QPD"],"???","???"],
+      ["???",["GATHERPF1QPS","","GATHERPF1QPD"],"???","???"],
       "???","???",
-      ["???",["","",["SCATTERPF0QPS","","SCATTERPF0QPD"],""],"???","???"],
-      ["???",["","",["SCATTERPF1QPS","","SCATTERPF1QPD"],""],"???","???"],
+      ["???",["SCATTERPF0QPS","","SCATTERPF0QPD"],"???","???"],
+      ["???",["SCATTERPF1QPS","","SCATTERPF1QPD"],"???","???"],
       "???"
     ],"???"
   ],
-  [["SHA1NEXTE","","",""],["","",["EXP2PS","","EXP2PD"],["EXP223PS","","???"]],"???","???"],
-  [["SHA1MSG1","","",""],["","","",["LOG2PS","","???"]],"???","???"],
-  [["SHA1MSG2","","",""],["","",["RCP28PS","","RCP28PD"],["RCP23PS","","???"]],"???","???"],
-  [["SHA256RNDS2","","",""],["","",["RCP28SS","","RCP28SD"],["RSQRT23PS","","???"]],"???","???"],
-  [["SHA256MSG1","","",""],["","",["RSQRT28PS","","RSQRT28PD"],["ADDSETSPS","","???"]],"???","???"],
-  [["SHA256MSG2","","",""],["","",["RSQRT28SS","","RSQRT28SD"],["PADDSETSD","","???"]],"???","???"],
+  ["SHA1NEXTE",["???","???",["EXP2PS","","EXP2PD"],["EXP223PS","","???"]],"???","???"],
+  ["SHA1MSG1",["LOG2PS","","LOG2PD"],"???","???"],
+  ["SHA1MSG2",["RCP28PS","","RCP28PD"],"???","???"],
+  ["SHA256RNDS2",["???","???",["RCP28SS","","RCP28SD"],["RSQRT23PS","","???"]],"???","???"],
+  ["SHA256MSG1",["???","???",["RSQRT28PS","","RSQRT28PD"],["ADDSETSPS","","???"]],"???","???"],
+  ["SHA256MSG2",["???","???",["RSQRT28SS","","RSQRT28SD"],["PADDSETSD","","???"]],"???","???"],
   "???","???",
-  [[["","","",["LOADUNPACKLD","","LOADUNPACKLQ"]],["","","",["PACKSTORELD","","PACKSTORELQ"]],"???","???"],"???"],
-  [[["","","",["LOADUNPACKLPS","","LOADUNPACKLPD"]],["","","",["PACKSTORELPS","","PACKSTORELPD"]],"???","???"],"???"],
+  [[["LOADUNPACKLD","","LOADUNPACKLQ"],["PACKSTORELD","","PACKSTORELQ"],"???","???"],"???"],
+  [[["LOADUNPACKLPS","","LOADUNPACKLPD"],["PACKSTORELPS","","PACKSTORELPD"],"???","???"],"???"],
   "???","???",
-  [[["","","",["LOADUNPACKHD","","LOADUNPACKHQ"]],["","","",["PACKSTOREHD","","PACKSTOREHQ"]],"???","???"],"???"],
-  [[["","","",["VLOADUNPACKHPS","","VLOADUNPACKHPD"]],["","","",["VPACKSTOREHPS","","VPACKSTOREHP"]],"???","???"],"???"],
+  [[["LOADUNPACKHD","","LOADUNPACKHQ"],["PACKSTOREHD","","PACKSTOREHQ"],"???","???"],"???"],
+  [[["VLOADUNPACKHPS","","VLOADUNPACKHPD"],["VPACKSTOREHPS","","VPACKSTOREHP"],"???","???"],"???"],
   "???","???","???","???","???",
-  ["???",["AESIMC","AESIMC","",""],"???","???"],
-  ["???",["AESENC","AESENC","",""],"???","???"],
-  ["???",["AESENCLAST","AESENCLAST","",""],"???","???"],
-  ["???",["AESDEC","AESDEC","",""],"???","???"],
-  ["???",["AESDECLAST","AESDECLAST","",""],"???","???"],
-  "???","???","???","???","???","???","???","???",
-  "???","???","???","???","???","???","???","???",
-  [
-    ["MOVBE","","",""],
-    ["MOVBE","","",""],"???",
-    ["CRC32","","",""]
-  ],
-  [
-    ["MOVBE","","",""],
-    ["MOVBE","","",""],"???",
-    ["CRC32","","",""]
-  ],
-  ["???",["","ANDN","",""],"???","???"],
+  ["???","AESIMC","???","???"],
+  ["???","AESENC","???","???"],
+  ["???","AESENCLAST","???","???"],
+  ["???","AESDEC","???","???"],
+  ["???","AESDECLAST","???","???"],
+  "???","???","???","???","???","???","???","???","???","???","???","???","???","???","???","???",
+  ["MOVBE","MOVBE","???","CRC32"],
+  ["MOVBE","MOVBE","???","CRC32"],
+  ["???","ANDN","???","???"],
   [
     "???",
-    ["???",["","BLSR","",""],"???","???"],
-    ["???",["","BLSMSK","",""],"???","???"],
-    ["???",["","BLSI","",""],"???","???"],
+    ["???","BLSR","???","???"],
+    ["???","BLSMSK","???","???"],
+    ["???","BLSI","???","???"],
     "???","???","???","???"
   ],"???",
-  [
-    ["","BZHI","",""],"???",
-    ["","PEXT","",""],
-    ["","PDEP","",""]
-  ],
-  [
-    "???",
-    ["ADCX","","",""],
-    ["ADOX","","",""],
-    ["","MULX","",""]
-  ],
-  [
-    ["","BEXTR","",""],
-    ["","SHLX","",""],
-    ["","SARX","",""],
-    ["","SHRX","",""]
-  ],
+  ["BZHI","???","PEXT","PDEP"],
+  ["???","ADCX","ADOX","MULX"],
+  ["BEXTR","SHLX","SARX","SHRX"],
   "???","???","???","???","???","???","???","???",
   /*------------------------------------------------------------------------------------------------------------------------
-  Three Byte operations 0F38. Opcodes plus 768 goes to 767 used by escape codes "0F, 3A", Or
+  Three Byte operations 0F3A. Opcodes plus 768 goes to 767 used by escape codes "0F, 3A", Or
   set directly by adding map bits "11" because "11 00000000" bin = 768 plus opcode.
   ------------------------------------------------------------------------------------------------------------------------*/
-  ["???",["","PERMQ","PERMQ",""],"???","???"],
-  ["???",["","PERMPD","PERMPD",""],"???","???"],
-  ["???",["",["PBLENDD","",""],"",""],"???","???"],
-  ["???",["","",["ALIGND","","ALIGNQ"],["ALIGND","","???"]],"???","???"],
-  ["???",["","PERMILPS",["PERMILPS","","???"],""],"???","???"],
-  ["???",["","PERMILPD","PERMILPD",""],"???","???"],
-  ["???",["","PERM2F128","",""],"???","???"],
-  ["???",["","","",["PERMF32X4","","???"]],"???","???"],
-  ["???",["ROUNDPS","ROUNDPS",["RNDSCALEPS","","???"],""],"???","???"],
-  ["???",["ROUNDPD","ROUNDPD","RNDSCALEPD",""],"???","???"],
-  ["???",["ROUNDSS","ROUNDSS",["RNDSCALESS","","???"],""],"???","???"],
-  ["???",["ROUNDSD","ROUNDSD","RNDSCALESD",""],"???","???"],
-  ["???",["BLENDPS","BLENDPS","",""],"???","???"],
-  ["???",["BLENDPD","BLENDPD","",""],"???","???"],
-  ["???",["PBLENDW","PBLENDW","",""],"???","???"],
-  [["PALIGNR","","",""],"PALIGNR","???","???"],
+  ["???",["PERMQ","","PERMQ",""],"???","???"],
+  ["???",["PERMPD","","PERMPD",""],"???","???"],
+  ["???",["PBLENDD","","???"],"???","???"],
+  ["???",["ALIGND","","ALIGNQ"],"???","???"],
+  ["???",["PERMILPS","","???"],"???","???"],
+  ["???","PERMILPD","???","???"],
+  ["???","PERM2F128","???","???"],
+  ["???",["PERMF32X4","","???"],"???","???"],
+  ["???",["ROUNDPS","",["RNDSCALEPS","","???"],""],"???","???"],
+  ["???",["ROUNDPD","","RNDSCALEPD",""],"???","???"],
+  ["???",["ROUNDSS","",["RNDSCALESS","","???"],""],"???","???"],
+  ["???",["ROUNDSD","","RNDSCALESD",""],"???","???"],
+  ["???","BLENDPS","???","???"],
+  ["???","BLENDPD","???","???"],
+  ["???","PBLENDW","???","???"],
+  ["PALIGNR","PALIGNR","???","???"],
   "???","???","???","???",
   [["???","PEXTRB","???","???"],["???","PEXTRB","???","???"]],
   [["???","PEXTRW","???","???"],["???","PEXTRW","???","???"]],
   ["???",["PEXTRD","","PEXTRQ"],"???","???"],
   ["???","EXTRACTPS","???","???"],
-  ["???",["","INSERTF128",["INSERTF32X4","","INSERTF64X2"],""],"???","???"],
-  ["???",["","EXTRACTF128",["EXTRACTF32X4","","EXTRACTF64X2"],""],"???","???"],
-  ["???",["","",["INSERTF32X8","","INSERTF64X4"],""],"???","???"],
-  ["???",["","",["EXTRACTF32X8","","EXTRACTF64X4"],""],"???","???"],
+  ["???",["INSERTF128","",["INSERTF32X4","","INSERTF64X2"],""],"???","???"],
+  ["???",["EXTRACTF128","",["EXTRACTF32X4","","EXTRACTF64X2"],""],"???","???"],
+  ["???",["INSERTF32X8","","INSERTF64X4"],"???","???"],
+  ["???",["EXTRACTF32X8","","EXTRACTF64X4"],"???","???"],
   "???",
-  ["???",["","CVTPS2PH",["CVTPS2PH","","???"],""],"???","???"],
-  ["???",["","",["PCMPUD","","PCMPUQ"],["PCMPUD","","PCMPUQ"]],"???","???"],
-  ["???",["","",["PCMPD","","PCMPQ"],["PCMPD","","PCMPQ"]],"???","???"],
+  ["???",["CVTPS2PH","","???"],"???","???"],
+  ["???",["PCMPUD","","PCMPUQ"],"???","???"],
+  ["???",["PCMPD","","PCMPQ"],"???","???"],
   ["???","PINSRB","???","???"],
   ["???",["INSERTPS","","???"],"???","???"],
-  ["???",["",["PINSRD","","PINSRQ"],["PINSRD","","PINSRQ"],""],"???","???"],
-  ["???",["","",["SHUFF32X4","","SHUFF64X2"],""],"???","???"],
+  ["???",["PINSRD","","PINSRQ"],"???","???"],
+  ["???",["SHUFF32X4","","SHUFF64X2"],"???","???"],
   "???",
-  ["???",["","",["PTERNLOGD","","PTERNLOGQ"],""],"???","???"],
-  ["???",["","",["GETMANTPS","","GETMANTPD"],["GETMANTPS","","GETMANTPD"]],"???","???"],
-  ["???",["","",["GETMANTSS","","GETMANTSD"],""],"???","???"],
+  ["???",["PTERNLOGD","","PTERNLOGQ"],"???","???"],
+  ["???",["GETMANTPS","","GETMANTPD"],"???","???"],
+  ["???",["GETMANTSS","","GETMANTSD"],"???","???"],
   "???","???","???","???","???","???","???","???",
-  ["???",["",["KSHIFTRB","","KSHIFTRW"],"",""],"???","???"],
-  ["???",["",["KSHIFTRD","","KSHIFTRQ"],"",""],"???","???"],
-  ["???",["",["KSHIFTLB","","KSHIFTLW"],"",""],"???","???"],
-  ["???",["",["KSHIFTLD","","KSHIFTLQ"],"",""],"???","???"],
+  ["???",["KSHIFTRB","","KSHIFTRW"],"???","???"],
+  ["???",["KSHIFTRD","","KSHIFTRQ"],"???","???"],
+  ["???",["KSHIFTLB","","KSHIFTLW"],"???","???"],
+  ["???",["KSHIFTLD","","KSHIFTLQ"],"???","???"],
   "???","???","???","???",
-  ["???",["","INSERTI128",["INSERTI32X4","","INSERTI64X2"],""],"???","???"],
-  ["???",["","EXTRACTI128",["EXTRACTI32X4","","EXTRACTI64X2"],""],"???","???"],
-  ["???",["","",["INSERTI32X8","","INSERTI64X4"],""],"???","???"],
-  ["???",["","",["EXTRACTI32X8","","EXTRACTI64X4"],""],"???","???"],
+  ["???",["INSERTI128","",["INSERTI32X4","","INSERTI64X2"],""],"???","???"],
+  ["???",["EXTRACTI128","",["EXTRACTI32X4","","EXTRACTI64X2"],""],"???","???"],
+  ["???",["INSERTI32X8","","INSERTI64X4"],"???","???"],
+  ["???",["EXTRACTI32X8","","EXTRACTI64X4"],"???","???"],
   "???","???",
-  ["???",["","KEXTRACT",["PCMPUB","","PCMPUW"],""],"???","???"],
-  ["???",["","",["PCMPB","","PCMPW"],""],"???","???"],
-  ["???",["DPPS","DPPS","",""],"???","???"],
-  ["???",["DPPD","DPPD","",""],"???","???"],
-  ["???",["MPSADBW","MPSADBW",["DBPSADBW","","???"],""],"???","???"],
-  ["???",["","",["SHUFI32X4","","SHUFI64X2"],""],"???","???"],
-  ["???",["PCLMULQDQ","PCLMULQDQ","",""],"???","???"],
+  ["???",["KEXTRACT","",["PCMPUB","","PCMPUW"],""],"???","???"],
+  ["???",["PCMPB","","PCMPW"],"???","???"],
+  ["???","DPPS","???","???"],
+  ["???","DPPD","???","???"],
+  ["???",["DBPSADBW","","???"],"???","???"],
+  ["???",["SHUFI32X4","","SHUFI64X2"],"???","???"],
+  ["???","PCLMULQDQ","???","???"],
   "???",
-  ["???",["","PERM2I128","",""],"???","???"],
+  ["???","PERM2I128","???","???"],
   "???",
-  ["???",["",["PERMIL2PS","","PERMIL2PS"],"",""],"???","???"],
-  ["???",["",["PERMIL2PD","","PERMIL2PD"],"",""],"???","???"],
-  ["???",["","BLENDVPS","",""],"???","???"],
-  ["???",["","BLENDVPD","",""],"???","???"],
-  ["???",["","PBLENDVB","",""],"???","???"],
+  ["???",["PERMIL2PS","","PERMIL2PS"],"???","???"],
+  ["???",["PERMIL2PD","","PERMIL2PD"],"???","???"],
+  ["???","BLENDVPS","???","???"],
+  ["???","BLENDVPD","???","???"],
+  ["???","PBLENDVB","???","???"],
   "???","???","???",
-  ["???",["","",["RANGEPS","","RANGEPD"],""],"???","???"],
-  ["???",["","",["RANGESS","","RANGESD"],""],"???","???"],
-  ["???",["","","",["RNDFXPNTPS","","RNDFXPNTPD"]],"???","???"],
+  ["???",["RANGEPS","","RANGEPD"],"???","???"],
+  ["???",["RANGESS","","RANGESD"],"???","???"],
+  ["???",["RNDFXPNTPS","","RNDFXPNTPD"],"???","???"],
   "???",
-  ["???",["","",["FIXUPIMMPS","","FIXUPIMMPD"],""],"???","???"],
-  ["???",["","",["FIXUPIMMSS","","FIXUPIMMSD"],""],"???","???"],
-  ["???",["","",["REDUCEPS","","REDUCEPD"],""],"???","???"],
-  ["???",["","",["REDUCESS","","REDUCESD"],""],"???","???"],
+  ["???",["FIXUPIMMPS","","FIXUPIMMPD"],"???","???"],
+  ["???",["FIXUPIMMSS","","FIXUPIMMSD"],"???","???"],
+  ["???",["REDUCEPS","","REDUCEPD"],"???","???"],
+  ["???",["REDUCESS","","REDUCESD"],"???","???"],
   "???","???","???","???",
-  ["???",["",["FMADDSUBPS","","FMADDSUBPS"],"",""],"???","???"],
-  ["???",["",["FMADDSUBPD","","FMADDSUBPD"],"",""],"???","???"],
-  ["???",["",["FMSUBADDPS","","FMSUBADDPS"],"",""],"???","???"],
-  ["???",["",["FMSUBADDPD","","FMSUBADDPD"],"",""],"???","???"],
-  ["???",["PCMPESTRM","PCMPESTRM","",""],"???","???"],
-  ["???",["PCMPESTRI","PCMPESTRI","",""],"???","???"],
-  ["???",["PCMPISTRM","PCMPISTRM","",""],"???","???"],
-  ["???",["PCMPISTRI","PCMPISTRI","",""],"???","???"],
+  ["???",["FMADDSUBPS","","FMADDSUBPS"],"???","???"],
+  ["???",["FMADDSUBPD","","FMADDSUBPD"],"???","???"],
+  ["???",["FMSUBADDPS","","FMSUBADDPS"],"???","???"],
+  ["???",["FMSUBADDPD","","FMSUBADDPD"],"???","???"],
+  ["???","PCMPESTRM","???","???"],
+  ["???","PCMPESTRI","???","???"],
+  ["???","PCMPISTRM","???","???"],
+  ["???","PCMPISTRI","???","???"],
   "???","???",
-  ["???",["","",["FPCLASSPS","","FPCLASSPD"],""],"???","???"],
-  ["???",["","",["FPCLASSSS","","FPCLASSSD"],""],"???","???"],
-  ["???",["",["FMADDPS","","FMADDPS"],"",""],"???","???"],
-  ["???",["",["FMADDPD","","FMADDPD"],"",""],"???","???"],
-  ["???",["",["FMADDSS","","FMADDSS"],"",""],"???","???"],
-  ["???",["",["FMADDSD","","FMADDSD"],"",""],"???","???"],
-  ["???",["",["FMSUBPS","","FMSUBPS"],"",""],"???","???"],
-  ["???",["",["FMSUBPD","","FMSUBPD"],"",""],"???","???"],
-  ["???",["",["FMSUBSS","","FMSUBSS"],"",""],"???","???"],
-  ["???",["",["FMSUBSD","","FMSUBSD"],"",""],"???","???"],
+  ["???",["FPCLASSPS","","FPCLASSPD"],"???","???"],
+  ["???",["FPCLASSSS","","FPCLASSSD"],"???","???"],
+  ["???",["FMADDPS","","FMADDPS"],"???","???"],
+  ["???",["FMADDPD","","FMADDPD"],"???","???"],
+  ["???",["FMADDSS","","FMADDSS"],"???","???"],
+  ["???",["FMADDSD","","FMADDSD"],"???","???"],
+  ["???",["FMSUBPS","","FMSUBPS"],"???","???"],
+  ["???",["FMSUBPD","","FMSUBPD"],"???","???"],
+  ["???",["FMSUBSS","","FMSUBSS"],"???","???"],
+  ["???",["FMSUBSD","","FMSUBSD"],"???","???"],
   "???","???","???","???","???","???","???","???",
-  ["???",["",["FNMADDPS","","FNMADDPS"],"",""],"???","???"],
-  ["???",["",["FNMADDPD","","FNMADDPD"],"",""],"???","???"],
-  ["???",["",["FNMADDSS","","FNMADDSS"],"",""],"???","???"],
-  ["???",["",["FNMADDSD","","FNMADDSD"],"",""],"???","???"],
-  ["???",["",["FNMSUBPS","","FNMSUBPS"],"",""],"???","???"],
-  ["???",["",["FNMSUBPD","","FNMSUBPD"],"",""],"???","???"],
-  ["???",["",["FNMSUBSS","","FNMSUBSS"],"",""],"???","???"],
-  ["???",["",["FNMSUBSD","","FNMSUBSD"],"",""],"???","???"],
+  ["???",["FNMADDPS","","FNMADDPS"],"???","???"],
+  ["???",["FNMADDPD","","FNMADDPD"],"???","???"],
+  ["???",["FNMADDSS","","FNMADDSS"],"???","???"],
+  ["???",["FNMADDSD","","FNMADDSD"],"???","???"],
+  ["???",["FNMSUBPS","","FNMSUBPS"],"???","???"],
+  ["???",["FNMSUBPD","","FNMSUBPD"],"???","???"],
+  ["???",["FNMSUBSS","","FNMSUBSS"],"???","???"],
+  ["???",["FNMSUBSD","","FNMSUBSD"],"???","???"],
   "???","???","???","???","???","???","???","???","???","???","???","???","???","???","???","???",
   "???","???","???","???","???","???","???","???","???","???","???","???","???","???","???","???",
   "???","???","???","???","???","???","???","???","???","???","???","???","???","???","???","???",
   "???","???","???","???","???","???","???","???","???","???","???","???","???","???","???","???",
   "???","???","???","???","???","???","???","???","???","???",
-  [["","","","CVTFXPNTUDQ2PS"],["","","",["CVTFXPNTPS2UDQ","","???"]],"???",["","","","CVTFXPNTPD2UDQ"]],
-  [["","","","CVTFXPNTDQ2PS"],["","","",["CVTFXPNTPS2DQ","","???"]],"???","???"],
+  ["CVTFXPNTUDQ2PS",["CVTFXPNTPS2UDQ","","???"],"???","CVTFXPNTPD2UDQ"],
+  ["CVTFXPNTDQ2PS",["CVTFXPNTPS2DQ","","???"],"???","???"],
   "???","???","???","???",
   "???","???","???","???","???","???","???","???","???","???","???","???","???","???","???",
-  ["???",["AESKEYGENASSIST","AESKEYGENASSIST","",""],"???","???"],
+  ["???","AESKEYGENASSIST","???","???"],
   "???","???","???","???","???","???","???","???","???","???","???","???","???","???","???","???",
-  ["???","???","???",["","RORX","",""]],
+  ["???","???","???","RORX"],
   "???","???","???","???","???","???","???","???","???","???","???","???","???","???","???",
   /*------------------------------------------------------------------------------------------------------------------------
   AMD XOP 8.
@@ -1241,20 +1139,20 @@ size then it's location in left, and right brackets like "QWORD PTR[Address]". T
 Used by function ^DecodeOpcode()^ after ^DecodePrefixAdjustments()^.
 -------------------------------------------------------------------------------------------------------------------------*/
 
-const Operands = [
+var Operands = [
   //------------------------------------------------------------------------------------------------------------------------
   //First Byte operations.
   //------------------------------------------------------------------------------------------------------------------------
-  "06000A000003","070E0B0E0003","0A0006000003","0B0E070E0003","16000C000003","170E0DE60003","","",
-  "06000A000003","070E0B0E0003","0A0006000003","0B0E070E0003","16000C000003","170E0DE60003","","",
-  "06000A000003","070E0B0E0003","0A0006000003","0B0E070E0003","16000C000003","170E0DE60003","","",
-  "06000A000003","070E0B0E0003","0A0006000003","0B0E070E0003","16000C000003","170E0DE60003","","",
-  "06000A000003","070E0B0E0003","0A0006000003","0B0E070E0003","16000C000003","170E0DE60003","","",
-  "06000A000003","070E0B0E0003","0A0006000003","0B0E070E0003","16000C000003","170E0DE60003","","",
-  "06000A000003","070E0B0E0003","0A0006000003","0B0E070E0003","16000C000003","170E0DE60003","","",
+  "06000A000013","070E0B0E0013","0A0006000013","0B0E070E0013","16000C000013","170E0DE60013","","",
+  "06000A000013","070E0B0E0013","0A0006000013","0B0E070E0013","16000C000013","170E0DE60013","","",
+  "06000A000013","070E0B0E0013","0A0006000013","0B0E070E0013","16000C000013","170E0DE60013","","",
+  "06000A000013","070E0B0E0013","0A0006000013","0B0E070E0013","16000C000013","170E0DE60013","","",
+  "06000A000013","070E0B0E0013","0A0006000013","0B0E070E0013","16000C000013","170E0DE60013","","",
+  "06000A000013","070E0B0E0013","0A0006000013","0B0E070E0013","16000C000013","170E0DE60013","","",
+  "06000A000013","070E0B0E0013","0A0006000013","0B0E070E0013","16000C000013","170E0DE60013","","",
   "06000A00","070E0B0E","0A000600","0B0E070E","16000C00","170E0DE6","","",
-  "03060003","03060003","03060003","03060003","03060003","03060003","03060003","03060003",
-  "03060003","03060003","03060003","03060003","03060003","03060003","03060003","03060003",
+  "03060013","03060013","03060013","03060013","03060013","03060013","03060013","03060013",
+  "03060013","03060013","03060013","03060013","03060013","03060013","03060013","03060013",
   "030A","030A","030A","030A","030A","030A","030A","030A",
   "030A","030A","030A","030A","030A","030A","030A","030A",
   ["","",""],["","",""],
@@ -1266,43 +1164,43 @@ const Operands = [
   "22001A01","230E1A01","1A012000","1A01210E",
   "10000002000C","10000002000C","10000002000C","10000002000C","10000002000C","10000002000C","10000002000C","10000002000C",
   "10000002000C","10000002000C","10000002000C","10000002000C","10000002000C","10000002000C","10000002000C","10000002000C",
-  ["06000C000003","06000C000003","06000C000003","06000C000003","06000C000003","06000C000003","06000C000003","06000C00"],
-  ["070E0DE60003","070E0DE60003","070E0DE60003","070E0DE60003","070E0DE60003","070E0DE60003","070E0DE60003","070E0DE6"],
-  ["06000C000003","06000C000003","06000C000003","06000C000003","06000C000003","06000C000003","06000C000003","06000C00"],
-  ["070E0DE10003","070E0DE10003","070E0DE10003","070E0DE10003","070E0DE10003","070E0DE10003","070E0DE10003","070E0DE1"],
+  ["06000C000013","06000C000013","06000C000013","06000C000013","06000C000013","06000C000013","06000C000013","06000C00"],
+  ["070E0DE60013","070E0DE60013","070E0DE60013","070E0DE60013","070E0DE60013","070E0DE60013","070E0DE60013","070E0DE6"],
+  ["06000C000013","06000C000013","06000C000013","06000C000013","06000C000013","06000C000013","06000C000013","06000C00"],
+  ["070E0DE10013","070E0DE10013","070E0DE10013","070E0DE10013","070E0DE10013","070E0DE10013","070E0DE10013","070E0DE1"],
   "06000A00","070E0B0E",
-  "0A0006000003","0B0E070E0003",
-  "06000A000001","070E0B0E0001",
-  "0A0006000001","0B0E070E0001",
-  "06020A080001",
+  "0A0006000013","0B0E070E0013",
+  "06000A000011","070E0B0E0011",
+  "0A0006000011","0B0E070E0011",
+  "06020A080011",
   ["0B0E0601",""],
-  "0A0806020001",
+  "0A0806020011",
   ["070A","","","","","","",""],
-  [["","","",""],["","","",""],["","","",""],["","","",""]],
-  "170E030E0003","170E030E0003","170E030E0003","170E030E0003","170E030E0003","170E030E0003","170E030E0003",
+  ["","","",""],
+  "170E030E0013","170E030E0013","170E030E0013","170E030E0013","170E030E0013","170E030E0013","170E030E0013",
   ["","",""],["","",""],
   "0D060C01", //CALL Ap (w:z).
   "",
   ["","",""],["","",""],
   "","",
-  "160004000001","170E050E0001",
-  "040016000001","050E170E0001",
+  "160004000011","170E050E0011",
+  "040016000011","050E170E0011",
   "22002000","230E210E",
   "22002000","230E210E",
   "16000C00","170E0DE6",
   "22001600","230E170E","16002000","170E210E","16002200","170E230E",
-  "02000C000001","02000C000001","02000C000001","02000C000001","02000C000001","02000C000001","02000C000001","02000C000001",
-  "030E0D0E0001","030E0D0E0001","030E0D0E0001","030E0D0E0001","030E0D0E0001","030E0D0E0001","030E0D0E0001","030E0D0E0001",
+  "02000C000011","02000C000011","02000C000011","02000C000011","02000C000011","02000C000011","02000C000011","02000C000011",
+  "030E0D0E0011","030E0D0E0011","030E0D0E0011","030E0D0E0011","030E0D0E0011","030E0D0E0011","030E0D0E0011","030E0D0E0011",
   ["06000C00","06000C00","06000C00","06000C00","06000C00","06000C00","06000C00","06000C00"],
   ["070E0C00","070E0C00","070E0C00","070E0C00","070E0C00","070E0C00","070E0C00","070E0C00"],
-  "0C010008","0008",
+  "0C01018","0018",
   "0B060906","0B060906",
   [
-    "06000C000001","","","","","","",
+    "06000C000011","","","","","","",
     ["0C00","0C00","0C00","0C00","0C00","0C00","0C00","0C00"]
   ],
   [
-    "070E0D060001","","","","","","",
+    "070E0D060011","","","","","","",
     ["1002","1002","1002","1002","1002","1002","1002","1002"]
   ],
   "0C010C00","",
@@ -1377,22 +1275,22 @@ const Operands = [
   /*------------------------------------------------------------------------------------------------------------------------
   End of X87 FPU.
   ------------------------------------------------------------------------------------------------------------------------*/
-  "10000004","10000004","10000004","10000004",
+  "10000014","10000014","10000014","10000014",
   "16000C00","170E0C00","0C001600","0C00170E",
-  "10020008",
-  "10020008",
+  "10020018",
+  "10020018",
   "0D060C01", //JMP Ap (w:z).
-  "100000040004",
+  "100000040014",
   "16001A01","170E1A01",
   "1A011600","1A01170E",
   "","","","","","",
-  ["06000C00","","06000003","06000003","16000600","0600","16000600","0600"],
-  ["070E0D06","","070E0003","070E0003","170E070E","070E","170E070E","170E070E"],
+  ["06000C00","","06000013","06000013","16000600","0600","16000600","0600"],
+  ["070E0D06","","070E0013","070E0013","170E070E","070E","170E070E","170E070E"],
   "","","","","","",
-  ["06000003","06000003","","","","","",""],
+  ["06000013","06000013","","","","","",""],
   [
-    ["070E0003","070E0003","070A0004","090E0008","070A0008","090E0008","070A",""],
-    ["070E0003","070E0003","070A0008","","070A0008","","070A",""]
+    ["070E0013","070E0013","070A0014","090E0018","070A0018","090E0018","070A",""],
+    ["070E0013","070E0013","070A0018","","070A0018","","070A",""]
   ],
   /*------------------------------------------------------------------------------------------------------------------------
   Two Byte operations.
@@ -1419,72 +1317,47 @@ const Operands = [
   "",
   "0A0A06A9", //3DNow takes ModR/M, IMM8.
   [
-    ["0B700770","0B700770","0A040603","0A040609"],
-    ["0B700770","0B700770","0A0412040604","0A0412040604"]
+    ["0B7007700070","0B7007700070","0A0406030070","0A0406090070"],
+    ["0B7007700070","0B7007700070","0A04120406040070","0A04120406040070"]
   ],
   [
-    ["07700B70","07700B70","06030A04","06090A04"],
-    ["07700B70","07700B70","060412040A04","060412040A04"]
+    ["07700B700070","07700B700070","06030A040070","06090A040070"],
+    ["07700B700070","07700B700070","060412040A040070","060412040A040070"]
   ],
   [
-    ["0A0412040606","0A0412040606","0B700770","0B700768"],
-    ["0A0412040604","","0B700770","0B700770"]
+    ["0A04120406060070","0A04120406060070","0B7007700070","0B7007680070"],
+    ["0A04120406040070","","0B7007700070","0B7007700070"]
   ],
-  [["06060A04","06060A04","",""],""],
-  ["0B70137007700110","0B70137007700110","",""],
-  ["0B70137007700110","0B70137007700110","",""],
-  [["0A0412040606","0A0412040606","0B700770",""],["0A0412040604","","0B700770",""]],
-  [["06060A04","06060A04","",""],""],
+  [["06060A040070","06060A040070","",""],""],
+  ["0B701370077001100070","0B701370077001100070","",""],
+  ["0B701370077001100070","0B701370077001100070","",""],
+  [["0A04120406060070","0A04120406060070","0B7007700070",""],["0A04120406040070","","0B7007700070",""]],
+  [["06060A040070","06060A040070","",""],""],
   [["0601","0601","0601","0601","","","",""],""],
   "",
-  [[["0A0B07080180","","",""],["0A0B07100180","","",""],["0A0B07080180","","",""],["0A0B07080180","","",""]],
-  ["",["0A0B060B","","",""],["0A0B07080180","","",""],["0A0B07080180","","",""]]],
-  [[["07080A0B0180","","",""],["07100A0B0180","","",""],["0A0B07080180","","",""],["0A0B07080180","","",""]],
-  ["",["0A0B060B","","",""],"",["0A0B07080180","","",""]]],
+  [["0A0B07080180","0A0B07100180","0A0B07080180","0A0B07080180"],["","0A0B060B0180","0A0B07080180","0A0B07080180"]],
+  [["07080A0B0180","07100A0B0180","0A0B07080180","0A0B07080180"],["","0A0B060B0180","","0A0B07080180"]],
   "","","",
   "070E",
-  ["","07080A0C0001"],["","07080A0D0001"],
-  ["","0A0C07080001"],["","0A0D07080001"],
-  ["","07080A0E0001"],"",
-  ["","0A0E07080001"],"",
-  [
-    ["0A040648","0B300730","0B700770","0A06066C0160"],
-    ["0A040648","0B300730","0B700770","0A06066C0100"],
-    "",""
-  ],
+  ["","07080A0C0011"],["","07080A0D0011"],
+  ["","0A0C07080011"],["","0A0D07080011"],
+  ["","07080A0E0011"],"",
+  ["","0A0E07080011"],"",
+  ["0B700770016000F0","0B700770010000F0","",""],
   [
     [
-      ["06480A04","07300B30","07700B70","066C0A060160"],
-      ["06480A04","07300B30","07700B70","066C0A060100"],
-      ["","","",["066C0A060168","066C0A060168","066C0A060168"]],
-      ["","","",["066C0A060108","066C0A060108","066C0A060108"]]
+      "07700B70016000F0","07700B7000F0",
+      ["066C0A0601680080","066C0A0601680080","066C0A0601680080"],
+      ["066C0A0601080080","066C0A0601080080","066C0A0601080080"]
     ],
-    [
-      ["06480A04","07300B30","07700B70","066C0A060160"],
-      ["06480A04","07300B30","07700B70","066C0A060100"],
-      "",""
-    ]
+    ["07700B70016000F0","07700B7000F0","",""]
   ],
-  [
-    ["0A0406A9","","",""],["0A0406A9","","",""], //Not Allowed to be Vector encoded.
-    "0A041204070C010A","0A041204070C010A"
-  ],
-  [
-    [
-      "07700B70","07700B70",
-      ["06030A04","","",""],["06060A04","","",""] //SSE4a can not be vector encoded.
-    ],""
-  ],
-  [
-    ["0A0A0649","","",""],["0A0A0648","","",""], //Not allowed to be Vector encoded.
-    "0B0C06490109","0B0C06490109"
-  ],
-  [
-    ["0A0A0649","","",""],["0A0A0648","","",""], //Not allowed to be vector encoded.
-    "0B0C0643010A","0B0C0649010A"
-  ],
-  ["0A0406430101","0A0406490101","",""],
-  ["0A0406430101","0A0406490101","",""],
+  ["0A0406A9","0A0406A9","0A041204070C010A0070","0A041204070C010A0070"],
+  [["07700B700070","07700B700070","06030A04","06060A04"],""],
+  ["0A0A0649","0A0A0648","0B0C064901090070","0B0C064901090070"],
+  ["0A0A0649","0A0A0648","0B0C0643010A0070","0B0C0649010A0070"],
+  ["0A04064301010070","0A04064901010070","",""],
+  ["0A04064301010070","0A04064901010070","",""],
   "","","","",
   "","","",
   "",
@@ -1494,217 +1367,183 @@ const Operands = [
   "","","","","",
   "0B0E070E",
   [
-    ["0B0E070E0180",["0A0F120F06FF","","0A0F120F06FF"],"",""],
-    ["0B0E070E0180",["0A0F120F06FF","","0A0F120F06FF"],"",""],"",""
+    ["0B0E070E0180",["0A0F120F06FF0020","","0A0F120F06FF0020"],"",""],
+    ["0B0E070E0180",["0A0F120F06FF0020","","0A0F120F06FF0020"],"",""],"",""
   ],
   [
-    ["0B0E070E0180",["0A0F120F06FF","","0A0F120F06FF"],"",""],
-    ["0B0E070E0180",["0A0F120F06FF","","0A0F120F06FF"],"",""],"",""
+    ["0B0E070E0180",["0A0F120F06FF0020","","0A0F120F06FF0020"],"",""],
+    ["0B0E070E0180",["0A0F120F06FF0020","","0A0F120F06FF0020"],"",""],"",""
   ],
-  [["0B0E070E0180","0A0F06FF","",""],"","",""],
+  [["0B0E070E0180","0A0F06FF0020","",""],"","",""],
   [
-    ["0B0E070E0180",["0A0F06FF","","0A0F06FF"],"",""],
-    ["0B0E070E0180",["0A0F06FF","","0A0F06FF"],"",""],"",""
-  ],
-  [
-    ["0A02070E0180",["0A0F120F06FF","","0A0F120F06FF"],"",""],
-    ["0A02070E0180",["0A0F120F06FF","","0A0F120F06FF"],"",""],"",""
+    ["0B0E070E0180",["0A0F06FF0020","","0A0F06FF0020"],"",""],
+    ["0B0E070E0180",["0A0F06FF0020","","0A0F06FF0020"],"",""],"",""
   ],
   [
-    ["0B0E070E0180",["0A0F120F06FF","","0A0F120F06FF"],"",""],
-    ["0B0E070E0180",["0A0F120F06FF","","0A0F120F06FF"],"",""],"",""
+    ["0A02070E0180",["0A0F120F06FF0020","","0A0F120F06FF0020"],"",""],
+    ["0A02070E0180",["0A0F120F06FF0020","","0A0F120F06FF0020"],"",""],"",""
   ],
   [
-    ["0B0E070E0180",["0A0F120F06FF","","0A0F120F06FF"],"",""],
-    ["0B0E070E0180",["0A0F120F06FF","","0A0F120F06FF"],"",""],"",""
-  ],
-  [["0B0E070E0180","0A0F06FF","",""],"","",""],
-  [["0B0E070E0180","0A0F06FF","",""],"","",""],
-  [
-    ["0B0E070E0180",["0A0F120F06FF","","0A0F120F06FF"],"",""],
-    ["0B0E070E0180",["0A0F120F06FF","","0A0F120F06FF"],"",""],"",""
+    ["0B0E070E0180",["0A0F120F06FF0020","","0A0F120F06FF0020"],"",""],
+    ["0B0E070E0180",["0A0F120F06FF0020","","0A0F120F06FF0020"],"",""],"",""
   ],
   [
-    ["0B0E070E0180",["0A0F120F06FF","","0A0F120F06FF"],"",""],
-    ["0B0E070E0180",["0A0F120F06FF","",""],"",""],"",""
+    ["0B0E070E0180",["0A0F120F06FF0020","","0A0F120F06FF0020"],"",""],
+    ["0B0E070E0180",["0A0F120F06FF0020","","0A0F120F06FF0020"],"",""],"",""
+  ],
+  [["0B0E070E0180","0A0F06FF0020","",""],"","",""],
+  [["0B0E070E0180","0A0F06FF0020","",""],"","",""],
+  [
+    ["0B0E070E0180",["0A0F120F06FF0020","","0A0F120F06FF0020"],"",""],
+    ["0B0E070E0180",["0A0F120F06FF0020","","0A0F120F06FF0020"],"",""],"",""
+  ],
+  [
+    ["0B0E070E0180",["0A0F120F06FF0020","","0A0F120F06FF0020"],"",""],
+    ["0B0E070E0180",["0A0F120F06FF0020","",""],"",""],"",""
   ],
   "0B0E070E","0B0E070E","0B0E070E","0B0E070E",
-  ["",[["0B0C0648","0B0C0730","",""],["0B0C0648","0B0C0730","",""],"",""]],
-  ["0B7007700112","0B7007700112","0A04120406430102","0A04120406490102"],
+  ["",["0B0C07300030","0B0C07300030","",""]],
+  ["0B70077001120070","0B70077001120070","0A041204064301020070","0A041204064901020070"],
+  ["0A0406480030","","0A04120406430030",""],
+  ["0A0406480030","","0A04120406430030",""],
+  ["0B701370077001100070","0B701370077001100070","",""],
+  ["0B701370077001100070","0B701370077001100070","",""],
+  ["0B701370077001100070","0B701370077001100070","",""],
+  ["0B701370077001100070","0B701370077001100070","",""],
+  ["0B7013700770017200F0","0B7013700770011200F0","0A041204064301020070","0A041204064601020070"],
+  ["0B7013700770017200F0","0B7013700770011200F0","0A041204064301020070","0A041204064601020070"],
+  ["0B700738011100F0","0B380770011200F0","0A041204064301010070","0A041204064601020070"],
+  [["0B70077001120070","","0B380770011A0070"],["0B700770011A0070","",""],"0B70077001110070",""],
+  ["0B7013700770017200F0","0B7013700770011200F0","0A041204064301020070","0A041204064601020070"],
+  ["0B701370077001110070","0B701370077001110070","0A041204064301010070","0A041204064601010070"],
+  ["0B701370077001120070","0B701370077001120070","0A041204064301020070","0A041204064601020070"],
+  ["0B701370077001110070","0B701370077001110070","0A041204064301010070","0A041204064601010070"],
+  ["0A0A06A3","0B701370077001080070","",""],
+  ["0A0A06A3","0B701370077001080070","",""],
+  ["0A0A06A3","0B7013700770011001080070","",""],
+  ["0A0A06A9","0B701370077001080070","",""],
+  ["0A0A06A9",["0B30133007300030","","0A0F1370077001080040",""],"",""], 
+  ["0A0A06A9",["0B30133007300030","","0A0F1370077001080040",""],"",""],
+  ["0A0A06A9",["0B30133007300030","",["0A0F13700770011800C0","",""],""],"",""],
+  ["0A0A06A9","0B701370077001080070","",""],
+  ["0A0A06A9","0B701370077001080070","",""],
+  ["0A0A06A9","0B701370077001080070","",""],
+  ["0A0A06A9",["0B701370077001180070","",""],"",""],
+  ["0A0A06A9",["0B701370077001180070","",""],"",""],
+  ["","0B701370077001100070","",""],
+  ["","0B701370077001100070","",""],
+  ["0A0A070C","0A04070C01080070","",""],
   [
-    ["0A040648","0A040648","",""],"",
-    ["0A040643","0A0412040643","",""],""
+    "0A0A06A9",
+    ["0B3007300030","",["0B700770014800C0","","0B70077000C0"],""],
+    ["0B3007300030","",["0B7007700040","","0B70077001080040"],""],
+    ["0B70077001080040","","0B7007700040"]
   ],
-  [
-    ["0A040648","0A040648","",""],"",
-    ["0A040643","0A0412040643","",""],""
-  ],
-  ["0B70137007700110","0B70137007700110","",""],
-  ["0B70137007700110","0B70137007700110","",""],
-  ["0B70137007700110","0B70137007700110","",""],
-  ["0B70137007700110","0B70137007700110","",""],
-  [
-    ["0A040648","0B3013300730","0B70137007700112","0A061206066C0172"],
-    ["0A040648","0B3013300730","0B70137007700112","0A061206066C0112"],
-    "0A04120406430102","0A04120406460102"
-  ],
-  [
-    ["0A040648","0B3013300730","0B70137007700112","0A061206066C0172"],
-    ["0A040648","0B3013300730","0B70137007700112","0A061206066C0112"],
-    "0A04120406430102","0A04120406460102"
-  ],
-  [
-    ["0A040648","0B300718","0B7007380111","0A06065A0111"],
-    ["0A040648","0B180730","0B3807700112","0A05066C0112"],
-    "0A04120406430101","0A04120406460102"
-  ],
-  [["0B7007700112","","0B380770011A"],["0B700770011A","",""],"0B7007700111",""],
-  [
-    ["0A060648","0B3013300730","0B70137007700112","0A061206066C0172"],
-    ["0A060648","0B3013300730","0B70137007700112","0A061206066C0112"],
-    "0A04120406430102","0A04120406460102"
-  ],
-  ["0B70137007700111","0B70137007700111","0A04120406430101","0A04120406460101"],
-  ["0B70137007700112","0B70137007700112","0A04120406430102","0A04120406460102"],
-  ["0B70137007700111","0B70137007700111","0A04120406430101","0A04120406460101"],
-  [["0A0A06A3","","",""],"0B70137007700108","",""],
-  [["0A0A06A3","","",""],"0B70137007700108","",""],
-  [["0A0A06A3","","",""],"0B701370077001100108","",""],
-  [["0A0A06A9","","",""],"0B70137007700108","",""],
-  [["0A0A06A9","","",""],["0A040648","0B3013300730","0A0F137007700108",""],"",""], 
-  [["0A0A06A9","","",""],["0A040648","0B3013300730","0A0F137007700108",""],"",""],
-  [["0A0A06A9","","",""],["0A040648","0B3013300730",["0A0F137007700118","",""],["0A0F1206066C0158","",""]],"",""],
-  [["0A0A06A9","","",""],"0B70137007700108","",""],
-  [["0A0A06A9","","",""],"0B70137007700108","",""],
-  [["0A0A06A9","","",""],"0B70137007700108","",""],
-  [["0A0A06A9","","",""],["0B70137007700118","",""],"",""],
-  [["0A0A06A9","","",""],["0B70137007700118","",""],"",""],
-  ["","0B70137007700110","",""],
-  ["","0B70137007700110","",""],
-  [["0A0A070C","","",""],"0A04070C0108","",""],
-  [
-    ["0A0A06A9","", "",""],
-    ["0B700770","0B700770",["0B7007700108","","0B700770"],["0A06066C0148","","0A06066C"]],
-    ["0A040710","0B700770",["0B700770","","0B7007700108"],""],
-    ["","",["0B7007700108","","0B700770"],""]
-  ],
-  [
-    ["0A0A06A90C00","","",""],
-    ["0A0406480C00","0B3007300C00",["0B7007700C000118","",""],["0A06066C0C000108","",""]],
-    "0B7007700C000108",
-    "0B7007700C000108"
-  ],
+  ["0A0A06A90C00",["0B7007700C00011800F0","",""],"0B7007700C0001080070","0B7007700C0001080070"],
   [
     "",
     [
       "","",
-      [["060A0C00","","",""],"137007700C000108","",""],"",
-      [["060A0C00","","",""],"137007700C000108","",""],"",
-      [["060A0C00","","",""],"137007700C000108","",""],""
+      ["060A0C00","137007700C0001080060","",""],"",
+      ["060A0C00","137007700C0001080060","",""],"",
+      ["060A0C00","137007700C0001080060","",""],""
     ]
   ],
   [
-    ["",["","",["137007700C000118","","137007700C000110"],""],"",""],
-    ["",["","",["137007700C000118","","137007700C000110"],""],"",""],
-    [["060A0C00","","",""],["06480C00","133007300C00",["137007700C000118","",""],["1206066C0C000158","",""]],"",""],
+    ["",["137007700C0001180040","","137007700C0001100040"],"",""],
+    ["",["137007700C0001180040","","137007700C0001100040"],"",""],
+    ["060A0C00",["137007700C00015800F0","",""],"",""],
     "",
-    [["060A0C00","","",""],["06480C00","133007300C00",["137007700C000118","","137007700C000110"],["1206066C0C000158","",""]],"",""],
+    ["060A0C00",["137007700C00015800F0","",""],"",""],
     "",
-    [["060A0C00","","",""],["06480C00","133007300C00",["137007700C000118","",""],["1206066C0C000158","",""]],"",""],
+    ["060A0C00",["137007700C00015800F0","","137007700C000030"],"",""],
     ""
   ],
   [
     "",
     [
       "","",
-      [["137007700C00","137007700C00","",""],"137007700C000110","",""],["","137007700C000108","",""],
+      ["137007700C000030","137007700C0001100070","",""],["","137007700C0001080070","",""],
       "","",
-      [["137007700C00","137007700C00","",""],"137007100C000110","",""],["","137007700C000108","",""]
+      ["137007700C000030","137007100C0001100070","",""],["","137007700C0001080070","",""]
     ]
   ],
-  [["0A0A06A9","","",""],["0A040710","13300B300730","0A0F137007700108",""],"",""],
-  [["0A0A06A9","","",""],["0A040710","13300B300730","0A0F137007700108",""],"",""],
-  [["0A0A06A9","","",""],["0A040710","13300B300730",["0A0F137007700118","",""],["0A0F1206066C0158","",""]],"",""],
-  [["",["","",""],"",""],"","",""],
+  ["0A0A06A9",["13300B3007300030","","0A0F1370077001080040",""],"",""],
+  ["0A0A06A9",["13300B3007300030","","0A0F1370077001080040",""],"",""],
+  ["0A0A06A9",["0A0F13700770015800F0","","0A0F137007700070"],"",""],
+  [["",["0020","0020","0020"],"",""],"","",""],
   [
-    ["07080B080180","",["0B7007700111","","0B3807700119"],""],
-    ["064F0C000C00","",["0B7007380119","","0B7007700111"],""],
-    ["","","0B0C06440109",""],
-    ["0A04064F0C000C00","","0B0C06460109",""]
+    ["07080B080180","",["0B70077001110040","","0B38077001190040"],""],
+    ["064F0C000C00","",["0B70073801190040","","0B70077001110040"],""],
+    "0B0C064401090040",
+    ["0A04064F0C000C00","","0B0C064601090040",""]
   ],
   [
-    ["0B0807080180","",["0B7007700112","","0B380770011A"],""],
-    ["0A04064F","",["0B700738011A","","0B7007700112"],""],
-    ["","","0B0C0644010A",""],
-    ["0A04064F","","0B0C0646010A",""]
-  ],
-  [
-    "",
-    ["","",["0B7007380119","","0B7007700111"],""],
-    ["","",["0B7007380112","","0B700770011A"],"0A06065A0112"],
-    ["","",["0B700770011A","","0B3807700112"],""]
+    ["0B0807080180","",["0B70077001120040","","0B380770011A0040"],""],
+    ["0A04064F","",["0B700738011A0040","","0B70077001120040"],""],
+    "0B0C0644010A0040",
+    ["0A04064F","","0B0C0646010A0040",""]
   ],
   [
     "",
-    ["","",["0B700738011A","","0B7007700112"],""],
-    ["","","0A041204070C010A",""],
-    ["","","0A041204070C010A",""]
+    ["0B70073801190040","","0B70077001110040"],
+    ["0B700738011200C0","","0B700770011A0040"],
+    ["0B700770011A0040","","0B38077001120040"]
   ],
   [
-    "",["0A040604","0B7013700770","",""],
-    "",["0A040604","0B7013700770","",""]
+    "",
+    ["0B700738011A0040","","0B70077001120040"],
+    "0A041204070C010A0040","0A041204070C010A0040"
   ],
+  ["","0B70137007700030","","0B70137007700030"],
+  ["","0B70137007700030","","0B70137007700030"],
+  ["070C0A0A",["06240A0401080070","","06360A0401080070"],["0A0406460030","","0A04064601080070"],""],
   [
-    "",["0A040604","0B7013700770","",""],
-    "",["0A040604","0B7013700770","",""]
-  ],
-  [["070C0A0A","","",""],["06240A040108","","06360A040108"],["0A040646","0A040646",["","","0A0406460108"],""],""],
-  [
-    ["06A90A0A","","",""],
-    ["06480A04","07300B30",["07700B700108","","07700B70"],["066C0A060148","","066C0A06"]],
-    ["06480A04","07300B30",["07700B70","","07700B700108"],""],
-    ["","",["07700B700108","","07700B70"],""]
+    "06A90A0A",
+    ["07300B300030","",["066C0A06014800C0","","066C0A0600C0"],""],
+    ["07300B300030","",["07700B700040","","07700B7001080040"],""],
+    ["07700B7001080040","","07700B700040"]
   ],
   "1106000C","1106000C","1106000C","1106000C",
-  [["1106000C","120F1002","",""],"","",""],[["1106000C","120F1002","",""],"","",""],
+  [["1106000C","120F10020020","",""],"","",""],[["1106000C","120F10020020","",""],"","",""],
   "1106000C","1106000C","1106000C","1106000C","1106000C","1106000C","1106000C","1106000C","1106000C","1106000C",
   [
-    ["0600",["0A0F0612","","0A0F0636"],"",""],
-    ["0600",["0A0F0600","","0A0F0624"],"",""],"",""
+    ["0600",["0A0F06120020","","0A0F06360020"],"",""],
+    ["0600",["0A0F06000020","","0A0F06240020"],"",""],"",""
   ],
   [
-    ["0600",["06120A0F","","06360A0F"],"",""],
-    ["0600",["06000A0F","","06240A0F"],"",""],"",""
+    ["0600",["06120A0F0020","","06360A0F0020"],"",""],
+    ["0600",["06000A0F0020","","06240A0F0020"],"",""],"",""
   ],
   [
-    ["0600",["0A0F06F4","",""],"",""],
-    ["0600",["0A0F06F4","",""],"",""],"",
-    ["0600",["0A0F06F6","","0A0F06F6"],"",""]
+    ["0600",["0A0F06F40020","",""],"",""],
+    ["0600",["0A0F06F40020","",""],"",""],"",
+    ["0600",["0A0F06F60020","","0A0F06F60020"],"",""]
   ],
   [
-    ["0600",["06F40A0F","",""],"",""],
-    ["0600",["06F40A0F","",""],"",""],"",
-    ["0600",["06F60A0F","","06F60A0F"],"",""]
+    ["0600",["06F40A0F0020","",""],"",""],
+    ["0600",["06F40A0F0020","",""],"",""],"",
+    ["0600",["06F60A0F0020","","06F60A0F0020"],"",""]
   ],
-  "0600",[["0600","0A03120F06FF","",""],"","",""],
-  "0600",[["0600","0A03120F06FF","",""],"","",""],
+  "0600",[["0600","0A03120F06FF0020","",""],"","",""],
+  "0600",[["0600","0A03120F06FF0020","",""],"","",""],
   [
-    ["0600",["0A0F06FF","","0A0F06FF"],"",""],
-    ["0600",["0A0F06FF","","0A0F06FF"],"",""],"",""
+    ["0600",["0A0F06FF0020","","0A0F06FF0020"],"",""],
+    ["0600",["0A0F06FF0020","","0A0F06FF0020"],"",""],"",""
   ],
   [
-    ["0600",["0A0F06FF","","0A0F06FF"],"",""],
-    ["0600",["0A0F06FF","","0A0F06FF"],"",""],"",""
+    ["0600",["0A0F06FF0020","","0A0F06FF0020"],"",""],
+    ["0600",["0A0F06FF0020","","0A0F06FF0020"],"",""],"",""
   ],
   "0600","0600","0600","0600","0600","0600",
   "2608","2608",
   "",
-  "070E0B0E0003",
+  "070E0B0E0013",
   "070E0B0E0C00","070E0B0E1800",
   "0B0E070E","070E0B0E",
   "2808","2808",
   "",
-  "070E0B0E0003",
+  "070E0B0E0013",
   "070E0B0E0C00","070E0B0E1800",
   [
     [
@@ -1715,8 +1554,8 @@ const Operands = [
       ["0601","0601",""]
     ],
     [
-      ["","",["0602","","",""],""],["","",["0602","","",""],""],
-      ["","",["0602","","",""],""],["","",["0602","","",""],""],
+      ["","","0602",""],["","","0602",""],
+      ["","","0602",""],["","","0602",""],
       "",
       ["","","","","","","",""],
       ["","","","","","","",""],
@@ -1724,42 +1563,34 @@ const Operands = [
     ]
   ],
   "0B0E070E",
-  "06000A000003","070E0B0E0003",
+  "06000A000013","070E0B0E0013",
   ["0B0E090E",""],
-  "070E0B0E0003",
+  "070E0B0E0013",
   ["0B0E090E",""],
   ["0B0E090E",""],
   "0B0E0600","0B0E0602",
+  ["1002","","0B0607060030",""],"",
+  ["","","","","070E0C000013","070E0C000013","070E0C000013","070E0C000013"],
+  "0B0E070E0013",
   [
-    ["1002","","",""],"",
-    ["0B060706","0A020602","",""],""
-  ],"",
-  ["","","","","070E0C000003","070E0C000003","070E0C000003","070E0C000003"],
-  "0B0E070E0003",
-  [
-    ["0B0E070E0180","","",""],"",
-    ["0B0E070E0180","0A020602","",""],["0B0E070E0180","0A020602","",""]
+    "0B0E070E0180","",
+    ["0B0E070E0180","0A0206020020","",""],["0B0E070E0180","0A0206020020","",""]
   ],
   [
     ["0B0E070E0180","","",""],"",
-    ["0B0E070E0180","0A020602","",""],["0B0E070E0180","","",""]
+    ["0B0E070E0180","0A0206020020","",""],["0B0E070E0180","","",""]
   ],
   "0B0E0600","0B0E0602",
-  "06000A000003","070E0B0E0003",
-  [
-    ["0A0406480C00","0B30133007300C00","0A0F07700C000111","0A0F066C0C000171"],
-    ["0A0406480C00","0B30133007300C00","0A0F07700C000111","0A0F066C0C000111"],
-    ["0A0406440C00","0A04120406480C00","0A0F06440C000111",""],
-    ["0A0406490C00","0A04120406480C00","0A0F06460C000111",""]
-  ],
+  "06000A000013","070E0B0E0013",
+  ["0A0F07700C00017100F0","0A0F07700C00011100F0","0A0F06440C0001110070","0A0F06460C0001110070"],
   ["06030A02",""],
-  [["0A0A06220C00","","",""],"0A04120406220C000108","",""],
-  ["",[["06020A0A0C00","","",""],"06020A040C000108","",""]],
-  ["0B70137007700C000110","0B70137007700C000110","",""],
+  ["0A0A06220C000010","0A04120406220C0001080070","",""],
+  ["",["06020A0A0C000010","06020A040C0001080070","",""]],
+  ["0B70137007700C0001100010","0B70137007700C0001100010","",""],
   [
     [
       "",
-      ["06060003","","060B0003"],
+      ["06060013","","060B0013"],
       "",
       ["0601","","0601"],
       ["0601","","0601"],
@@ -1774,434 +1605,407 @@ const Operands = [
     ]
   ],
   "030E","030E","030E","030E","030E","030E","030E","030E",
-  ["",["0A040648","0B3013300730","",""],"",["0A040648","0B3013300730","",""]],
-  [["0A0A06A9","","",""],"0B70137006480108","",""],
-  [["0A0A06A9","","",""],["0A040648","0B6013600648",["0B70137006480108","",""],""],"",""],
-  [["0A0A06A9","","",""],"0B70137006480100","",""],
-  [["0A0A06A9","","",""],"0B70137007700110","",""],
-  [["0A0A06A9","","",""],"0B70137007700108","",""],
+  ["0B30133007300013","","0B30133007300013","",""],
+  ["0A0A06A9","0B70137006480108","",""],
+  ["0A0A06A9",["0B701370064801080070","","0B701370064801080060"],"",""],
+  ["0A0A06A9","0B70137006480100","",""],
+  ["0A0A06A9","0B70137007700110","",""],
+  ["0A0A06A9","0B70137007700108","",""],
   [
-    ["","06490A040100","",""],
-    ["","06490A040100",["0A040649","","",""],["0A040649","","",""]]
+    ["","06490A0401000070","",""],
+    ["","06490A0401000070","0A0406490010","0A0406490010"]
   ],
-  ["",[["0B0C06A0","","",""],["0B0C0640","0B0C0730","",""],"",""]],
-  [["0A0A06A9","","",""],"0B70137007700108","",""],
-  [["0A0A06A9","","",""],"0B70137007700108","",""],
-  [["0A0A06A9","","",""],"0B70137007700108","",""],
-  [["0A0A06A9","","",""],["0A040648","0B3013300730",["0B70137007700118","","0B70137007700110"],["0A061206066C0158","","0A061206066C0110"]],"",""],
-  [["0A0A06A9","","",""],"0B70137007700108","",""],
-  [["0A0A06A9","","",""],"0B70137007700108","",""],
-  [["0A0A06A9","","",""],"0B70137007700108","",""],
-  [["0A0A06A9","","",""],["0A040648","0B3013300730",["0B70137007700118","","0B70137007700110"],["0A061206066C0158","","0A061206066C0110"]],"",""],
-  [["0A0A06A9","","",""],"0B70137007700108","",""],
-  [["0A0A06A9","","",""],"0B70137006480108","",""],
-  [["0A0A06A9","","",""],["0A040648","0B3013300648",["0B70137006480108","","0B7013700648"],""],"",""],
-  [["0A0A06A9","","",""],"0B70137007700108","",""],
-  [["0A0A06A9","","",""],"0B70137007700108","",""],
-  [["0A0A06A9","","",""],"0B70137007700108","",""],
-  [
-    "",
-    ["0A040648","0A040730","0B3807700111",""],
-    ["0A040649","0A040730",["0B7007380112","","0B700770011A"],"0A06065A0110"],
-    "0B3807700112"
-  ],
-  [[["06090A0A","","",""],["07100A040108","",""],"",""],""],
-  [["0A0A06A9","","",""],"0B70137007700108","",""],
-  [["0A0A06A9","","",""],"0B70137007700108","",""],
-  [["0A0A06A9","","",""],"0B70137007700108","",""],
-  [["0A0A06A9","","",""],["0A040648","0B3013300730",["0B70137007700118","","0B70137007700110"],["0A061206066C0158","","0A061206066C0110"]],"",""],
-  [["0A0A06A9","","",""],"0B70137007700108","",""],
-  [["0A0A06A9","","",""],"0B70137007700108","",""],
-  [["0A0A06A9","","",""],"0B70137007700108","",""],
-  [["0A0A06A9","","",""],["0A040648","0B3013300730",["0B70137007700118","","0B70137007700110"],["0A061206066C0158","","0A061206066C0110"]],"",""],
-  [["","","",["0A040648","0A040730","",""]],"0000"],
-  [["0A0A06A9","","",""],"0B70137006480108","",""],
-  [["0A0A06A9","","",""],["0B70137006480108","",""],"",""],
-  [["0A0A06A9","","",""],"0B7013700648","",""],
-  [["0A0A06A9","","",""],"0B70137007700110","",""],
-  [["0A0A06A9","","",""],"0B70137007700108","",""],
-  [["0A0A06A9","","",""],"0B70137007700108","",""],
-  ["",[["0A0A060A","","",""],["0B040648","0B040648","",""],"",""]],
-  [["0A0A06A9","","",""],"0B70137007700108","",""],
-  [["0A0A06A9","","",""],"0B70137007700108","",""],
-  [["0A0A06A9","","",""],["0A040648","0B3013300730",["0B70137007700118","",""],["0A061206066C0158","",""]],"",""],
-  [["0A0A06A9","","",""],"0B70137007700110","",""],
-  [["0A0A06A9","","",""],"0B70137007700108","",""],
-  [["0A0A06A9","","",""],"0B70137007700108","",""],
-  [["0A0A06A9","","",""],["0A040648","0B3013300730",["0B70137007700118","",""],["0A061206066C0158","",""]],"",""],
+  ["",["0B0C06A0","0B0C07300030","",""]],
+  ["0A0A06A9","0B701370077001080070","",""],
+  ["0A0A06A9","0B701370077001080070","",""],
+  ["0A0A06A9","0B701370077001080070","",""],
+  ["0A0A06A9",["0B30133007300030","",["0A061206066C015800C0","","0A061206066C011000C0"],""],"",""],
+  ["0A0A06A9","0B701370077001080070","",""],
+  ["0A0A06A9","0B701370077001080070","",""],
+  ["0A0A06A9","0B701370077001080070","",""],
+  ["0A0A06A9",["0B30133007300030","",["0A061206066C015800C0","","0A061206066C011000C0"],""],"",""],
+  ["0A0A06A9","0B701370077001080070","",""],
+  ["0A0A06A9","0B701370064801080070","",""],
+  ["0A0A06A9",["0B30133006480030","",["0B701370064801080040","","0B70137006480040"],""],"",""],
+  ["0A0A06A9","0B701370077001080070","",""],
+  ["0A0A06A9","0B701370077001080070","",""],
+  ["0A0A06A9","0B701370077001080070","",""],
+  ["","0B38077001110070",["0B700738011200F0","","0B700770011A0070"],"0B38077001120070"],
+  [["06090A0A",["07100A0401080070","",""],"",""],""],
+  ["0A0A06A9","0B701370077001080070","",""],
+  ["0A0A06A9","0B701370077001080070","",""],
+  ["0A0A06A9","0B701370077001080070","",""],
+  ["0A0A06A9",["0B30133007300030","",["0A061206066C015800C0","","0A061206066C011000C0"],""],"",""],
+  ["0A0A06A9","0B701370077001080070","",""],
+  ["0A0A06A9","0B701370077001080070","",""],
+  ["0A0A06A9","0B701370077001080070","",""],
+  ["0A0A06A9",["0B30133007300030","",["0A061206066C015800C0","","0A061206066C011000C0"],""],"",""],
+  [["","","","0A0407300030"],""],
+  ["0A0A06A9","0B701370064801080070","",""],
+  ["0A0A06A9",["0B701370064801080070","",""],"",""],
+  ["0A0A06A9","0B70137006480070","",""],
+  ["0A0A06A9","0B701370077001100070","",""],
+  ["0A0A06A9","0B701370077001080070","",""],
+  ["0A0A06A9","0B701370077001080070","",""],
+  ["",["0A0A060A","0B0406480030","",""]],
+  ["0A0A06A9","0B701370077001080070","",""],
+  ["0A0A06A9","0B701370077001080070","",""],
+  ["0A0A06A9",["0B7013700770015800F0","","0B701370077001580030"],"",""],
+  ["0A0A06A9","0B701370077001100070","",""],
+  ["0A0A06A9","0B701370077001080070","",""],
+  ["0A0A06A9","0B701370077001080070","",""],
+  ["0A0A06A9",["0B7013700770015800F0","","0B7013700770030"],"",""],
   "",
   /*------------------------------------------------------------------------------------------------------------------------
   Three Byte operations 0F38.
   ------------------------------------------------------------------------------------------------------------------------*/
-  [["0A0A06A9","","",""],"0B70137007700108","",""],
-  [["0A0A06A9","","",""],["0A040648","0B3013300730","",""],"",""],
-  [["0A0A06A9","","",""],["0A040648","0B3013300730","",""],"",""],
-  [["0A0A06A9","","",""],["0A040648","0B3013300730","",""],"",""],
-  [["0A0A06A9","","",""],"0B70137007700108","",""],
-  [["0A0A06A9","","",""],["0A040648","0B3013300730","",""],"",""],
-  [["0A0A06A9","","",""],["0A040648","0B3013300730","",""],"",""],
-  [["0A0A06A9","","",""],["0A040648","0B3013300730","",""],"",""],
-  [["0A0A06A9","","",""],["0A040648","0B3013300730","",""],"",""],
-  [["0A0A06A9","","",""],["0A040648","0B3013300730","",""],"",""],
-  [["0A0A06A9","","",""],["0A040648","0B3013300730","",""],"",""],
-  [["0A0A06A9","","",""],"0B70137007700108","",""],
-  ["",["","0B3013300730",["0B70137007700118","",""],""],"",""],
-  ["",["","0B3013300730","0B70137007700110",""],"",""],
-  ["",["","0B300730","",""],"",""],
-  ["",["","0B300730","",""],"",""],
-  ["",["0A0406482E00","0B30133007301530","0B7013700770",""],["","","07380B70",""],""],
-  ["",["","","0B7013700770",""],["","","071C0B70",""],""],
-  ["",["","","0B7013700770",""],["","","070E0B70",""],""],
-  ["",["","0B300718",["0B7007380109","",""],""],["","","07380B70",""],""],
-  ["",["0A0407102E00","0B30133007301530",["0B70137007700118","","0B70137007700110"],""],["","","071C0B70",""],""],
-  ["",["0A0407102E00","0B30133007301530",["0B70137007700118","","0B70137007700110"],""],["","","07380B70",""],""],
-  ["",["","0B3013300730",["0B70137007700118","","0B70137007700110"],""],"",""],
-  ["",["0A040648","0B300730","",""],"",""],
-  ["",["","0B300644",["0B7006440108","",""],["0A0606440168","",""]],"",""],
-  ["",["","0A050646",["0B6006460108","","0B700646"],["","","0A060646"]],"",""],
-  ["",["","0A050648",["0B6006480108","","0B600648"],["0A0606480168","",""]],"",""],
-  ["",["","",["0A06065A0108","","0A06065A"],["","","0A06065A"]],"",""],
-  [["0A0A06A9","","",""],"0B7007700108","",""],
-  [["0A0A06A9","","",""],"0B7007700108","",""],
-  [["0A0A06A9","","",""],["0B7007700118","",""],"",""],
-  ["",["","","0B7007700110",""],"",""],
-  ["","0B7007380108",["","","07380B70",""],""],
-  ["","0B70071C0108",["","","071C0B70",""],""],
-  ["","0B70070E0108",["","","070E0B70",""],""],
-  ["","0B7007380108",["","","07380B70",""],""],
-  ["","0B70071C0108",["","","071C0B70",""],""],
-  ["","0B7007380108",["","","07380B70",""],""],
-  ["",["","",["0A0F137007700108","","0A0F13700770"],""],["","",["0A0F13700770","","0A0F137007700108"],""],""],
-  ["",["","",["0A0F137007700118","","0A0F137007700110"],["0A0F1206066C0158","",""]],["","",["0A0F137007700110","","0A0F137007700118"],""],""],
-  ["","0B70137007700110",["","",["0B7006FF","","0B7006FF0108"],""],""],
-  ["",["0A040648","0B3013300730","0A0F137007700110",""],["","",["0A0F0770","","0A0F07700108"],""],""],
-  [["",["0B7007700108","",""],"",""],["","",["","",["","","0B7006FF0108"],""],""]],
-  ["",["0B70137007700118","",""],"",""],
-  ["",["","0B3013300730",["0B7013700770011A","","0B70137007700112"],""],"",""],
-  ["",["","0B3013300730",["0A0412040644011A","","0A04120406480112"],""],"",""],
-  ["",["","073013300B30","",""],"",""],
-  ["",["","0B3013300730","",""],"",""],
-  ["","0B7007380108",["","","07380B70",""],""],
-  ["","0B70071C0108",["","","071C0B70",""],""],
-  ["","0B70070E0108",["","","070E0B70",""],""],
-  ["","0B7007380108",["","","07380B70",""],""],
-  ["","0B70071C0108",["","","071C0B70",""],""],
-  ["","0B7007380108",["","","07380B70",""],""],
-  ["",["","0A051205065A",["0B60136007600118","","0B60136007600110"],["0A061206066C0108","",""]],"",""],
-  ["",["0A040710","0B3013300730","0A0F137007700110",""],"",""],
-  ["","0B70137007700108",["","",["0B7006FF","","0B7006FF0108"],""],""],
-  ["",["0A0412040648","0B3013300730",["0B70137007700118","","0B70137007700110"],["0A061206066C0158","",""]],["","",["0A0F0770","","0A0F07700108"],""],""],
-  ["","0B70137007700108",["","","0B7006FF0100",""],""],
-  ["",["0A0412040648","0B3013300730",["0B70137007700118","","0B70137007700110"],["0A061206066C0158","",""]],"",""],
-  ["","0B70137007700108","",""],
-  ["",["0A0412040648","0B3013300730",["0B70137007700118","","0B70137007700110"],["0A061206066C0158","",""]],"",""],
-  ["","0B70137007700108","",""],
-  ["",["0A0412040648","0B3013300730",["0B70137007700118","","0B70137007700110"],["0A061206066C0158","",""]],"",""],
-  ["",["0A0412040648","0B3013300730",["0B70137007700118","","0B70137007700110"],["0A061206066C0158","",""]],"",""],
-  ["",["0A040648",["0A040648","0A040648","",""],"",""],"",""],
-  ["",["","",["0B7007700119","","0B7007700111"],["0A06066C0179","","0A06066C0111"]],"",""],
-  ["",["","",["0A0412040644010A","","0A04120406460102"],""],"",""],
-  ["",["","",["0B7007700118","","0B7007700110"],""],"",""],
-  ["",["",["0B3013300730","","0B3013300730"],["0B70137007700118","","0B70137007700110"],["0A061206066C0158","",""]],"",""],
-  ["",["",["0B3013300730","",""],["0B70137007700118","","0B70137007700110"],["0A061206066C0158","",""]],"",""],
-  ["",["",["0B3013300730","","0B3013300730"],["0B70137007700118","","0B70137007700110"],["0A061206066C0158","",""]],"",""],
+  ["0A0A06A9","0B701370077001080070","",""],
+  ["0A0A06A9","0B30133007300030","",""],
+  ["0A0A06A9","0B30133007300030","",""],
+  ["0A0A06A9","0B30133007300030","",""],
+  ["0A0A06A9","0B701370077001080070","",""],
+  ["0A0A06A9","0B30133007300030","",""],
+  ["0A0A06A9","0B30133007300030","",""],
+  ["0A0A06A9","0B30133007300030","",""],
+  ["0A0A06A9","0B30133007300030","",""],
+  ["0A0A06A9","0B30133007300030","",""],
+  ["0A0A06A9","0B30133007300030","",""],
+  ["0A0A06A9","0B701370077001080070","",""],
+  ["",["0B701370077001180060","","0B30133007300020"],"",""],
+  ["","0B701370077001100060","",""],
+  ["","0B3007300020","",""],
+  ["","0B3007300020","",""],
+  ["",["0A0406482E00","0B301330073015300020","0B70137007700040",""],"07380B700040",""],
+  ["","0B70137007700040","071C0B700040",""],
+  ["","0B70137007700040","070E0B700040",""],
+  ["",["0B70073801090060","","0B3007180020"],"07380B700040",""],
+  ["",["0A0407102E00","0B301330073015300020",["0B701370077001180040","","0B701370077001100040"],""],"071C0B700040",""],
+  ["",["0A0407102E00","0B301330073015300020",["0B701370077001180040","","0B701370077001100040"],""],"07380B700040",""],
+  ["",["0B701370077001180060","","0B701370077001100040"],"",""],
+  ["","0B3007300030","",""],
+  ["",["0B700644016800E0","","0B3006440020"],"",""],
+  ["",["0B60064601080060","","0B70064600E0"],"",""],
+  ["",["0A0506480020","",["0B600648016800C0","","0B6006480040"],""],"",""],
+  ["",["0A06065A01080040","","0A06065A00C0"],"",""],
+  ["0A0A06A9","0B70077001080070","",""],
+  ["0A0A06A9","0B70077001080070","",""],
+  ["0A0A06A9",["0B70077001180070","",""],"",""],
+  ["","0B70077001100040","",""],
+  ["","0B70073801080070","07380B700040",""],
+  ["","0B70071C01080070","071C0B700040",""],
+  ["","0B70070E01080070","070E0B700040",""],
+  ["","0B70073801080070","07380B700040",""],
+  ["","0B70071C01080070","071C0B700040",""],
+  ["","0B70073801080070","07380B700040",""],
+  ["",["0A0F1370077001080040","","0A0F137007700040"],["0A0F137007700040","","0A0F1370077001080040"],""],
+  ["",["0A0F13700770015800C0","","0A0F1370077001100040"],["0A0F1370077001100040","","0A0F1370077001180040"],""],
+  ["","0B701370077001100070",["0B7006FF0040","","0B7006FF01080040"],""],
+  ["",["0B30133007300030","","0A0F1370077001100040",""],["0A0F07700040","","0A0F077001080040"],""],
+  [["",["0B70077001080070","",""],["","","0B7006FF01080040"],""],""],
+  ["",["0B701370077001180070","",""],"",""],
+  ["",["0B30133007300020","",["0B7013700770011A0040","","0B701370077001120040"],""],"",""],
+  ["",["0B30133007300020","",["0A0412040644011A0040","","0A041204064801120040"],""],"",""],
+  ["","073013300B300020","",""],
+  ["","0B30133007300020","",""],
+  ["","0B70073801080070","07380B700040",""],
+  ["","0B70071C01080070","071C0B700040",""],
+  ["","0B70070E01080070","070E0B700040",""],
+  ["","0B70073801080070","07380B700040",""],
+  ["","0B70071C01080070","071C0B700040",""],
+  ["","0B70073801080070","07380B700040",""],
+  ["",["0B6013600760011800E0","","0B601360076001100060"],"",""],
+  ["",["0B30133007300030","","0A0F1370077001100040",""],"",""],
+  ["","0B701370077001080070",["0B7006FF0040","","0B7006FF01080040"],""],
+  ["",["0B7013700770015800F0","","0B701370077001100070"],["0A0F07700040","","0A0F077001080040"],""],
+  ["","0B701370077001080070","0B7006FF01000040",""],
+  ["",["0B7013700770015800F0","","0B701370077001100070"],"",""],
+  ["","0B701370077001080070","",""],
+  ["",["0B7013700770015800F0","","0B701370077001100070"],"",""],
+  ["","0B701370077001080070","",""],
+  ["",["0B7013700770015800F0","","0B701370077001100040"],"",""],
+  ["",["0B7013700770015800F0","","0B701370077001100070"],"",""],
+  ["",["0A0406480030","0A0406480030",""],"",""],
+  ["",["0B700770017900C0","","0B700770011100C0"],"",""],
+  ["",["0A0412040644010A0040","","0A041204064601020040"],"",""],
+  ["",["0B70077001180040","","0B70077001100040"],"",""],
+  ["",["0B7013700770015800E0","","0B701370077001100060"],"",""],
+  ["",["0B7013700770015800E0","","0B701370077001100060"],"",""],
+  ["",["0B7013700770015800E0","","0B701370077001100060"],"",""],
   "","","","",
-  ["",["","",["0B7007700118","","0B7007700110"],""],"",""],
-  ["",["","",["0A04120406440108","","0A0412040646"],""],"",""],
-  ["",["","",["0B7007700118","","0B7007700110"],""],"",""],
-  ["",["","",["0A04120406440108","","0A0412040646"],""],"",""],
-  ["",["","","",["0A061206066C0178","","0A061206066C0110"]],"",""],
-  ["",["","","",["0A061206066C0179","",""]],"",""],
-  ["",["","","",["0A061206066C0179","","0A061206066C0111"]],"",""],
-  ["",["","","",["0A061206066C0179","","0A061206066C0111"]],"",""],
+  ["",["0B70077001180040","","0B70077001100040"],"",""],
+  ["",["0A041204064401080040","","0A04120406460040"],"",""],
+  ["",["0B70077001180040","","0B70077001100040"],"",""],
+  ["",["0A041204064401080040","","0A04120406460040"],"",""],
+  ["",["0A061206066C01780080","","0A061206066C01100080"],"",""],
+  ["",["0A061206066C01790080","",""],"",""],
+  ["",["0A061206066C01790080","","0A061206066C01110080"],"",""],
+  ["",["0A061206066C01790080","","0A061206066C01110080"],"",""],
   "",
-  ["",["","","",["0A061206066C0159","","0A061206066C0111"]],"",""],
+  ["",["0A061206066C01590080","","0A061206066C01110080"],"",""],
   "","",
-  ["",["","0B300644",["0B7006440108","",""],["0A0606440148","",""]],"",""],
-  ["",["","0B300646",["0B7006460108","","0B700646"],["","","0A060646"]],"",""],
-  ["",["","0A050648",["0B6006480108","","0B600648"],["0A0606480148","",""]],"",""],
-  ["",["","",["0A06065A0108","","0A06065A"],["","","0A06065A"]],"",""],
-  ["",["","","",["0A06120F066C0158","",""]],"",""],
-  ["",["","","",["0A06120F066C0158","",""]],"",""],
-  ["",["","","",["0A06120F066C0158","",""]],"",""],
-  ["",["","","",["0A06120F066C0158","",""]],"",""],
+  ["",["0B700644010800E0","",""],"",""],
+  ["",["0B70064601080060","","0B70064600E0"],"",""],
+  ["",["0A0506480020","",["0B600648014800C0","","0B6006480040"],""],"",""],
+  ["",["0A06065A01080040","","0A06065A00C0"],"",""],
+  ["",["0A06120F066C01580080","",""],"",""],
+  ["",["0A06120F066C01580080","",""],"",""],
+  ["",["0A06120F066C01580080","",""],"",""],
+  ["",["0A06120F066C01580080","",""],"",""],
   "","","","",
-  ["",["","",["0B70137007700118","","0B70137007700110"],["0A061206066C0158","","0A061206066C0110"]],"",""],
-  ["",["","",["0B70137007700118","","0B70137007700110"],["0A061206066C0178","","0A061206066C0110"]],"",""],
-  ["",["","",["0B70137007700108","","0B7013700770"],""],"",""],
+  ["",["0B7013700770015800C0","","0B7013700770011000C0"],"",""],
+  ["",["0B7013700770017800C0","","0B7013700770011000C0"],"",""],
+  ["",["0B701370077001080040","","0B70137007700040"],"",""],
   "","","","","",
-  ["",["","","",["0A061206066C0158","",""]],"",""],
-  ["",["","","",["0A061206066C017A","","0A061206066C0112"]],"",""],
-  ["",["","","",["0A06120F066C0158","",""]],"",""],
-  ["",["","","",["0A06120F066C0158","",""]],"",""],
+  ["",["0A061206066C01580080","",""],"",""],
+  ["",["0A061206066C017A0080","","0A061206066C01120080"],"",""],
+  ["",["0A06120F066C01580080","",""],"",""],
+  ["",["0A06120F066C01580080","",""],"",""],
   "","","","",
-  ["",["","","",["0A0F1206066C0158","",""]],"",""],
-  ["",["","",["0B70137007700108","","0B7013700770"],""],"",""],
-  ["",["","",["0B70137007700118","","0B70137007700110"],""],"",""],
-  ["",["","",["0B70137007700118","","0B70137007700110"],""],"",""],
-  ["",["","0B300640",["0B7006400108","",""],""],"",""],
-  ["",["","0B300642",["0B7006420108","",""],""],"",""],
-  ["",["",["","",["0B7006000108","",""],""],"",""]],
-  ["",["",["","",["0B7006100108","",""],""],"",""]],
-  ["",["","",["0B70062F0108","","0B70063F"],""],"",""],
-  ["",["","",["0B70137007700108","","0B7013700770"],""],"",""],
-  ["",["","",["0B70137007700118","","0B70137007700110"],""],"",""],
-  ["",["","",["0B70137007700118","","0B70137007700110"],""],"",""],
-  [["","0B0C060B0180","",""],""],
-  [["","0B0C060B0180","",""],""],
-  [["","0B0C060B0180","",""],""],
-  ["",["","","0B70137007700110",""],"",""],
-  ["",["","","",["0A061206066C015A","",""]],"",""],
+  ["",["0A0F1206066C01580080","",""],"",""],
+  ["",["0B701370077001080040","","0B70137007700040"],"",""],
+  ["",["0B701370077001180040","","0B701370077001100040"],"",""],
+  ["",["0B701370077001180040","","0B701370077001100040"],"",""],
+  ["",["0B70064001080060","",""],"",""],
+  ["",["0B70064201080060","",""],"",""],
+  ["",["",["0B70060001080040","",""],"",""]],
+  ["",["",["0B70061001080040","",""],"",""]],
+  ["",["0B70062F01080040","","0B70063F0040"],"",""],
+  ["",["0B701370077001080040","","0B70137007700040"],"",""],
+  ["",["0B701370077001180040","","0B701370077001100040"],"",""],
+  ["",["0B701370077001180040","","0B701370077001100040"],"",""],
+  [["","0B0C060B01800070","",""],""],
+  [["","0B0C060B01800070","",""],""],
+  [["","0B0C060B01800070","",""],""],
+  ["","0B701370077001100040","",""],
+  ["",["0A061206066C015A0080","",""],"",""],
   "",
-  ["",["","","",["0A061206066C0158","",""]],"",""],
-  ["",["","","",["0A061206066C0158","",""]],"",""],
-  ["",["","",["0B7007700108","","0B700770"],""],"",""],
-  ["",["","",["0B7007700108","","0B700770"],""],"",""],
-  ["",["","",["07700B700108","","07700B70"],""],"",""],
-  ["",["","",["07700B700108","","07700B70"],""],"",""],
+  ["",["0A061206066C01580080","",""],"",""],
+  ["",["0A061206066C01580080","",""],"",""],
+  ["",["0B70077001080040","","0B7007700040"],"",""],
+  ["",["0B70077001080040","","0B7007700040"],"",""],
+  ["",["07700B7001080040","","07700B700040"],"",""],
+  ["",["07700B7001080040","","07700B700040"],"",""],
   "",
-  ["",["","",["0B70137007700108","","0B7013700770"],""],"",""],
+  ["",["0B701370077001080040","","0B70137007700040"],"",""],
   "","",
-  ["",["",["0B3007301330","","0B3006481330"],["0B700770010C","","0B7007380104"],["0A06066C014C","","0A06065A0104"]],"",""],
-  ["",["",["0A0407301204","","0B3007301330"],["0B380770010C","","0B3807700104"],""],"",""],
-  ["",["",["0B3007301330","","0B3006481330"],["0B700770010C","","0B7007380104"],["0A06066C016C","","0A06065A0104"]],"",""],
-  ["",["",["0A0407301204","","0B3007301330"],["0B380770010C","","0B7007700104"],""],"",""],
+  ["",[["0B30073013300020","","0B30071813300020"],"",["0B700770014C00E0","","0B700738010400E0"],""],"",""],
+  ["",[["0A04073012040020","","0B30073013300020"],"",["0B380770010C00C0","","0B380770010400C0"],""],"",""],
+  ["",[["0B30073013300020","","0B30071813300020"],"",["0B700770016C00E0","","0B700738010400E0"],""],"",""],
+  ["",[["0A04073012040020","","0B30073013300020"],"",["0B380770010C0060","","0B70077001040060"],""],"",""],
   "","",
-  ["",["",["0B3013300730","","0B3013300730"],["0B7013700770011A","","0B70137007700112"],""],"",""],
-  ["",["",["0B3013300730","","0B3013300730"],["0B7013700770011A","","0B70137007700112"],""],"",""],
-  ["",["",["0B3013300730","","0B3013300730"],["0B7013700770011A","","0B70137007700112"],["0A061206066C017A","","0A061206066C0112"]],"",""],
-  ["",["",["0A0412040714","","0A0412040718"],["0A0412040644010A","","0A04120406460102"],""],"",""],
-  ["",["",["0B3013300730","","0B3013300730"],["0B7013700770011A","","0B70137007700112"],["0A061206066C017A","","0A061206066C0112"]],"",""],
-  ["",["",["0A0412040714","","0A0412040718"],["0A0412040644010A","","0A04120406460102"],""],"",""],
-  ["",["",["0B3013300730","","0B3013300730"],["0B7013700770011A","","0B70137007700112"],["0A061206066C017A","","0A061206066C0112"]],"",""],
-  ["",["",["0A0412040714","","0A0412040718"],["0A0412040644010A","","0A04120406460102"],""],"",""],
-  ["",["",["0B3013300730","","0B3013300730"],["0B7013700770011A","","0B70137007700112"],["0A061206066C017A","","0A061206066C0112"]],"",""],
-  ["",["",["0A0412040714","","0A0412040718"],["0A0412040644010A","","0A04120406460102"],""],"",""],
-  ["",["","",["07700B70010C","","07380B700104"],["066C0A06014C","","065A0A060104"]],"",""],
-  ["",["","",["07700B38010C","","07700B700104"],""],"",""],
-  ["",["","",["07700B70010C","","07380B700104"],["066C0A06016C","","065A0A060104"]],"",""],
-  ["",["","",["07700B38010C","","07700B700104"],""],"",""],
-  ["",["","","",["0A061206066C011A","",""]],"",""],
+  ["",["0B7013700770011A0060","","0B701370077001120060"],"",""],
+  ["",["0B7013700770011A0060","","0B701370077001120060"],"",""],
+  ["",["0B7013700770017A00E0","","0B7013700770011200E0"],"",""],
+  ["",["0A0412040644010A0060","","0A041204064601020060"],"",""],
+  ["",["0B7013700770017A00E0","","0B7013700770011200E0"],"",""],
+  ["",["0A0412040644010A0060","","0A041204064601020060"],"",""],
+  ["",["0B7013700770017A00E0","","0B7013700770011200E0"],"",""],
+  ["",["0A0412040644010A0060","","0A041204064601020060"],"",""],
+  ["",["0B7013700770017A00E0","","0B7013700770011200E0"],"",""],
+  ["",["0A0412040644010A0060","","0A041204064601020060"],"",""],
+  ["",["07700B70014C00C0","","07380B70010400C0"],"",""],
+  ["",["07700B38010C0040","","07700B7001040040"],"",""],
+  ["",["07700B70016C00C0","","07380B70010400C0"],"",""],
+  ["",["07700B38010C0040","","07700B7001040040"],"",""],
+  ["",["0A061206066C011A0080","",""],"",""],
   "",
-  ["",["",["0B3013300730","","0B3013300730"],["0B7013700770011A","","0B70137007700112"],""],"",""],
-  ["",["",["0B3013300730","","0B3013300730"],["0B7013700770011A","","0B70137007700112"],""],"",""],
-  ["",["",["0B3013300730","","0B3013300730"],["0B7013700770011A","","0B70137007700112"],["0A061206066C017A","","0A061206066C0112"]],"",""],
-  ["",["",["0A0412040644","","0A0412040646"],["0A0412040644010A","","0A04120406460102"],""],"",""],
-  ["",["",["0B3013300730","","0B3013300730"],["0B7013700770011A","","0B70137007700112"],["0A061206066C017A","","0A061206066C0112"]],"",""],
-  ["",["",["0A0412040644","","0A0412040646"],["0A0412040644010A","","0A04120406460102"],""],"",""],
-  ["",["",["0B3013300730","","0B3013300730"],["0B7013700770011A","","0B70137007700112"],["0A061206066C017A","","0A061206066C0112"]],"",""],
-  ["",["",["0A0412040644","","0A0412040646"],["0A0412040644010A","","0A04120406460102"],""],"",""],
-  ["",["",["0B3013300730","","0B3013300730"],["0B7013700770011A","","0B70137007700112"],["0A061206066C017A","","0A061206066C0112"]],"",""],
-  ["",["",["0A0412040644","","0A0412040646"],["0A0412040644010A","","0A04120406460102"],""],"",""],
+  ["",["0B7013700770011A0060","","0B701370077001120060"],"",""],
+  ["",["0B7013700770011A0060","","0B701370077001120060"],"",""],
+  ["",["0B7013700770017A00E0","","0B7013700770011200E0"],"",""],
+  ["",["0A0412040644010A0060","","0A041204064601020060"],"",""],
+  ["",["0B7013700770017A00E0","","0B7013700770011200E0"],"",""],
+  ["",["0A0412040644010A0060","","0A041204064601020060"],"",""],
+  ["",["0B7013700770017A00E0","","0B7013700770011200E0"],"",""],
+  ["",["0A0412040644010A0060","","0A041204064601020060"],"",""],
+  ["",["0B7013700770017A00E0","","0B7013700770011200E0"],"",""],
+  ["",["0A0412040644010A0060","","0A041204064601020060"],"",""],
   "","","","",
-  ["",["","","0B70137007700110",["0A061206066C0158","",""]],"",""],
-  ["",["","","0B70137007700110",["0A061206066C0158","",""]],"",""],
-  ["",["",["0B3013300730","","0B3013300730"],["0B7013700770011A","","0B70137007700112"],""],"",""],
-  ["",["",["0B3013300730","","0B3013300730"],["0B7013700770011A","","0B70137007700112"],""],"",""],
-  ["",["",["0B3013300730","","0B3013300730"],["0B7013700770011A","","0B70137007700112"],["0A061206066C017A","","0A061206066C0112"]],"",""],
-  ["",["",["0A0412040644","","0A0412040646"],["0A0412040644010A","","0A04120406460102"],""],"",""],
-  ["",["",["0B3013300730","","0B3013300730"],["0B7013700770011A","","0B70137007700112"],["0A061206066C017A","","0A061206066C0112"]],"",""],
-  ["",["",["0A0412040644","","0A0412040646"],["0A0412040644010A","","0A04120406460102"],""],"",""],
-  ["",["",["0B3013300730","","0B3013300730"],["0B7013700770011A","","0B70137007700112"],["0A061206066C017A","","0A061206066C0112"]],"",""],
-  ["",["",["0A0412040644","","0A0412040646"],["0A0412040644010A","","0A04120406460102"],""],"",""],
-  ["",["",["0B3013300730","","0B3013300730"],["0B7013700770011A","","0B70137007700112"],["0A061206066C017A","","0A061206066C0112"]],"",""],
-  ["",["",["0A0412040644","","0A0412040646"],["0A0412040644010A","","0A04120406460102"],""],"",""],
+  ["",["0A061206066C01580080","","0B701370077001100040"],"",""],
+  ["",["0A061206066C01580080","","0B701370077001100040"],"",""],
+  ["",["0B7013700770011A0060","","0B701370077001120060"],"",""],
+  ["",["0B7013700770011A0060","","0B701370077001120060"],"",""],
+  ["",["0B7013700770017A00E0","","0B7013700770011200E0"],"",""],
+  ["",["0A0412040644010A0060","","0A041204064601020060"],"",""],
+  ["",["0B7013700770017A00E0","","0B7013700770011200E0"],"",""],
+  ["",["0A0412040644010A0060","","0A041204064601020060"],"",""],
+  ["",["0B7013700770017A00E0","","0B7013700770011200E0"],"",""],
+  ["",["0A0412040644010A0060","","0A041204064601020060"],"",""],
+  ["",["0B7013700770017A00E0","","0B7013700770011200E0"],"",""],
+  ["",["0A0412040644010A0060","","0A041204064601020060"],"",""],
   "","","","",
-  ["",["","",["0B7007700118","","0B7007700110"],""],"",""],
+  ["",["0B70077001180040","","0B70077001100040"],"",""],
   "",
   [
     [
       "",
-      ["",["","",["060C0108","","060A"],""],"",""],
-      ["",["","",["060C0108","","060A"],""],"",""],
+      ["",["060C01080040","","060A0040"],"",""],
+      ["",["060C01080040","","060A0040"],"",""],
       "","",
-      ["",["","",["060C0108","","060A"],""],"",""],
-      ["",["","",["060C0108","","060A"],""],"",""],
+      ["",["060C01080040","","060A0040"],"",""],
+      ["",["060C01080040","","060A0040"],"",""],
       ""
     ],""
   ],
   [
     [
       "",
-      ["",["","",["060C0108","","060C"],""],"",""],
-      ["",["","",["060C0108","","060C"],""],"",""],
+      ["",["060C01080040","","060C0040"],"",""],
+      ["",["060C01080040","","060C0040"],"",""],
       "","",
-      ["",["","",["060C0108","","060C"],""],"",""],
-      ["",["","",["060C0108","","060C"],""],"",""],
+      ["",["060C01080040","","060C0040"],"",""],
+      ["",["060C01080040","","060C0040"],"",""],
       ""
     ],""
   ],
-  [["0A040648","","",""],["","",["0A06066C0119","","0A06066C0111"],["0A06066C0109","",""]],"",""],
-  [["0A040648","","",""],["","","",["0A06066C0109","",""]],"",""],
-  [["0A040648","","",""],["","",["0A06066C0119","","0A06066C0111"],["0A06066C0109","",""]],"",""],
-  [["0A0406482E00","","",""],["","",["0A04120406440109","","0A04120406460101"],["0A06066C0109","",""]],"",""],
-  [["0A040648","","",""],["","",["0A06066C0119","","0A06066C0111"],["0A06066C017A","",""]],"",""],
-  [["0A040648","","",""],["","",["0A04120406440109","","0A04120406460101"],["0A06066C0158","",""]],"",""],
+  ["0A040648",["","",["0A06066C01190040","","0A06066C01110040"],["0A06066C01190080","",""]],"",""],
+  ["0A040648",["0A06066C01090080","","0A06066C01010080"],"",""],
+  ["0A040648",["0A06066C011900C0","","0A06066C01110040"],"",""],
+  ["0A0406482E00",["","",["0A041204064401090040","","0A041204064601010040"],["0A041204064401090080","",""]],"",""],
+  ["0A040648",["","",["0A06066C01190040","","0A06066C01110040"],["0A06066C01190080","",""]],"",""],
+  ["0A040648",["","",["0A041204064401090040","","0A041204064601010040"],["0A041204064401090080","",""]],"",""],
   "","",
-  [[["","","",["0A06060C0140","","0A06060C0108"]],["","","",["060C0A060148","","060C0A06"]],"",""],""],
-  [[["","","",["0A06060C0160","","0A06060C0108"]],["","","",["060C0A060168","","060C0A06"]],"",""],""],
+  [[["0A06060C01400080","","0A06060C01080080"],["060C0A0601480080","","060C0A060080"],"",""],""],
+  [[["0A06060C01600080","","0A06060C010800800080"],["060C0A0601680080","","060C0A060080"],"",""],""],
   "","",
-  [[["","","",["0A06060C0140","","0A06060C0108"]],["","","",["060C0A060148","","060C0A06"]],"",""],""],
-  [[["","","",["0A06060C0160","","0A06060C0108"]],["","","",["060C0A060168","","060C0A06"]],"",""],""],
+  [[["0A06060C01400080","","0A06060C01080080"],["060C0A060148080","","060C0A06080"],"",""],""],
+  [[["0A06060C01600080","","0A06060C01080080"],["060C0A060168080","","060C0A06080"],"",""],""],
   "","","","","",
-  ["",["0A040648","0A040648","",""],"",""],
-  ["",["0A040648","0A0412040648","",""],"",""],
-  ["",["0A040648","0A0412040648","",""],"",""],
-  ["",["0A040648","0A0412040648","",""],"",""],
-  ["",["0A040648","0A0412040648","",""],"",""],
+  ["","0A0406480030","",""],
+  ["","0A04120406480030","",""],
+  ["","0A04120406480030","",""],
+  ["","0A04120406480030","",""],
+  ["","0A04120406480030","",""],
   "","","","","","","","","","","","","","","","",
-  [
-    ["0B0E070E0180","","",""],
-    ["0B0E070E0180","","",""],"",
-    ["0B0C06000180","","",""]
-  ],
-  [
-    ["070E0B0E0180","","",""],
-    ["070E0B0E0180","","",""],"",
-    ["0B0C070E0180","","",""]
-  ],
-  ["",["","0B0C130C070C","",""],"",""],
+  ["0B0E070E0180","0B0E070E0180","","0B0C06000180"],
+  ["070E0B0E0180","070E0B0E0180","","0B0C070E0180"],
+  ["","0B0C130C070C0020","",""],
   [
     "",
-    ["",["","130C070C","",""],"",""],
-    ["",["","130C070C","",""],"",""],
-    ["",["","130C070C","",""],"",""],
+    ["","130C070C0020","",""],
+    ["","130C070C0020","",""],
+    ["","130C070C0020","",""],
     "","","",""
   ],"",
-  [
-    ["","0B0C070C130C","",""],"",
-    ["","0B0C130C070C","",""],
-    ["","0B0C130C070C","",""]
-  ],
-  [
-    "",
-    ["0B0C070C","","",""],
-    ["0B0C070C","","",""],
-    ["","0B0C130C070C1B0C","",""]
-  ],
-  [
-    ["","0B0C130C070C","",""],
-    ["","0B0C130C070C","",""],
-    ["","0B0C130C070C","",""],
-    ["","0B0C130C070C","",""]
-  ],
+  ["0B0C070C130C0020","","0B0C130C070C0020","0B0C130C070C0020"],
+  ["","0B0C070C","0B0C070C","0B0C130C070C1B0C0020"],
+  ["0B0C130C070C0020","0B0C130C070C0020","0B0C130C070C0020","0B0C130C070C0020"],
   "","","","","","","","",
   /*------------------------------------------------------------------------------------------------------------------------
   Three Byte operations 0F3A.
   ------------------------------------------------------------------------------------------------------------------------*/
-  ["",["","0A05065A0C00","0B7007700C000110",""],"",""],
-  ["",["","0A05065A0C00","0B7007700C000110",""],"",""],
-  ["",["",["0B30133007300C00","",""],"",""],"",""],
-  ["",["","",["0B70137007700C000118","","0B70137007700C000110"],["0A061206066C0C000118","",""]],"",""],
-  ["",["","0B3007300C00",["0B7007700C000118","",""],""],"",""],
-  ["",["","0B3007300C00","0B7007700C000110",""],"",""],
-  ["",["","0A051205065A0C00","",""],"",""],
-  ["",["","","",["0A06066C0108","",""]],"",""],
-  ["",["0A0406480C00","0B3007300C00",["0B7007700C000119","",""],""],"",""],
-  ["",["0A0406480C00","0B3007300C00","0B7007700C000111",""],"",""],
-  ["",["0A0406440C00","0A04120406440C00",["0A04120406440C000109","",""],""],"",""],
-  ["",["0A0406460C00","0A04120406460C00","0A04120406460C000101",""],"",""],
-  ["",["0A0406480C00","0B30133007300C00","",""],"",""],
-  ["",["0A0406480C00","0B30133007300C00","",""],"",""],
-  ["",["0A0406480C00","0B30133007300C00","",""],"",""],
-  [["0A0A06A90C00","","",""],"0B70137007700C000108","",""],
+  ["",["0A05065A0C000020","","0B7007700C0001100040",""],"",""],
+  ["",["0A05065A0C000020","","0B7007700C0001100040",""],"",""],
+  ["",["0B30133007300C000020","",""],"",""],
+  ["",["0B70137007700C00011800C0","","0B70137007700C0001100040"],"",""],
+  ["",["0B7007700C0001180060","",""],"",""],
+  ["","0B7007700C0001100060","",""],
+  ["","0A051205065A0C000020","",""],
+  ["",["0A06066C01080080","",""],"",""],
+  ["",["0B3007300C000030","",["0B7007700C0001190070","",""],""],"",""],
+  ["",["0B3007300C000030","","0B7007700C0001110070",""],"",""],
+  ["",["0A04120406440C000030","",["0A04120406440C0001090070","",""],""],"",""],
+  ["",["0A04120406460C000030","","0A04120406460C0001010070",""],"",""],
+  ["","0B30133007300C000030","",""],
+  ["","0B30133007300C000030","",""],
+  ["","0B30133007300C000030","",""],
+  ["0A0A06A90C00","0B70137007700C0001080070","",""],
   "","","","",
-  [["","06000A040C000108","",""],["","070C0A040C000108","",""]],
-  [["","06020A040C000108","",""],["","070C0A040C000108","",""]],
-  ["",["06240A040C000108","","06360A040C00"],"",""],
-  ["","070C0A040C000108","",""],
-  ["",["","0A05120506480C00",["0B70137006480108","","0B7013700648"],""],"",""],
-  ["",["","06480A050C00",["06480B700C000108","","06480B700C00"],""],"",""],
-  ["",["","",["0A061206065A0C000108","","0A061206065A0C00"],""],"",""],
-  ["",["","",["065A0A060C000108","","065A0A060C00"],""],"",""],
+  [["","06000A040C0001080070","",""],["","070C0A040C0001080070","",""]],
+  [["","06020A040C0001080070","",""],["","070C0A040C0001080070","",""]],
+  ["",["06240A040C0001080070","","06360A040C000070"],"",""],
+  ["","070C0A040C0001080070","",""],
+  ["",["0A05120506480C000020","",["0B701370064801080040","","0B70137006480040"],""],"",""],
+  ["",["06480A050C000020","",["06480B700C0001080040","","06480B700C000040"],""],"",""],
+  ["",["0A061206065A0C0001080040","","0A061206065A0C000040"],"",""],
+  ["",["065A0A060C0001080040","","065A0A060C000040"],"",""],
   "",
-  ["",["","07180B300C00",["07380B700C000109","",""],""],"",""],
-  ["",["","",["0A0F137007700C000118","","0A0F137007700C000110"],["0A0F1206066C0C000158","",""]],"",""],
-  ["",["","",["0A0F137007700C000118","","0A0F137007700C000110"],["0A0F1206066C0C000158","",""]],"",""],
-  ["","0A04120406200C000108","",""],
-  ["",["0A04120406440C000108","",""],"",""],
-  ["",["",["0A04120406240C00","","0A04120406360C00"],["0A04120406240C000108","","0A04120406360C00"],""],"",""],
-  ["",["","",["0B70137007700C000118","","0B70137007700C000110"],""],"",""],
+  ["",["07380B700C0001090060","",""],"",""],
+  ["",["0A0F137007700C00015800C0","","0A0F137007700C0001100040"],"",""],
+  ["",["0A0F137007700C00015800C0","","0A0F137007700C0001100040"],"",""],
+  ["","0A04120406200C0001080070","",""],
+  ["",["0A04120406440C0001080070","",""],"",""],
+  ["",["0A04120406240C0001080060","","0A04120406360C000060"],"",""],
+  ["",["0B70137007700C0001180040","","0B70137007700C0001100040"],"",""],
   "",
-  ["",["","",["0B70137007700C000118","","0B70137007700C000110"],""],"",""],
-  ["",["","",["0B7007700C000119","","0B7007700C000111"],["0A06066C0C000179","","0A06066C0C000111"]],"",""],
-  ["",["","",["0A04120406440C000109","","0A04120406460C000101"],""],"",""],
+  ["",["0B70137007700C0001180040","","0B70137007700C0001100040"],"",""],
+  ["",["0B7007700C00017900C0","","0B7007700C00011100C0"],"",""],
+  ["",["0A04120406440C0001090040","","0A04120406460C0001010040"],"",""],
   "","","","","","","","",
-  ["",["",["0A0F06FF0C00","","0A0F06FF0C00"],"",""],"",""],
-  ["",["",["0A0F06FF0C00","","0A0F06FF0C00"],"",""],"",""],
-  ["",["",["0A0F06FF0C00","","0A0F06FF0C00"],"",""],"",""],
-  ["",["",["0A0F06FF0C00","","0A0F06FF0C00"],"",""],"",""],
+  ["",["0A0F06FF0C000020","","0A0F06FF0C000020"],"",""],
+  ["",["0A0F06FF0C000020","","0A0F06FF0C000020"],"",""],
+  ["",["0A0F06FF0C000020","","0A0F06FF0C000020"],"",""],
+  ["",["0A0F06FF0C000020","","0A0F06FF0C000020"],"",""],
   "","","","",
-  ["",["","0A05120506480C00",["0B70137006480C000108","","0B70137006480C00"],""],"",""],
-  ["",["","06480A050C00",["06480B700C000108","","06480B700C00"],""],"",""],
-  ["",["","",["0A061206065A0C000108","","0A061206065A0C00"],""],"",""],
-  ["",["","",["065A0A060C000108","","065A0A060C00"],""],"",""],
+  ["",["0B30133006480C000060","",["0B70137006480C0001080060","","0B70137006480C000060"],""],"",""],
+  ["",["06480B300C000060","",["06480B700C0001080060","","06480B700C000040"],""],"",""],
+  ["",["0A061206065A0C0001080040","","0A061206065A0C000040"],"",""],
+  ["",["065A0A060C0001080040","","065A0A060C000040"],"",""],
   "","",
-  ["",["","0A0F063F0C00",["0A0F137007700C000108","","0A0F137007700C00"],""],"",""],
-  ["",["","",["0A0F137007700C000108","","0A0F137007700C00"],""],"",""],
-  ["",["0A0406480C00","0B30133007300C00","",""],"",""],
-  ["",["0A0406480C00","0A04120406480C00","",""],"",""],
-  ["",["0A0406480C00","0B30133007300C00",["0B70137007700C000108","",""],""],"",""],
-  ["",["","",["0B70137007700C000118","","0B70137007700C000110"],""],"",""],
-  ["",["0A0406480C00","0A04120406480C00","",""],"",""],
+  ["",["0A0F137007700C000020","",["0A0F137007700C0001080060","","0A0F137007700C000040"],""],"",""],
+  ["",["0A0F137007700C0001080040","","0A0F137007700C000040"],"",""],
+  ["","0B30133007300C000030","",""],
+  ["","0A04120406480C000030","",""],
+  ["",["0B70137007700C0001080070","",""],"",""],
+  ["",["0B70137007700C0001180040","","0B70137007700C0001100040"],"",""],
+  ["","0A04120406480C000030","",""],
   "",
-  ["",["","0A051205065A0C00","",""],"",""],
+  ["","0A051205065A0C000020","",""],
   "",
-  ["",["",["0B301330073015300E00","","0B301330153007300E00"],"",""],"",""],
-  ["",["",["0B301330073015300E00","","0B301330153007300E00"],"",""],"",""],
-  ["",["","0B30133007301530","",""],"",""],
-  ["",["","0B30133007301530","",""],"",""],
-  ["",["","0A051205065A1505","",""],"",""],
+  ["",["0B301330073015300E000020","","0B301330153007300E000020"],"",""],
+  ["",["0B301330073015300E000020","","0B301330153007300E000020"],"",""],
+  ["","0B301330073015300020","",""],
+  ["","0B301330073015300020","",""],
+  ["","0A051205065A15050020","",""],
   "","","",
-  ["",["","",["0B70137007700C000119","","0B70137007700C000111"],""],"",""],
-  ["",["","",["0A04120406440C000109","","0A04120406460C000101"],""],"",""],
-  ["",["","","",["0A06066C0C000179","","0A06066C0C000111"]],"",""],
+  ["",["0B70137007700C0001190040","","0B70137007700C0001110040"],"",""],
+  ["",["0A04120406440C0001090040","","0A04120406460C0001010040"],"",""],
+  ["",["0A06066C0C0001790080","","0A06066C0C0001110080"],"",""],
   "",
-  ["",["","",["0B70137007700C000119","","0B70137007700C000111"],""],"",""],
-  ["",["","",["0A04120406440C000109","","0A04120406460C000101"],""],"",""],
-  ["",["","",["0B7007700C000119","","0B7007700C000111"],""],"",""],
-  ["",["","",["0A04120406440C000109","","0A04120406460C000101"],""],"",""],
+  ["",["0B70137007700C0001190040","","0B70137007700C0001110040"],"",""],
+  ["",["0A04120406440C0001090040","","0A04120406460C0001010040"],"",""],
+  ["",["0B7007700C0001190040","","0B7007700C0001110040"],"",""],
+  ["",["0A04120406440C0001090040","","0A04120406460C0001010040"],"",""],
   "","","","",
-  ["",["",["0B30133007301530","","0B30133015300730"],"",""],"",""],
-  ["",["",["0B30133007301530","","0B30133015300730"],"",""],"",""],
-  ["",["",["0B30133007301530","","0B30133015300730"],"",""],"",""],
-  ["",["",["0B30133007301530","","0B30133015300730"],"",""],"",""],
-  ["",["0A0406480C00","0A0406480C00","",""],"",""],
-  ["",["0A0406480C00","0A0406480C00","",""],"",""],
-  ["",["0A0406480C00","0A0406480C00","",""],"",""],
-  ["",["0A0406480C00","0A0406480C00","",""],"",""],
+  ["",["0B301330073015300020","","0B301330153007300020"],"",""],
+  ["",["0B301330073015300020","","0B301330153007300020"],"",""],
+  ["",["0B301330073015300020","","0B301330153007300020"],"",""],
+  ["",["0B301330073015300020","","0B301330153007300020"],"",""],
+  ["","0A0406480C000030","",""],
+  ["","0A0406480C000030","",""],
+  ["","0A0406480C000030","",""],
+  ["","0A0406480C000030","",""],
   "","",
-  ["",["","",["0A0F07700C000118","","0A0F07700C000110"],""],"",""],
-  ["",["","",["0A0F06440C000108","","0A0F06460C00"],""],"",""],
-  ["",["",["0B30133007301530","","0B30133015300730"],"",""],"",""],
-  ["",["",["0B30133007301530","","0B30133015300730"],"",""],"",""],
-  ["",["",["0A04120406441530","","0A04120415300644"],"",""],"",""],
-  ["",["",["0A04120406461530","","0A04120415300646"],"",""],"",""],
-  ["",["",["0B30133007301530","","0B30133015300730"],"",""],"",""],
-  ["",["",["0B30133007301530","","0B30133015300730"],"",""],"",""],
-  ["",["",["0A04120406441530","","0A04120415300644"],"",""],"",""],
-  ["",["",["0A04120406461530","","0A04120415300646"],"",""],"",""],
+  ["",["0A0F07700C0001180040","","0A0F07700C0001100040"],"",""],
+  ["",["0A0F06440C0001080040","","0A0F06460C000040"],"",""],
+  ["",["0B301330073015300020","","0B301330153007300020"],"",""],
+  ["",["0B301330073015300020","","0B301330153007300020"],"",""],
+  ["",["0A041204064415300020","","0A041204153006440020"],"",""],
+  ["",["0A041204064615300020","","0A041204153006460020"],"",""],
+  ["",["0B301330073015300020","","0B301330153007300020"],"",""],
+  ["",["0B301330073015300020","","0B301330153007300020"],"",""],
+  ["",["0A041204064415300020","","0A041204153006440020"],"",""],
+  ["",["0A041204064615300020","","0A041204153006460020"],"",""],
   "","","","","","","","",
-  ["",["",["0B30133007301530","","0B30133015300730"],"",""],"",""],
-  ["",["",["0B30133007301530","","0B30133015300730"],"",""],"",""],
-  ["",["",["0A04120406441530","","0A04120415300644"],"",""],"",""],
-  ["",["",["0A04120406461530","","0A04120415300646"],"",""],"",""],
-  ["",["",["0B30133007301530","","0B30133015300730"],"",""],"",""],
-  ["",["",["0B30133007301530","","0B30133015300730"],"",""],"",""],
-  ["",["",["0A04120406441530","","0A04120415300644"],"",""],"",""],
-  ["",["",["0A04120406461530","","0A04120415300646"],"",""],"",""],
+  ["",["0B301330073015300020","","0B301330153007300020"],"",""],
+  ["",["0B301330073015300020","","0B301330153007300020"],"",""],
+  ["",["0A041204064415300020","","0A041204153006440020"],"",""],
+  ["",["0A041204064615300020","","0A041204153006460020"],"",""],
+  ["",["0B301330073015300020","","0B301330153007300020"],"",""],
+  ["",["0B301330073015300020","","0B301330153007300020"],"",""],
+  ["",["0A041204064415300020","","0A041204153006440020"],"",""],
+  ["",["0A041204064615300020","","0A041204153006460020"],"",""],
   "","","","","","","","","","","","","","","","",
   "","","","","","","","","","","","","","","","",
   "","","","","","","","","","","","","","","","",
   "","","","","","","","","","","","","","","","",
   "","","","","","","","","","",
-  [["","","","0A06066C0C000151"],["","","",["0A06066C0C000179","",""]],"",["","","","0A06066C0C000111"]],
-  [["","","","0A06066C0C000151"],["","","",["0A06066C0C000179","",""]],"",""],
+  ["0A06066C0C0001510080",["0A06066C0C0001790080","",""],"","0A06066C0C0001110080"],
+  ["0A06066C0C0001510080",["0A06066C0C0001790080","",""],"",""],
   "","","","",
   "","","","","","","","","","","","","","","",
-  ["",["0A0406480C00","0A0406480C00","",""],"",""],
+  ["","0A0406480C000030","",""],
   "","","","","","","","","","","","","","","","",
-  ["","","",["","0B0C070C0C00","",""]],
+  ["","","","0B0C070C0C000020"],
   "","","","","","","","","","","","","","","",
   /*------------------------------------------------------------------------------------------------------------------------
   AMD XOP 8.
@@ -2305,7 +2109,7 @@ At the very end of the function ^DecodeInstruction()^ an undefined instruction n
 compared for if the operation code is 0x10F then the next byte is read and is used as the selected 3DNow instruction.
 -------------------------------------------------------------------------------------------------------------------------*/
 
-const M3DNow = [
+var M3DNow = [
   "","","","","","","","","","","","","PI2FW","PI2FD","","",
   "","","","","","","","","","","","","","","","",
   "","","","","","","","","","","","","","","","",
@@ -2341,7 +2145,7 @@ If it is operation "SSS" then the two bytes are then read as two codes which are
 link to the patent https://www.google.com/patents/US7552426
 -------------------------------------------------------------------------------------------------------------------------*/
 
-const MSynthetic = [
+var MSynthetic = [
   "VMGETINFO","VMSETINFO","VMDXDSBL","VMDXENBL","",
   "VMCPUID","VMHLT","VMSPLAF","","",
   "VMPUSHFD","VMPOPFD","VMCLI","VMSTI","VMIRETD",
@@ -2587,19 +2391,9 @@ Used by the function ^DecodeOpcode()^.
 var SIMD = 0;
 
 /*-------------------------------------------------------------------------------------------------------------------------
-Vect is set true during the decoding of an instruction code. If the instruction is an Vector instruction 4 in length for
-the four modes then Vect is set true. When Vect is set true the Function ^Decode_ModRM_SIB_Address()^ Will decode the
-ModR/M as a Vector address.
----------------------------------------------------------------------------------------------------------------------------
-Set By function ^DecodeOpcode()^, and used by function ^Decode_ModRM_SIB_Address()^.
--------------------------------------------------------------------------------------------------------------------------*/
-
-var Vect = false;
-
-/*-------------------------------------------------------------------------------------------------------------------------
 VectS is an 8 bit value that stores the Settings for AVX512 vector instruction.
 ---------------------------------------------------------------------------------------------------------------------------
-VectS format = 0 (No Vect), 000 (Conversion Modes), 0 (Ignores Width bit), 0 (VSIB), 0 ({ER}), 0 ({SAE}).
+VectS format = 0 (Reserved), 000 (Conversion Modes), 0 (Ignores Width bit), 0 (VSIB), 0 ({ER}), 0 ({SAE}).
 ---------------------------------------------------------------------------------------------------------------------------
 Some arithmetic instructions are combined with vector instructions, so no Vect is required for these instructions.
 No vect disables the registers from defaulting to XMM (Smallest vector register) if the size attribute is lower than 128.
@@ -2671,10 +2465,10 @@ MVEX/EVEX register round modes.
 Some instructions use SAE which suppresses all errors, but if an instruction uses {er} the 4 others are used by vector length.
 -------------------------------------------------------------------------------------------------------------------------*/
 
-const RoundModes = [
+var RoundModes = [
   "", //No rounding mode.
   /*-------------------------------------------------------------------------------------------------------------------------
-  MVEX/EVEX round modes {ER} note EVEX only uses first 4 by vector length while MVEX can ue all 8.
+  MVEX/EVEX round modes {ER} note EVEX only uses first 4 by vector length while MVEX can use all 8.
   -------------------------------------------------------------------------------------------------------------------------*/
   ",{RN}", ",{RD}", ",{RU}", ",{RZ}",",{RN-SAE}", ",{RD-SAE}", ",{RU-SAE}", ",{RZ-SAE}",
   /*-------------------------------------------------------------------------------------------------------------------------
@@ -2687,7 +2481,7 @@ const RoundModes = [
 MVEX register swizzle modes. When an operation is done register to register without The "MVEX.E" control set.
 -------------------------------------------------------------------------------------------------------------------------*/
 
-const RegSwizzleModes = [ "", "{CDAB}", "{BADC}", "{DACB}", "{AAAA}", "{BBBB}", "{CCCC}", "{DDDD}" ];
+var RegSwizzleModes = [ "", "{CDAB}", "{BADC}", "{DACB}", "{AAAA}", "{BBBB}", "{CCCC}", "{DDDD}" ];
 
 /*-------------------------------------------------------------------------------------------------------------------------
 MVEX Memory conversion modes. EVEX uses broadcast round {1To16}, {1To8} as an broadcast round control using the Width bit.
@@ -2696,7 +2490,7 @@ The array is stored in double pairs for the Width bit, and Conversion mode.
 There are two modes usable by MVEX options Float, and Integer conversion. Both EVEX, and MVEX support Broadcast round.
 -------------------------------------------------------------------------------------------------------------------------*/
 
-const ConversionModes = [
+var ConversionModes = [
   "", "", //None.
   "{1To16}", "{1To8}", //(Broadcast) Used by EVEX broadcast round mode, and MVEX broadcast round option.
   "{4To16}", "{4To8}", //(Broadcast) The 4ToX is only usable by MVEX.
@@ -2791,6 +2585,14 @@ This is used by function ^DecodeInstruction()^.
 var BND = false;
 
 /*-------------------------------------------------------------------------------------------------------------------------
+Extensions is set by instructions that can be encoded using more than one extension. Not all instructions have been introduced
+under all extensions.
+Extensions set 1 in value by default until an instruction specifies which extensions the instruction can  be encoded in.
+-------------------------------------------------------------------------------------------------------------------------*/
+
+var Extensions = 1;
+
+/*-------------------------------------------------------------------------------------------------------------------------
 The Invalid Instruction variable is very important as some bit settings in vector extensions create invalid operation codes.
 Also some opcodes are invalid in different cpu bit modes.
 ---------------------------------------------------------------------------------------------------------------------------
@@ -2807,7 +2609,7 @@ and SIMD Vector length instructions using the adjusted variable SizeAttrSelect.
 Used by functions ^DecodeRegValue()^, ^Decode_ModRM_SIB_Address()^.
 -------------------------------------------------------------------------------------------------------------------------*/
 
-const REG = [
+var REG = [
   /*-------------------------------------------------------------------------------------------------------------------------
   REG array Index 0 Is used only if the value returned from the GetOperandSize is 0 in value which is the 8 bit general use
   Arithmetic registers names. Note that these same registers can be made 16 bit across instead of using just the first 8 bit
@@ -3007,7 +2809,7 @@ When the 16 bit shift is used for far pointers only plus one is added for the 16
 Used by the function ^Decode_ModRM_SIB_Address()^.
 -------------------------------------------------------------------------------------------------------------------------*/
 
-const PTR = [
+var PTR = [
   /*-------------------------------------------------------------------------------------------------------------------------
   Pointer array index 0 when GetOperandSize returns size 0 then times 2 for 8 bit pointer.
   In plus 16 bit shift array index 0 is added by 1 making 0+1=1 no pointer name is used.
@@ -3059,7 +2861,7 @@ a Memory address that uses the SIB Address mode which uses another byte for the 
 used by the ^Decode_ModRM_SIB_Address function()^.
 -------------------------------------------------------------------------------------------------------------------------*/
 
-const scale = [
+var scale = [
  "", //when scale bits are 0 in value no scale multiple is used
  "*2", //when scale bits are 1 in value a scale multiple of times two is used
  "*4", //when scale bits are 2 in value a scale multiple of times four is used
@@ -3402,7 +3204,7 @@ function GetOperandSize( SizeAttribute )
 
   //In 32/16 bit mode the operand size must never exceed 32.
 
-  if ( BitMode <= 1 && S2 >= 3 && !Vect )
+  if ( BitMode <= 1 && S2 >= 3 && !( Extensions > 1 ) )
   {
     if( ( S1 | S2 | S3 ) === S3 ){ S1 = 2; S3 = 2; } //If single size all adjust 32.
     S2 = 2; //Default operand size 32.
@@ -3411,15 +3213,15 @@ function GetOperandSize( SizeAttribute )
   //In 16 bit mode The operand override is always active until used. This makes all operands 16 bit size.
   //When Operand override is used it is the default 32 size. Flip S3 with S2.
 
-  if( BitMode === 0 && !Vect ) { var t = S3; S3 = S2; S2 = t; }
+  if( BitMode === 0 && !( Extensions > 1 ) ) { var t = S3; S3 = S2; S2 = t; }
 
   //If an Vect is active, then EVEX.W, VEX.W, or XOP.W bit acts as 32/64.
 
-  if( ( Vect || Extension > 0 ) && ( ( S1 + S2 + S3 ) === 7 | ( S1 + S2 + S3 ) === 5 ) ) { Vect = false; return( ( [ S2, S1 ] )[ WidthBit & 1 ] ); }
+  if( ( ( Extensions > 1 ) || Extension > 0 ) && ( ( S1 + S2 + S3 ) === 7 | ( S1 + S2 + S3 ) === 5 ) ) { Extensions = 1; return( ( [ S2, S1 ] )[ WidthBit & 1 ] ); }
 
   //If it is an vector, and Bround is active vector goes max size.
 
-  if( Vect && ConversionMode === 1 )
+  if( ( Extensions > 1 ) && ConversionMode === 1 )
   {
     S0 = S1; S3 = S1; S2 = S1;
   }
@@ -3683,7 +3485,7 @@ function DecodeRegValue( RValue, BySize, Setting )
 {
   //If the instruction is a Vector instruction, and no extension is active like EVEX, VEX Make sure Size attribute uses the default vector size.
 
-  if( Vect && Extension === 0 )
+  if( ( Extensions > 1 ) && Extension === 0 )
   {
     SizeAttrSelect = 0;
   }
@@ -3696,7 +3498,7 @@ function DecodeRegValue( RValue, BySize, Setting )
 
     //If it is an Vector Operation any operation smaller than 128 has to XMM because XMM is the smallest SIMD Vector register.
 
-    if( Vect && Setting < 4 ) { Setting = 4; }
+    if( ( Extensions > 1 ) && Setting < 4 ) { Setting = 4; }
   }
 
   //if 8 bit high/low Registers
@@ -3732,7 +3534,7 @@ function Decode_ModRM_SIB_Address( ModRM, BySize, Setting )
 
     //If the instruction is a Vector instruction, and no extension is active like EVEX, VEX Make sure Size attribute uses the default vector size.
 
-    if( Vect && Extension === 0 )
+    if( ( Extensions > 1 ) && Extension === 0 )
     {
        SizeAttrSelect = 0;
     }
@@ -3747,7 +3549,7 @@ function Decode_ModRM_SIB_Address( ModRM, BySize, Setting )
       //Check if it is not the non vectorized 128 which uses "Oword ptr".
       //-------------------------------------------------------------------------------------------------------------------------
 
-      if ( Setting !== 16 || Vect )
+      if ( Setting !== 16 || ( Extensions > 1 ) )
       {
         Setting = ( GetOperandSize( Setting ) << 1 ) | FarPointer;
       }
@@ -3756,7 +3558,7 @@ function Decode_ModRM_SIB_Address( ModRM, BySize, Setting )
       //Non vectorized 128 uses "Oword ptr" alaises to "QWord ptr" in 32 bit mode, or lower.
       //-------------------------------------------------------------------------------------------------------------------------
 
-      else if ( !Vect ) { Setting = 11 - ( ( BitMode <= 1 ) * 5 ); }
+      else if ( !( Extensions > 1 ) ) { Setting = 11 - ( ( BitMode <= 1 ) * 5 ); }
     }
 
     //-------------------------------------------------------------------------------------------------------------------------
@@ -4375,8 +4177,6 @@ function DecodeOpcode()
 
   if(Name instanceof Array && Name.length == 4)
   {
-    Vect = true; //Set Vector Encoding true.
-
     //Reset the prefix string G1 because prefix codes F2, and F3 are used with SSE which forum the repeat prefix.
     //Some SSE instructions can use the REP, RENP prefixes.
     //The Vectors that do support the repeat prefix uses Packed Single format.
@@ -4386,16 +4186,17 @@ function DecodeOpcode()
 
     //If the SIMD instruction uses another array 4 in length in the Selected SIMD vector Instruction.
     //Then each vector Extension is separate. The first extension is used if no extension is active for Regular instructions, and vector instruction septation.
-    //0=None. 1=VEX only. 2=EVEX only. 3=??? unused.
+    //0=None. 1=VEX only. 2=EVEX only. 3=MVEX.
 
     if(Name instanceof Array && Name.length == 4)
     {
       //Get the correct Instruction for the Active Extension type.
 
-      if(Name[Extension] !== "") { Name = Name[Extension]; Type = Type[Extension]; }
-      else{ Name = "???"; Type = ""; }
+      if( Name[ Extension ] !== "" ) { Name = Name[ Extension ]; Type = Type[ Extension ]; }
+      else if( Extension >= 2 && Name[ 2 ] !== "" ) { Name = Name[ 2 ]; Type = Type[ 2 ]; }
+      else if( Extension >= 1 && Name[ 1 ] !== "" ) { Name = Name[ 1 ]; Type = Type[ 1 ]; }
+      else if( Extension >= 0 && Name[ 0 ] !== "" ) { Name = Name[ 0 ]; Type = Type[ 0 ]; }
     }
-    else if( Extension === 3 ){ InvalidOp = true; }
   }
 
   //if Any Mnemonic is an array 3 in size the instruction name goes by size.
@@ -4467,7 +4268,6 @@ function DecodeOperandString( OperandString )
       if(BySize) //Vector adjustment settings.
       {
         VectS = Setting & 0xFF;
-        if( ( Setting & 0x80 ) == 0x80 ) { Vect = false; } //If Non vector instruction set Vect false.
       }
       else //Instruction Prefix types.
       {
@@ -4475,6 +4275,7 @@ function DecodeOperandString( OperandString )
         XAcquire = ( Setting & 0x02 ) >> 1;
         HT = ( Setting & 0x04 ) >> 2;
         BND = ( Setting & 0x08 ) >> 3;
+        Extensions = ( Setting & 0xF0 ) >> 4;
       }
     }
 
@@ -4801,11 +4602,20 @@ function DecodeInstruction()
 
     //Now only some instructions can vector extend, and that is only if the instruction is an SIMD Vector format instruction.
 
-    if( !Vect && Extension > 0 && Opcode <= 0x400 ) { InvalidOp = true; }
+    if ( !( Extensions > 1 ) && Extension > 0 && Opcode <= 0x400 ) { InvalidOp = true; }
+    
+    //Check if valid extension type is used.
+    
+    if( !( ( ( Extensions & 1 ) && ( Extension === 0 ) ) || //Regularly encoded.
+      ( ( ( Extensions & 2 ) >> 1 ) && ( Extension === 1 ) ) || //VEX encodable.
+      ( ( ( Extensions & 4 ) >> 2 ) && ( Extension === 2 ) ) || //MVEX encodable.
+      ( ( ( Extensions & 8 ) >> 3 ) && ( Extension === 3 ) ) ) //EVEX encodable.
+     )
+     { InvalidOp = true; }
 
     //The Width Bit setting must match the vector numbers size otherwise this create an invalid operation code in MVEX/EVEX unless the Width bit is ignored.
 
-    if( Vect && ( ( VectS & 0x08 ) !== 0x08 ) && Extension >= 2 )
+    if( !InvalidOp && ( Extensions > 1 ) && ( ( VectS & 0x08 ) !== 0x08 ) && Extension >= 2 )
     {
       InvalidOp = ( ( SIMD & 1 ) !== ( WidthBit & 1 ) ); //Note use, and ignore width bit pastern EVEX.
     }
@@ -4994,7 +4804,7 @@ function Reset()
 
   //Reset ModR/M Vector extensions.
 
-  Extension = 0; SIMD = 0; Vect = false; ConversionMode = 0; WidthBit = false;
+  Extension = 0; SIMD = 0; Extensions = 1; ConversionMode = 0; WidthBit = false;
   VectorRegister = 0; MaskRegister = 0; EH_ZeroMerg = false; RoundMode = 0x00;
   VectS = 0x00;
 
