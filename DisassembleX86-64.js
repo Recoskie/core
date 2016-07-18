@@ -2417,15 +2417,19 @@ Some instructions use SAE which suppresses all errors, but if an instruction use
 -------------------------------------------------------------------------------------------------------------------------*/
 
 const RoundModes = [
-  "", //No rounding mode.
+  "","","","","","","","", //First 8 No rounding mode.
   /*-------------------------------------------------------------------------------------------------------------------------
-  MVEX/EVEX round modes {ER} note EVEX only uses first 4 by vector length while MVEX can use all 8.
+  MVEX/EVEX round Modes {SAE} Note MVEX (1xx) must be set 4 or higher, while EVEX uses upper 4 in rounding mode by vector length.
   -------------------------------------------------------------------------------------------------------------------------*/
-  ",{RN}", ",{RD}", ",{RU}", ",{RZ}",",{RN-SAE}", ",{RD-SAE}", ",{RU-SAE}", ",{RZ-SAE}",
+  ",{Error}", ",{Error}", ",{Error}", ",{Error}", ",{SAE}", ",{SAE}", ",{SAE}", ",{SAE}",
   /*-------------------------------------------------------------------------------------------------------------------------
-  MVEX/EVEX round Modes {SAE} Note MVEX (1xx) must be set 4 or higher, while EVEX uses upper size in rounding mode by vector length.
+  MVEX/EVEX round modes {ER} note EVEX only uses the upper 4 by vector length while MVEX can use all 8.
   -------------------------------------------------------------------------------------------------------------------------*/
-  ",{Error}", ",{Error}", ",{Error}", ",{Error}",",{SAE}", ",{SAE}", ",{SAE}", ",{SAE}"
+  ",{RN}", ",{RD}", ",{RU}", ",{RZ}", ",{RN-SAE}", ",{RD-SAE}", ",{RU-SAE}", ",{RZ-SAE}",
+  /*-------------------------------------------------------------------------------------------------------------------------
+  MVEX/EVEX round modes {SAE}, {ER} Both rounding modes can not possibly be set both at the same time.
+  -------------------------------------------------------------------------------------------------------------------------*/
+  "","","","","","","","" //No rounding mode.
 ];
   
 /*-------------------------------------------------------------------------------------------------------------------------
@@ -3753,16 +3757,9 @@ function Decode_ModRM_SIB_Address( ModRM, BySize, Setting )
     
     //MVEX/EVEX round mode.
  
-    if ( Extension === 3 && EH_ZeroMerg )
+    if ( ( Extension === 3 && EH_ZeroMerg ) || ( Extension === 2 && ConversionMode === 1 ) )
     {
-	  if ( VectS & 0x01 ) { RoundMode = 9 + ConversionMode; }
-	  else if ( ( VectS & 0x02 ) >> 1 ) { RoundMode = 1 + ConversionMode; }
-	}
-	
-	if ( Extension === 2 && ConversionMode === 1 )
-	{
-	  if ( VectS & 0x01 ) { RoundMode = 13 + SizeAttrSelect; }
-	  else if ( ( VectS & 0x02 ) >> 1 ) { RoundMode = 1 + SizeAttrSelect; }
+	  RoundMode |= ( ( VectS & 3 ) << 3 );
 	}
 
     //If the upper 4 bits are defined and by size is false then the upper four bits is the selected register.
@@ -3996,6 +3993,7 @@ function DecodePrefixAdjustments()
       if ( ( Opcode & 0x0400 ) > 0 )
       {
 		SizeAttrSelect = ( Opcode & 0x600000 ) >> 21; //The EVEX.L'L Size combination.
+		RoundMode = SizeAttrSelect | 4; //Rounding mode is Vector length if used.
         ConversionMode = (Opcode & 0x100000 ) >> 20; //Broadcast Round Memory address system.
 	  }
       
@@ -4005,10 +4003,11 @@ function DecodePrefixAdjustments()
       {
 	    SizeAttrSelect = 2; //Max Size by default.
 	    ConversionMode = ( Opcode & 0x700000 ) >> 20; //"MVEX.sss" Option bits.
+	    RoundMode = ConversionMode; //Rounding mode selection is ConversionMode if used.
 	    Ex = 3;
       }
       
-      VectorRegister |= ( Opcode & 0x080000 ) >> 15; //The EVEX.V' vector extension adds an extra V bit to the vector register selection for 0 to 31.
+      VectorRegister |= ( Opcode & 0x080000 ) >> 15; //The MVEX/EVEX.V' vector extension adds an extra V bit to the vector register selection for 0 to 31.
       MaskRegister = ( Opcode & 0x070000 ) >> 16; //Mask to destination.
       Opcode = ( Opcode & 0x03 ) << 8; //Change Operation code map.
 
