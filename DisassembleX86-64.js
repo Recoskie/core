@@ -596,7 +596,7 @@ const Mnemonics = [
   ],
   "MOVSX","MOVSX",
   "XADD","XADD",
-  ["CMPPS","CMPPD","CMPSS","CMPSD"],
+  [["CMP,PS,","CMP,PD,","CMP,SS,","CMP,SD,"],["CMP,PS,","CMP,PD,","CMP,SS,","CMP,SD,"]], //Conbition codes.
   ["MOVNTI","???"],
   ["PINSRW","PINSRW","",""],
   ["???",["PEXTRW","PEXTRW","",""]],
@@ -936,8 +936,8 @@ const Mnemonics = [
   ["???",["EXTRACTF32X8","","EXTRACTF64X4"],"???","???"],
   "???",
   ["???",["CVTPS2PH","","???"],"???","???"],
-  ["???",["PCMPUD","","PCMPUQ"],"???","???"],
-  ["???",["PCMPD","","PCMPQ"],"???","???"],
+  ["???",["PCMP,UD,","","PCMP,UQ,"],"???","???"],
+  ["???",["PCM,PD,","","PCM,PQ,"],"???","???"],
   ["???","PINSRB","???","???"],
   ["???",["INSERTPS","","???"],"???","???"],
   ["???",["PINSRD","","PINSRQ"],"???","???"],
@@ -957,8 +957,8 @@ const Mnemonics = [
   ["???",["INSERTI32X8","","INSERTI64X4"],"???","???"],
   ["???",["EXTRACTI32X8","","EXTRACTI64X4"],"???","???"],
   "???","???",
-  ["???",["KEXTRACT",["PCMPUB","","PCMPUW"]],"???","???"],
-  ["???",["PCMPB","","PCMPW"],"???","???"],
+  ["???",["KEXTRACT",["PCMP,UB,","","PCMP,UW,"]],"???","???"],
+  ["???",["PCM,PB,","","PCM,PW,"],"???","???"],
   ["???","DPPS","???","???"],
   ["???","DPPD","???","???"],
   ["???",["DBPSADBW","","???"],"???","???"],
@@ -1041,9 +1041,9 @@ const Mnemonics = [
   "???","???","???","???","???","???","???","???","???","???","???","???","???","???","???",
   "VPMADCSWD","???","???","???","???","???","???","???","???","???",
   "VPROTB","VPROTW","VPROTD","VPROTQ","???","???","???","???","???","???","???","???",
-  "VPCOMB","VPCOMW","VPCOMD","VPCOMQ","???","???","???","???","???","???","???","???","???","???","???",
+  "VPCOM,B,","VPCOM,W,","VPCOM,D,","VPCOM,Q,","???","???","???","???","???","???","???","???","???","???","???",
   "???","???","???","???","???","???","???","???","???","???","???","???","???","???","???","???","???",
-  "VPCOMUB","VPCOMUW","VPCOMUD","VPCOMUQ",
+  "VPCOM,UB,","VPCOM,UW,","VPCOM,UD,","VPCOM,UQ,",
   "???","???","???","???","???","???","???","???","???","???","???","???","???","???","???","???",
   /*------------------------------------------------------------------------------------------------------------------------
   AMD XOP 9.
@@ -1556,7 +1556,7 @@ const Operands = [
   ],
   "0B0E0600","0B0E0602",
   "06000A000013","070E0B0E0013",
-  ["0A0F07700C00017100F0","0A0F07700C00011100F0","0A0F06440C0001110070","0A0F06460C0001110070"],
+  [["0B30133007300C000030","0B30133007300C000030","0A04120406440C000030","0A04120406460C000030"],["0A0F137007700C00017100C0","0A0F137007700C00011100C0","0A0F120406440C0001110040","0A0F120406460C0001110040"]],
   ["06030A02",""],
   ["0A0A06220C000010","0A04120406220C0001080070","",""],
   ["",["06020A0A0C000010","06020A040C0001080070","",""]],
@@ -2103,6 +2103,31 @@ const MSynthetic = [
   "VMSGDT","VMSIDT","VMSLDT","VMSTR","",
   "VMSDTE","","","",""
 ];
+
+/*-------------------------------------------------------------------------------------------------------------------------
+Condition codes Note that the SSE, and MVEX versions are limited to the first 7 condition codes.
+XOP condition codes map differently.
+-------------------------------------------------------------------------------------------------------------------------*/
+
+const ConditionCodes = [
+  "EQ","LT","LE","UNORD","NEQ","NLT","NLE","ORD", //SSE/MVEX.
+  "EQ_UQ","NGE","NGT","FALSE","NEQ_OQ","GE","GT","TRUE", //VEX/EVEX.
+  "EQ_OS","LT_OQ","LE_OQ","UNORD_S","NEQ_US","NLT_UQ","NLE_UQ","ORD_S", //VEX/EVEX.
+  "EQ_US","NGE_UQ","NGT_UQ","FALSE_OS","NEQ_OS","GE_OQ","GT_OQ","TRUE_US", //VEX/EVEX.
+  "LT","LE","GT","GE","EQ","NEQ","FALSE","TRUE" //XOP.
+];
+
+/*-------------------------------------------------------------------------------------------------------------------------
+The Decoded operation name.
+-------------------------------------------------------------------------------------------------------------------------*/
+
+var Instruction = "";
+
+/*-------------------------------------------------------------------------------------------------------------------------
+The Instructions operands.
+-------------------------------------------------------------------------------------------------------------------------*/
+
+var InsOperands = "";
 
 /*-------------------------------------------------------------------------------------------------------------------------
 This object stores a single decoded Operand, and gives it an number in OperandNum (Operand Number) for the order they are
@@ -3843,6 +3868,7 @@ function DecodePrefixAdjustments()
 
     if( Opcode === 0xC5 )
     {
+	  Extension = 1;
       //-------------------------------------------------------------------------------------------------------------------------
       Opcode = BinCode[CodePos]; //read VEX2 byte settings.
       NextByte(); //Move to the next byte.
@@ -3870,13 +3896,14 @@ function DecodePrefixAdjustments()
 
       //Stop decoding prefixes send back code for VEX.
 
-      return(1);
+      return(null);
     }
 
     //The VEX3 prefix settings decoding.
 
     if( Opcode === 0xC4 )
     {
+	  Extension = 1;
       //-------------------------------------------------------------------------------------------------------------------------
       Opcode = BinCode[CodePos]; //read VEX3 byte settings.
       NextByte(); //Move to the next byte.
@@ -3905,7 +3932,7 @@ function DecodePrefixAdjustments()
       NextByte(); //Move to the next byte.
       //-------------------------------------------------------------------------------------------------------------------------
 
-      return(1);
+      return(null);
 
     }
 
@@ -3919,6 +3946,7 @@ function DecodePrefixAdjustments()
 
       if( Code >= 8 && Code <= 10 )
       {
+		Extension = 1;
         //-------------------------------------------------------------------------------------------------------------------------
         Opcode = BinCode[CodePos]; //read XOP byte settings.
         NextByte(); //Move to the next byte.
@@ -3948,8 +3976,7 @@ function DecodePrefixAdjustments()
         NextByte(); //Move to the next byte.
         //-------------------------------------------------------------------------------------------------------------------------
 
-        return(1);
-
+        return(null);
       }
 
     }
@@ -3958,7 +3985,7 @@ function DecodePrefixAdjustments()
 
     if( Opcode === 0x62 )
     {
-	  var Ex = 2;
+	  Extension = 2;
       //-------------------------------------------------------------------------------------------------------------------------
       Opcode = BinCode[CodePos]; //read MVEX/EVEX byte settings.
       NextByte(); //Move to the next byte.
@@ -4004,7 +4031,7 @@ function DecodePrefixAdjustments()
 	    SizeAttrSelect = 2; //Max Size by default.
 	    ConversionMode = ( Opcode & 0x700000 ) >> 20; //"MVEX.sss" Option bits.
 	    RoundMode = ConversionMode; //Rounding mode selection is ConversionMode if used.
-	    Ex = 3;
+	    Extension = 3;
       }
       
       VectorRegister |= ( Opcode & 0x080000 ) >> 15; //The MVEX/EVEX.V' vector extension adds an extra V bit to the vector register selection for 0 to 31.
@@ -4016,9 +4043,9 @@ function DecodePrefixAdjustments()
       NextByte(); //Move to the next byte.
       //-------------------------------------------------------------------------------------------------------------------------
 
-      //Stop decoding prefixes send back code for MVEX/EVEX.
+      //Stop decoding prefixes.
 
-      return( Ex );
+      return(null);
 
     }
   }
@@ -4077,9 +4104,6 @@ function DecodePrefixAdjustments()
     InvalidOp |= ( Opcode === 0x9A | Opcode === 0xEA );
     InvalidOp |= ( Opcode === 0x82 );
   }
-
-  return(0); //regular opcode no extension active like VEX, or EVEX.
-
 }
 
 /*-------------------------------------------------------------------------------------------------------------------------
@@ -4098,11 +4122,11 @@ function DecodeOpcode()
 
   //get the Operation name by the operations opcode.
 
-  var Name = Mnemonics[Opcode];
+  Instruction = Mnemonics[Opcode];
 
   //get the Operands for this opcode it follows the same array structure as Mnemonics array
 
-  var Type = Operands[Opcode];
+  InsOperands = Operands[Opcode];
 
   //Some Opcodes use the next byte automatically for extended opcode selection. Or current SIMD mode.
 
@@ -4111,34 +4135,34 @@ function DecodeOpcode()
   //If the current Mnemonic is an array two in size then Register Mode, and memory mode are separate from each other.
   //Used in combination with Grouped opcodes, and Static opcodes.
 
-  if(Name instanceof Array && Name.length == 2) { var bits = ( ModRMByte >> 6 ) & ( ModRMByte >> 7 ); Name = Name[bits]; Type = Type[bits]; }
+  if(Instruction instanceof Array && Instruction.length == 2) { var bits = ( ModRMByte >> 6 ) & ( ModRMByte >> 7 ); Instruction = Instruction[bits]; InsOperands = InsOperands[bits]; }
 
   //Arithmetic unit 8x8 combinational logic array combinations.
   //If the current Mnemonic is an array 8 in length It is a group opcode instruction may repeat previous instructions in different forums.
 
-  if(Name instanceof Array && Name.length == 8) { var bits = ( ModRMByte & 0x38 ) >> 3; Name = Name[bits]; Type = Type[bits];
+  if(Instruction instanceof Array && Instruction.length == 8) { var bits = ( ModRMByte & 0x38 ) >> 3; Instruction = Instruction[bits]; InsOperands = InsOperands[bits];
 
     //if The select Group opcode is another array 8 in size it is a static opcode selection which makes the last three bits of the ModR/M byte combination.
 
-    if(Name instanceof Array && Name.length == 8) { var bits = ( ModRMByte & 0x07 ); Name = Name[bits]; Type = Type[bits]; NextByte(); } }
+    if(Instruction instanceof Array && Instruction.length == 8) { var bits = ( ModRMByte & 0x07 ); Instruction = Instruction[bits]; InsOperands = InsOperands[bits]; NextByte(); } }
 
   //Vector unit 4x4 combinational array logic.
   //if the current Mnemonic is an array 4 in size it is an SIMD instruction with four possible modes N/A, 66, F3, F2.
   //The mode is set to SIMD, it could have been set by the EVEX.pp, VEX.pp bit combination, or by prefixes N/A, 66, F3, F2.
 
-  if(Name instanceof Array && Name.length == 4)
+  if(Instruction instanceof Array && Instruction.length == 4)
   {
     //Reset the prefix string G1 because prefix codes F2, and F3 are used with SSE which forum the repeat prefix.
     //Some SSE instructions can use the REP, RENP prefixes.
     //The Vectors that do support the repeat prefix uses Packed Single format.
 
-    if(Name[SIMD] !== "") { PrefixG1 = ""; Name = Name[SIMD]; Type = Type[SIMD]; }
-    else { Name = Name[0]; Type = Type[0]; } //pack single.
+    if(Instruction[SIMD] !== "") { PrefixG1 = ""; Instruction = Instruction[SIMD]; InsOperands = InsOperands[SIMD]; }
+    else { Instruction = Instruction[0]; InsOperands = InsOperands[0]; } //pack single.
 
     //If the SIMD instruction uses an array 2 in length then the vector instruction is on top of an legacy code.
     //0=Arithmetic, 1=Vector.
 
-    if(Name instanceof Array && Name.length == 2)
+    if(Instruction instanceof Array && Instruction.length == 2)
     {
       //Get the correct Instruction for the Active Extension type.
       
@@ -4151,27 +4175,27 @@ function DecodeOpcode()
         if( ( ( Opcode & 0x3EE ) === 0x164 ) || ( ( Opcode & 0x3EF ) === 0x16F ) ||
             ( ( Opcode & 0x3FC ) === 0x290 ) || ( ( Opcode & 0x3DE ) === 0x318 ) ||
             ( ( Opcode & 0x3BC ) === 0x218 ) && ( ( ( Opcode << 1 ) ^ Opcode ) & 2 ) || ( ( Opcode & 0x3FE ) === 0x22C ) ||
-            ( Opcode === 0x176 || Opcode === 0x33E ) ) { bits = 0; }
+            ( Opcode === 0x176 || Opcode === 0x1C2 || Opcode === 0x33E ) ) { bits = 0; }
        }
        else if ( Extension === 2 && ( ( Opcode > 0x2CA && Opcode < 0x2CE ) || Opcode === 0x2C8 ) ) { bits = 0; }
 
-      Name = Name[ bits ]; Type = Type[ bits ];
+      Instruction = Instruction[ bits ]; InsOperands = InsOperands[ bits ];
     }
   }
 
-  //if Any Mnemonic is an array 3 in size the instruction name goes by size.
+  //if Any Mnemonic is an array 3 in size the instruction name goes by size unless the mid element is used for condition code.
 
-  if(Name instanceof Array && Name.length == 3)
+  if(Instruction instanceof Array && Instruction.length == 3)
   {
     var bits = ( Extension === 0 & BitMode !== 0 ) ^ ( SizeAttrSelect & 1 ); //The first bit in SizeAttrSelect for size 32/16 Flips if 16 bit mode.
     ( WidthBit ) && ( bits = 2 ); //Goes 64 using the Width bit.
-    ( Extension === 3 && EH_ZeroMerg && Name[1] !== "" ) && ( EH_ZeroMerg = false, bits = 1 ); //MVEX uses element 1 if MVEX.E is set for instructions that change name. 
+    ( Extension === 3 && EH_ZeroMerg && Instruction[1] !== "" ) && ( EH_ZeroMerg = false, bits = 1 ); //MVEX uses element 1 if MVEX.E is set for instructions that change name. 
 
-    if (Name[bits] !== "") { Name = Name[bits]; Type = Type[bits]; }
+    if (Instruction[bits] !== "") { Instruction = Instruction[bits]; InsOperands = InsOperands[bits]; }
 
     //else no size prefix name then use the default size Mnemonic name.
 
-    else { Name = Name[0]; Type = Type[0]; }
+    else { Instruction = Instruction[0]; InsOperands = InsOperands[0]; }
   }
 
   //If Extension is not 0 then add the vector extend "V" to the instruction.
@@ -4179,16 +4203,11 @@ function DecodeOpcode()
   //Vector mask instructions start with K instead of V any instruction that starts with K and is an
   //vector mask Instruction which starts with K instead of V.
 
-  if( Opcode <= 0x400 && Extension > 0 && Name.charAt(0) !== "K" && Name !== "???" ) { Name = "V" + Name; }
+  if( Opcode <= 0x400 && Extension > 0 && Instruction.charAt(0) !== "K" && Instruction !== "???" ) { Instruction = "V" + Instruction; }
 
   //In 32 bit mode, or bellow only one instruction MOVSXD is replaced with ARPL.
 
-  if( BitMode <= 1 && Name === "MOVSXD" ) { Name = "ARPL"; Type = "06020A01"; }
-
-  //return the instruction name, and operand encoding type.
-
-  return( [ Name, Type ] );
-
+  if( BitMode <= 1 && Instruction === "MOVSXD" ) { Instruction = "ARPL"; InsOperands = "06020A01"; }
 }
 
 /*-------------------------------------------------------------------------------------------------------------------------
@@ -4227,7 +4246,7 @@ function DecodeOperandString( OperandString )
     {
       if(BySize) //Vector adjustment settings.
       {
-        VectS = Setting & 0xFF;
+        VectS = Setting;
       }
       else //Instruction Prefix types.
       {
@@ -4390,11 +4409,31 @@ function DecodeOperands()
 
   if( X86Decoder[3].Active )
   {
-    out[ X86Decoder[3].OpNum ] = DecodeImmediate(
+	  
+	var t = DecodeImmediate(
       X86Decoder[3].Type, //Immediate input type.
       X86Decoder[3].BySizeAttrubute, //By size attribute or not.
       X86Decoder[3].Size //Size settings.
     );
+	  
+	//Check if Instruction uses condition codes.
+	
+	if( Instruction.slice(-1) === "," )
+	{
+	  Instruction = Instruction.split(",");
+	  
+	  if( ( Extension >= 1 && Extension <= 2 && Opcode <= 0x400 && IMMValue < 0x20 ) || IMMValue < 0x08 )
+	  {
+		IMMValue |= ( ( ( Opcode > 0x400 ) & 1 ) << 5 ); //XOP adjust.
+	    Instruction = Instruction[0] + ConditionCodes[ IMMValue ] + Instruction[1];
+      }
+      else { Instruction = Instruction[0] + Instruction[1]; out[ X86Decoder[3].OpNum ] = t; }
+	}
+	
+	//else add the Immediate byte encoding to the decoded instruction operands.
+	
+	else { out[ X86Decoder[3].OpNum ] = t; }
+    
     IMM_Used = true; //Immediate byte is read.
   }
 
@@ -4516,7 +4555,7 @@ function DecodeOperands()
 
   //convert the operand array to a string and return it.
 
-  return ( out.toString() );
+  InsOperands = out.toString();
 
 }
 
@@ -4530,15 +4569,6 @@ function DecodeInstruction()
 
   Reset();
 
-  //Setup and internalize the variables.
-
-  var Instruction = ["", //Stores instruction name.
-  "" //Stores the Operands.
-  ];
-
-  var Operands = ""; //Stores the Decoded operands.
-  var out = ""; //The instruction code that will be returned back from this function.
-
   //Record the starting position.
 
   InstructionPos = GetPosition();
@@ -4546,7 +4576,7 @@ function DecodeInstruction()
   //First read any opcodes (prefix) that act as adjustments to the main three operand decode functions ^DecodeRegValue()^,
   //^Decode_ModRM_SIB_Address()^, and ^DecodeImmediate()^.
 
-  Extension = DecodePrefixAdjustments();
+  DecodePrefixAdjustments();
 
   //Only continue if an invalid opcode is not read by DecodePrefixAdjustments() for cpu bit mode setting.
 
@@ -4554,15 +4584,11 @@ function DecodeInstruction()
   {
     //Decode the instruction.
 
-    Instruction = DecodeOpcode();
+    DecodeOpcode();
 
     //Setup the X86 Decoder for which operands the instruction uses.
 
-    DecodeOperandString( Instruction[1] );
-
-    //Pervent VEX from using XOP instructions.
-
-    InvalidOp = ( Extension > 0 && Opcode >= 0x400 );
+    DecodeOperandString( InsOperands );
     
     //Check if valid extension type is used.
     
@@ -4589,7 +4615,7 @@ function DecodeInstruction()
   {
     //Decode each operand along the Decoder array in order, and deactivate them.
 
-    Operands = DecodeOperands();
+    DecodeOperands();
 
     /*-------------------------------------------------------------------------------------------------------------------------
     3DNow Instruction name is encoded by the next byte after the ModR/M, and Reg operands.
@@ -4599,13 +4625,13 @@ function DecodeInstruction()
     {
       //Lookup operation code.
 
-      Instruction[0] = M3DNow[ BinCode[CodePos] ]; NextByte();
+      Instruction = M3DNow[ BinCode[CodePos] ]; NextByte();
 
       //If Invalid instruction.
 
-      if( Instruction[0] === "" || Instruction[0] == null )
+      if( Instruction === "" || Instruction == null )
       {
-        Instruction[0] = "???"; Operands = "";
+        Instruction = "???"; Operands = "";
       }
     }
 
@@ -4613,7 +4639,7 @@ function DecodeInstruction()
     Synthetic virtual machine operation codes.
     -------------------------------------------------------------------------------------------------------------------------*/
 
-    else if( Instruction[0] === "SSS" )
+    else if( Instruction === "SSS" )
     {
       //The Next two bytes after the static opcode is the select synthetic virtual machine operation code.
 
@@ -4622,19 +4648,19 @@ function DecodeInstruction()
 
       //No operations exist past 4 in value for both bytes that combine to the operation code.
 
-      if( Code1 >= 5 || Code2 >= 5 ) { Instruction[0] = "???"; }
+      if( Code1 >= 5 || Code2 >= 5 ) { Instruction = "???"; }
 
       //Else calculate the operation code in the 5x5 map.
 
       else
       {
-        Instruction[0] = MSynthetic[ ( Code1 * 5 ) + Code2 ];
+        Instruction = MSynthetic[ ( Code1 * 5 ) + Code2 ];
 
         //If Invalid instruction.
 
-        if( Instruction[0] === "" || Instruction[0] == null )
+        if( Instruction === "" || Instruction == null )
         {
-          Instruction[0] = "???";
+          Instruction = "???";
         }
       }
     }
@@ -4643,8 +4669,8 @@ function DecodeInstruction()
 
     if( Opcode === 0x9A || Opcode === 0xEA )
     {
-      var t = Operands.split(",");
-      Operands = t[1] + ":" +t[0];
+      var t = InsOperands.split(",");
+      InsOperands = t[1] + ":" +t[0];
     }
 
     //**Depending on the operation different prefixes replace others for  HLE, or MPX, and branch prediction.
@@ -4721,12 +4747,12 @@ function DecodeInstruction()
 
       //Set prefixes, and operands to empty strings, and set Instruction to UD.
 
-      PrefixG1 = "";PrefixG2 = ""; Instruction[0] = "???"; Operands = "";
+      PrefixG1 = "";PrefixG2 = ""; Instruction = "???"; InsOperands = "";
     }
 
     //Put the Instruction sequence together.
 
-    out = PrefixG1 + " " + PrefixG2 + " " + Instruction[0] + " " + Operands;
+    out = PrefixG1 + " " + PrefixG2 + " " + Instruction + " " + InsOperands;
 
     //Remove any trailing spaces because of unused prefixes.
 
@@ -4751,6 +4777,10 @@ function Reset()
   //Reset Opcode, and Size attribute selector.
 
   Opcode = 0; SizeAttrSelect = 1;
+  
+  //Reset Operands and instruction.
+  
+  Instruction = ""; InsOperands = "";
 
   //Reset ModR/M.
 
