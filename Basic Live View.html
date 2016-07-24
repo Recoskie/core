@@ -123,6 +123,141 @@
         document.getElementById("RIP").value = Offset; //Update the instruction pointer size based on CPU format type.
         document.getElementById("CS").value = Seg; //Update the CodeSegment.
       }
+
+      function Help( h )
+      {
+        if( h === 0 )
+        {
+          alert("x86 is a family of backwards compatible instruction set architectures which means there should be no conflicts, but they are only minor.\r\n\
+If the CPU is not listed in compatibility modes then the code is compatible with the Full X86 architecture mode. For more information on what each compatibility mode effects click the technical info buttons.\r\n\
+*There are very few conflicting instructions though all X86 cores. You should only set compatibility mode if you know the code is designed for one of the conflicting architecture otherwise everything else matches the X86 architecture code standard.");
+        }
+
+        if( h === 1 )
+        {
+          var win = window.open("", "X86", "toolbar=no, location=no, directories=no, status=no, menubar=no, scrollbars=yes, resizable=yes");
+          win.document.body.innerHTML = "Enables decoding of all binary instructions this is the proper setting if the CPU is not listed in compatibility mode meaning the architecture is fully backwards comparable from the modern architecture.<br /><br />\
+  x86 is a family of backwards compatible instruction set architectures with almost full backwards compatibility.<br /><br />\
+  However not all processors match the modern X86 architecture encoding perfectly which is the reason for compatibility mode settings.";
+        }
+
+        if( h === 2 )
+        {
+          var win = window.open("", "K1OM", "toolbar=no, location=no, directories=no, status=no, menubar=no, scrollbars=yes, resizable=yes");
+          win.document.body.innerHTML = "Knights Corner compatibility mode corrects VEX encoded Mask instructions that are different in Knights landing, and Xeon Phi.<br /><br />\
+VEX mask instruction 41 can be encoded 4 ways in knights landing, and later.<br /><br />\
+C4E17941C0 is KANDB K0,K0,K0<br />\
+C4E17841C0 is KANDW K0,K0,K0<br />\
+C4E1F941C0 is KANDD K0,K0,K0<br />\
+C4E1F841C0 is KANDQ K0,K0,K0<br /><br />\
+In knights corner variable size controlled mask did not exist KAND[B|W|D|Q], and also the Vector encoded mask register does not exist.<br />\
+In knights corner the same instructions are decoded as follows.<br /><br />\
+C4E17941C0 is KAND K0,K0<br />\
+C4E17841C0 is KAND K0,K0<br />\
+C4E1F941C0 is KAND K0,K0<br />\
+C4E1F841C0 is KAND K0,K0<br /><br />\
+The mask instructions are adjusted to there proper decoding.<br /><br />\
+KAND[B|W|D|Q] is adjusted to KAND.<br />\
+KANDN[B|W|D|Q] is adjusted to KANDN.<br />\
+KNOT[B|W|D|Q] is adjusted to KNOT.<br />\
+KOR[B|W|D|Q] is adjusted to KOR.<br />\
+KXNOR[B|W|D|Q] is adjusted to KXNOR.<br />\
+KXOR[B|W|D|Q] is adjusted to KXOR.<br />\
+KMOV[B|W|D|Q] is adjusted to KMOV.<br />\
+KORTEST[B|W|D|Q] is adjusted to KORTEST.<br /><br />\
+Lastly the instruction encoding's used by knights corner using the MVEX encoding is distinguishable from the EVEX encoding used by the Knights landing processor and later without error. \
+The only instructions that cause an problem for knights corner support are above.<br /><br />\
+The full Knights corner instruction set is supported under the \"Full X86 Architecture\" compatibility mode. Just that enabling the \"Knights corner\" compatibility mode will correct the mask instruction problem.";
+        }
+
+        if( h === 3 )
+        {
+          var win = window.open("", "Cyrix", "toolbar=no, location=no, directories=no, status=no, menubar=no, scrollbars=yes, resizable=yes");
+          win.document.body.innerHTML = "Cyrix, and Geode instruction SMINT is the three byte opcode map instruction 0F38.<br />\
+Cyrix instruction BB0_RESET Conflicts with the three byte opcode map 0F3A.<br />\
+Cyrix instruction BB1_RESET Conflicts with the three byte opcode map 0F3B, however 0F3B is reserved for future instructions if necessary.<br />\
+Cyrix instruction CPU_WRITE Conflicts with the three byte opcode map 0F3C, however 0F3C is reserved for future instructions if necessary.<br />\
+Cyrix instruction CPU_READ Conflicts with the three byte opcode map 0F3D, however 0F3D is reserved for future instructions if necessary.<br /><br />\
+Lastly the Cyrix instructions.<br /><br />\
+Code 0F50 is Cyrix instruction PAVEB.<br />\
+Code 0F51 is Cyrix instruction PADDSIW.<br />\
+Code 0F52 is Cyrix instruction PMAGW.<br />\
+Code 0F54 is Cyrix instruction PDISTIB.<br />\
+Code 0F55 is Cyrix instruction PSUBSIW.<br />\
+Code 0F58 is Cyrix instruction PMVZB.<br />\
+Code 0F59 is Cyrix instruction PMULHRW.<br />\
+Code 0F5A is Cyrix instruction PMVNZB.<br />\
+Code 0F5B is Cyrix instruction PMVLZB.<br />\
+Code 0F5C is Cyrix instruction PMVGEZB.<br />\
+Code 0F5D is Cyrix instruction PMULHRIW.<br />\
+Code 0F5E is Cyrix instruction PMACHRIW.<br />\
+Code 0F78 is Cyrix instruction SVDC.<br />\
+Code 0F79 is Cyrix instruction RSDC.<br />\
+Code 0F7A is Cyrix instruction SVLDT.<br />\
+Code 0F7B is Cyrix instruction RSLDT.<br />\
+Code 0F7C is Cyrix instruction SVTS.<br />\
+Code 0F7D is Cyrix instruction RSTS.<br />\
+Code 0F7E is Cyrix instruction SMINT.<br /><br />\
+Are the following instructions in modern X86 Arcutecure.<br /><br />\
+Code 0F50 is vector instruction MOVMSK[PS|PD].<br />\
+Code 0F51 is vector instruction SQRT[PS|PD|SS|SD].<br />\
+Code 0F52 is vector instruction RSQRT[PS|PD].<br />\
+Code 0F54 is vector instruction AND[PS|PD].<br />\
+Code 0F58 is vector instruction ADD[PS|PD|SS|SD].<br />\
+Code 0F59 is vector instruction MUL[PS|PD|SS|SD].<br />\
+Code 0F5A is vector instruction CVT[PS|PD|SS|SD]2[PD|PS|SD|SS].<br />\
+Code 0F5B is vector instruction CVT[DQ|PS]2[PS|DQ].<br />\
+Code 0F5C is vector instruction SUB[PS|PD|SS|SD].<br />\
+Code 0F5D is vector instruction MIN[PS|PD|SS|SD].<br />\
+Code 0F5E is vector instruction DIV[PS|PD|SS|SD].<br />\
+Code 0F78 is virtual machine instruction VMREAD.<br />\
+Code 0F79 is virtual machine instruction VMWRITE.<br />\
+Code 0F7A is vector instruction CVT[TPS|TPD|UDQ|UQQ]2[QQ|PD|PS].<br />\
+Code 0F7B is vector instruction CTV[PS|PD|USI]2[QQ|SS|SD].<br />\
+Code 0F7C is vector instruction HADD[PD|PS].<br />\
+Code 0F7D is vector instruction HSUB[PD|PS].<br />\
+Code 0F7E is instruction MOV[D|Q].<br /><br />\
+The rest of the instruction encoding's remain unchanged to the \"Full X86 Architecture\" compatibility mode allowing the Cyrix CPU to execute regular X86 compatible instructions.<br /><br />\
+Enabling Cyrix compatibility mode will allow the Cyrix instructions to disassemble, but at an cost of all vector instructions under the three byte opcodes to not disassemble since they are now instructions under 0F38, and 0F3A.<br />\
+Also the conflicting Vector, and virtual machine instructions will be changed into Cyrix instructions as how they are supposed to be on the Cyrix CPU.<br /><br />\
+Only enable this mode if you Are certain the code is optimized, and meant specifically for the Cyrix CPU otherwise some vector, and virtual machine codes will decode as Cyrix instructions.";
+        }
+
+        if( h === 4 )
+        {
+          var win = window.open("", "Geode", "toolbar=no, location=no, directories=no, status=no, menubar=no, scrollbars=yes, resizable=yes");
+          win.document.body.innerHTML = "AMD created the Geode CPU which derived from the Cyrix CPU. The key differences are listed bellow.<br /><br />\
+Cyrix, and Geode instruction SMINT is the three byte opcode map instruction 0F38.<br />\
+Geode instruction DMINT is the three byte opcode map instruction 0F39, however 0F39 is reserved for future instructions if necessary.<br />\
+Geode instruction RDM Conflicts with the three byte opcode map 0F3A.<br /><br />\
+The rest of the instruction encoding's remain unchanged to the \"Full X86 Architecture\" compatibility mode allowing the Geode CPU to execute regular X86 compatible instructions.<br /><br />\
+Setting Geode compatibility mode will allow the instructions SMINT, DMINT, and RDM to disassemble, but at an cost of disabling an lot of vector instructions that are under the three byte opcodes.";
+        }
+
+        if( h === 5 )
+        {
+          var win = window.open("", "Centaur", "toolbar=no, location=no, directories=no, status=no, menubar=no, scrollbars=yes, resizable=yes");
+          win.document.body.innerHTML = "The Centaur CPU instruction ALTINST Conflicts with the three byte opcode map 0F3F, however 0F3F is reserved for future instructions if necessary.<br /><br />\
+Instruction 0FA6 is the instruction XBIT, but is grouped instructions MONTMUL (0FA6C0), XSA1 (0FA6C8), XSA256 (0FA6D0) in the Centaur CPU.<br />\
+Instruction 0FA7 is the Instruction IBITS, but is grouped instructions XSTORE (0FA7C0), XCRYPT-ECB (F30FA7C8), XCRYPT-CBC (F30FA7D0), XCRYPT-CTR (F30FA7D8), XCRYPT-CFB (F30FA7E0), XCRYPT-OFB (F30FA7E8) in the Centaur CPU.<br /><br />\
+The rest of the instruction encoding's remain unchanged to the \"Full X86 Architecture\" compatibility mode allowing the Centaur CPU to execute regular X86 compatible instructions.<br /><br />\
+Setting Centaur compatibility mode will allow the Centaur CPU instructions to disassemble instead, of the XBIT, and IBITS instructions.";
+        }
+
+        if( h === 6 )
+        {
+          var win = window.open("", "486", "toolbar=no, location=no, directories=no, status=no, menubar=no, scrollbars=yes, resizable=yes");
+          win.document.body.innerHTML = "In 486 and older CPU's the instruction UMOV conflicts with the new vector MOV instructions: MOVU[PS|PD], MOV[SS|SD], MOVL[PS|PD], MOV[SLD|SS]UP, MOVHLPS, MOVL[PS|PD].<br /><br />\
+Instruction 0F10 is vector instruction MOVU[PS|PD], MOV[SS|SD], but is instruction UMOV in 486<br />\
+Instruction 0F11 is vector instruction MOVU[PS|PD], MOV[SS|SD], but is instruction UMOV in 486<br />\
+Instruction 0F12 is vector instruction MOVL[PS|PD], MOV[SLD|SS]UP, MOVHLPS, but is instruction UMOV in 486<br />\
+Instruction 0F13 is vector instruction MOVL[PS|PD], but is instruction UMOV in 486<br /><br />\
+Instruction 0FA6 is XBIT, but is instruction CMPXCHG in 486.<br />\
+Instruction 0FA7 is IBITS, but is instruction CMPXCHG in 486.<br /><br />\
+The rest of the instruction encoding's remain unchanged to the \"Full X86 Architecture\" compatibility mode allowing the 486 CPU to execute regular X86 compatible instructions.<br /><br />\
+Setting 486 compatibility mode will allow UMOV, and CMPXCHG to disassemble instead, of the Vectored MOV instructions, and XBIT, IBITS instructions.";
+        }
+      }
     </script>
     <center>
       <h1>
@@ -134,9 +269,34 @@
       <table border="1px" width="100%">
         <tr>
           <td>Format:</td>
-          <td><input type="radio" name="Format" id="B16" onclick="Update();" value="16bit">16 bit binaries 8086 (X86-16).</td>
-          <td><input type="radio" name="Format" id="B32" onclick="Update();" value="32bit">32 bit binaries 80386 (X86-32).</td>
+          <td><input type="radio" name="Format" id="B16" onclick="Update();" value="16bit">16 bit binaries (X86-16).</td>
+          <td><input type="radio" name="Format" id="B32" onclick="Update();" value="32bit">32 bit binaries (X86-32).</td>
           <td><input type="radio" name="Format" id="B64" onclick="Update();" value="64bit" checked>64 bit binaries (X86-64).</td>
+        </tr>
+      </table>
+      <table border="1px" width="100%">
+        <tr>
+          <td>
+            <input type="button" onclick="Help(0)" value="Compatibility Mode Help." />Compatibility Mode:
+          </td>
+          <td>
+            <input type="radio" name="CMode" id="Defualt" onclick="CompatibilityMode(0);Update();" checked>Full X86 Architecture.<div style="float:right;display:inline-block"><input type="button" onclick="Help(1)" value="Technical info." /></div>
+          </td>
+          <td>
+            <input type="radio" name="CMode" id="K1OM" onclick="CompatibilityMode(1);Update();">Knights Corner.<div style="float:right;display:inline-block"><input type="button" onclick="Help(2)" value="Technical info." /></div>
+          </td>
+          <td>
+            <input type="radio" name="CMode" id="Cyrix" onclick="CompatibilityMode(2);Update();">Cyrix.<div style="float:right;display:inline-block"><input type="button" onclick="Help(3)" value="Technical info." /></div>
+          </td>
+          <td>
+            <input type="radio" name="CMode" id="Geode" onclick="CompatibilityMode(3);Update();">Geode.<div style="float:right;display:inline-block"><input type="button" onclick="Help(4)" value="Technical info." /></div>
+          </td>
+          <td>
+            <input type="radio" name="CMode" id="Centaur" onclick="CompatibilityMode(4);Update();">Centaur.<div style="float:right;display:inline-block"><input type="button" onclick="Help(5)" value="Technical info." /></div>
+          </td>
+          <td>
+            <input type="radio" name="CMode" id="X86/486" onclick="CompatibilityMode(5);Update();">X86/486.<div style="float:right;display:inline-block"><input type="button" onclick="Help(6)" value="Technical info." /></div>
+          </td>
         </tr>
       </table>
       <table border="1px" width="100%">

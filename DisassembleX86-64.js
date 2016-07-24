@@ -2847,6 +2847,187 @@ const scale = [
  "*4", //when scale bits are 2 in value a scale multiple of times four is used
  "*8"  //when scale bits are 3 in value a scale multiple of times eight is used
  ];
+ 
+ 
+ 
+function CompatibilityMode( type )
+{
+  Mnemonics[0x110] = [["MOVUPS","MOVUPD","MOVSS","MOVSD"],["MOVUPS","MOVUPD","MOVSS","MOVSD"]];
+  Mnemonics[0x111] = [["MOVUPS","MOVUPD","MOVSS","MOVSD"],["MOVUPS","MOVUPD","MOVSS","MOVSD"]];
+  Mnemonics[0x112] = [["MOVLPS","MOVLPD","MOVSLDUP","MOVDDUP"],["MOVHLPS","???","MOVSLDUP","MOVDDUP"]];
+  Mnemonics[0x113] = [["MOVLPS","MOVLPD","???","???"],"???"];
+  Mnemonics[0x138] = ""; Mnemonics[0x139] = "???"; Mnemonics[0x13A] = ""; Mnemonics[0x13B] = "???"; Mnemonics[0x13C] = "???"; Mnemonics[0x13D] = "???"; Mnemonics[0x13F] = "???";
+  Mnemonics[0x141] = [["CMOVNO",["KANDW","","KANDQ"]],["CMOVNO",["KANDB","","KANDD"]],"",""];
+  Mnemonics[0x142] = [["CMOVB",["KANDNW","","KANDNQ"]],["CMOVB",["KANDNB","","KANDND"]],"",""];
+  Mnemonics[0x144] = [["CMOVE",["KNOTW","","KNOTQ"]],["CMOVE",["KNOTB","","KNOTD"]],"",""];
+  Mnemonics[0x145] = [["CMOVNE",["KORW","","KORQ"]],["CMOVNE",["KORB","","KORD"]],"",""];
+  Mnemonics[0x146] = [["CMOVBE",["KXNORW","","KXNORQ"]],["CMOVBE",["KXNORB","","KXNORD"]],"",""];
+  Mnemonics[0x147] = [["CMOVA",["KXORW","","KXORQ"]],["CMOVA",["KXORB","","KXORD"]],"",""];
+  Mnemonics[0x150] = ["???",["MOVMSKPS","MOVMSKPD","???","???"]];
+  Mnemonics[0x151] = ["SQRTPS","SQRTPD","SQRTSS","SQRTSD"];
+  Mnemonics[0x152] = ["RSQRTPS","???","RSQRTSS","???"];
+  Mnemonics[0x154] = ["ANDPS","ANDPD","???","???"];
+  Mnemonics[0x155] = ["ANDNPS","ANDNPD","???","???"];
+  Mnemonics[0x158] = ["ADDPS","ADDPD","ADDSS","ADDSD"];
+  Mnemonics[0x159] = ["MULPS","MULPD","MULSS","MULSD"];
+  Mnemonics[0x15A] = ["CVTPS2PD","CVTPD2PS","CVTSS2SD","CVTSD2SS"];
+  Mnemonics[0x15B] = [["CVTDQ2PS","","CVTQQ2PS"],["CVTPS2DQ","","???"],"CVTTPS2DQ","???"];
+  Mnemonics[0x15C] = ["SUBPS","SUBPD","SUBSS","SUBSD"];
+  Mnemonics[0x15D] = ["MINPS","MINPD","MINSS","MINSD"];
+  Mnemonics[0x15E] = ["DIVPS","DIVPD","DIVSS","DIVSD"];
+  Mnemonics[0x178] = [["VMREAD",["CVTTPS2UDQ","","CVTTPD2UDQ"]],["EXTRQ",["CVTTPS2UQQ","","CVTTPD2UQQ"]],"CVTTSS2USI",["INSERTQ","CVTTSD2USI"]];
+  Mnemonics[0x179] = [["VMWRITE",["CVTPS2UDQ","","CVTPD2UDQ"]],["EXTRQ",["CVTPS2UQQ","","CVTPD2UQQ"]],"CVTSS2USI",["INSERTQ","CVTSD2USI"]];
+  Mnemonics[0x17A] = ["???",["CVTTPS2QQ","","CVTTPD2QQ"],["CVTUDQ2PD","","CVTUQQ2PD"],["CVTUDQ2PS","","CVTUQQ2PS"]];
+  Mnemonics[0x17B] = ["???",["CVTPS2QQ","","CVTPD2QQ"],"CVTUSI2SS","CVTUSI2SD"];
+  Mnemonics[0x17C] = ["???","HADDPD","???","HADDPS"];
+  Mnemonics[0x17D] = ["???","HSUBPD","???","HSUBPS"];
+  Mnemonics[0x17E] = ["MOVD",["MOVD","","MOVQ"],["MOVQ","","MOVQ"],"???"];
+  Mnemonics[0x190] = [["SETO",["KMOVW","","KMOVQ"]],["SETO",["KMOVB","","KMOVD"]],"",""];
+  Mnemonics[0x192] = [["SETB",["KMOVW","","???"]],["SETB",["KMOVB","","???"]],"",["SETB",["KMOVD","","KMOVQ"]]];
+  Mnemonics[0x193] = [["SETAE",["KMOVW","","???"]],["SETAE",["KMOVB","","???"]],"",["SETAE",["KMOVD","","KMOVQ"]]];
+  Mnemonics[0x198] = [["SETS",["KORTESTW","","KORTESTQ"]],["SETS",["KORTESTB","","KORTESTD"]],"",""];
+  Mnemonics[0x1A6] = "XBTS";
+  Mnemonics[0x1A7] = "IBTS";
+
+  Operands[0x110] = [["0B7007700070","0B7007700070","0A0406030070","0A0406090070"],["0B7007700070","0B7007700070","0A04120406040070","0A04120406040070"]];
+  Operands[0x111] = [["07700B700070","07700B700070","06030A040070","06090A040070"],["07700B700070","07700B700070","060412040A040070","060412040A040070"]];
+  Operands[0x112] = [["0A04120406060070","0A04120406060070","0B7007700070","0B7007680070"],["0A04120406040070","","0B7007700070","0B7007700070"]];
+  Operands[0x113] = [["06060A040070","06060A040070","",""],""];
+  Operands[0x138] = ""; Operands[0x139] = ""; Operands[0x13A] = ""; Operands[0x13B] = ""; Operands[0x13C] = ""; Operands[0x13D] = ""; Operands[0x13F] = "";
+  Operands[0x141] = [["0B0E070E0180",["0A0F120F06FF0020","","0A0F120F06FF0020"]],["0B0E070E0180",["0A0F120F06FF0020","","0A0F120F06FF0020"]],"",""];
+  Operands[0x142] = [["0B0E070E0180",["0A0F120F06FF0020","","0A0F120F06FF0020"]],["0B0E070E0180",["0A0F120F06FF0020","","0A0F120F06FF0020"]],"",""];
+  Operands[0x144] = [["0B0E070E0180",["0A0F06FF0020","","0A0F06FF0020"]],["0B0E070E0180",["0A0F06FF0020","","0A0F06FF0020"]],"",""];
+  Operands[0x145] = [["0A02070E0180",["0A0F120F06FF0020","","0A0F120F06FF0020"]],["0A02070E0180",["0A0F120F06FF0020","","0A0F120F06FF0020"]],"",""];
+  Operands[0x146] = [["0B0E070E0180",["0A0F120F06FF0020","","0A0F120F06FF0020"]],["0B0E070E0180",["0A0F120F06FF0020","","0A0F120F06FF0020"]],"",""];
+  Operands[0x147] = [["0B0E070E0180",["0A0F120F06FF0020","","0A0F120F06FF0020"]],["0B0E070E0180",["0A0F120F06FF0020","","0A0F120F06FF0020"]],"",""];
+  Operands[0x150] = ["",["0B0C07300030","0B0C07300030","",""]];
+  Operands[0x151] = ["0B70077001120070","0B70077001120070","0A041204064301020070","0A041204064901020070"];
+  Operands[0x152] = ["0A0406480030","","0A04120406430030",""];
+  Operands[0x154] = ["0B701370077001100070","0B701370077001100070","",""];
+  Operands[0x155] = ["0B701370077001100070","0B701370077001100070","",""];
+  Operands[0x158] = ["0B7013700770017200F0","0B7013700770011200F0","0A041204064301020070","0A041204064601020070"];
+  Operands[0x159] = ["0B7013700770017200F0","0B7013700770011200F0","0A041204064301020070","0A041204064601020070"];
+  Operands[0x15A] = ["0B700738011100F0","0B380770011200F0","0A041204064301010070","0A041204064601020070"];
+  Operands[0x15B] = [["0B70077001120070","","0B380770011A0070"],["0B700770011A0070","",""],"0B70077001110070",""];
+  Operands[0x15C] = ["0B7013700770017200F0","0B7013700770011200F0","0A041204064301020070","0A041204064601020070"];
+  Operands[0x15D] = ["0B701370077001110070","0B701370077001110070","0A041204064301010070","0A041204064601010070"];
+  Operands[0x15E] = ["0B701370077001120070","0B701370077001120070","0A041204064301020070","0A041204064601020070"];
+  Operands[0x178] = [["07080B080180",["0B70077001110040","","0B38077001190040"]],["064F0C000C00",["0B70073801190040","","0B70077001110040"]],"0B0C064401090040",["0A04064F0C000C00","0B0C064601090040"]];
+  Operands[0x179] = [["0B0807080180",["0B70077001120040","","0B380770011A0040"]],["0A04064F",["0B700738011A0040","","0B70077001120040"]],"0B0C0644010A0040",["0A04064F","0B0C0646010A0040"]];
+  Operands[0x17A] = ["",["0B70073801190040","","0B70077001110040"],["0B700738011200C0","","0B700770011A0040"],["0B700770011A0040","","0B38077001120040"]];
+  Operands[0x17B] = ["",["0B700738011A0040","","0B70077001120040"],"0A041204070C010A0040","0A041204070C010A0040"];
+  Operands[0x17C] = ["","0B70137007700030","","0B70137007700030"];
+  Operands[0x17D] = ["","0B70137007700030","","0B70137007700030"];
+  Operands[0x17E] = ["070C0A0A",["06240A0401080070","","06360A0401080070"],["0A0406460030","","0A04064601080070"],""];
+  Operands[0x190] = [["0600",["0A0F06120020","","0A0F06360020"]],["0600",["0A0F06000020","","0A0F06240020"]],"",""];
+  Operands[0x192] = [["0600",["0A0F06F40020","",""]],["0600",["0A0F06F40020","",""]],"",["0600",["0A0F06F60020","","0A0F06F60020"]]];
+  Operands[0x193] = [["0600",["06F40A0F0020","",""]],["0600",["06F40A0F0020","",""]],"",["0600",["06F60A0F0020","","06F60A0F0020"]]];
+  Operands[0x198] = [["0600",["0A0F06FF0020","","0A0F06FF0020"]],["0600",["0A0F06FF0020","","0A0F06FF0020"]],"",""];
+  Operands[0x1a6] = "0B0E070E";
+  Operands[0x1a7] = "070E0B0E";
+  
+  //Adjust the VEX mask instructions for K1OM (Knights corner) which conflict with the enhanced AVX512 versions.
+	
+  if( type === 1 )
+  {
+    Mnemonics[0x141] = [["CMOVNO","KAND"],"","",""];
+    Mnemonics[0x142] = [["CMOVB","KANDN"],"","",""];
+    Mnemonics[0x144] = [["CMOVE","KNOT"],"","",""];
+    Mnemonics[0x145] = [["CMOVNE","KOR"],"","",""];
+    Mnemonics[0x146] = [["CMOVBE","KXNOR"],"","",""];
+    Mnemonics[0x147] = [["CMOVA","KXOR"],"","",""];
+    Mnemonics[0x190] = [["SETO","KMOV"],"","",""];
+    Mnemonics[0x192] = [["SETB","KMOV"],"","",""];
+    Mnemonics[0x193] = [["SETAE","KMOV"],"","",""];
+    Mnemonics[0x198] = [["SETS","KORTEST"],"","",""];
+    Operands[0x141] = [["0B0E070E0180","0A0F06FF0020"],"","",""];
+    Operands[0x142] = [["0B0E070E0180","0A0F06FF0020"],"","",""];
+    Operands[0x144] = [["0B0E070E0180","0A0F06FF0020"],"","",""];
+    Operands[0x145] = [["0A02070E0180","0A0F06FF0020"],"","",""];
+    Operands[0x146] = [["0B0E070E0180","0A0F06FF0020"],"","",""];
+    Operands[0x147] = [["0B0E070E0180","0A0F06FF0020"],"","",""];
+    Operands[0x190] = [["0600","0A0F06FF0020"],"","",""];
+    Operands[0x192] = [["0600","06FF0B060020"],"","",""];
+    Operands[0x193] = [["0600","07060A0F0020"],"","",""];
+    Operands[0x198] = [["0600","0A0F06FF0020"],"","",""];
+  }
+  
+  //Adjust the Mnemonics, and Operand encoding, for the Cyrix processors.
+  
+  if( type === 2 )
+  {
+    Mnemonics[0x138] = "SMINT"; Mnemonics[0x13A] = "BB0_RESET"; Mnemonics[0x13B] = "BB1_RESET"; Mnemonics[0x13C] = "CPU_WRITE"; Mnemonics[0x13D] = "CPU_READ";
+    Mnemonics[0x150] = "PAVEB"; Mnemonics[0x151] = "PADDSIW"; Mnemonics[0x152] = "PMAGW";
+    Mnemonics[0x154] = "PDISTIB"; Mnemonics[0x155] = "PSUBSIW";
+    Mnemonics[0x158] = "PMVZB"; Mnemonics[0x159] = "PMULHRW"; Mnemonics[0x15A] = "PMVNZB";
+    Mnemonics[0x15B] = "PMVLZB"; Mnemonics[0x15C] = "PMVGEZB"; Mnemonics[0x15D] = "PMULHRIW";
+    Mnemonics[0x15E] = "PMACHRIW";
+    Mnemonics[0x178] = "SVDC"; Mnemonics[0x179] = "RSDC"; Mnemonics[0x17A] = "SVLDT";
+    Mnemonics[0x17B] = "RSLDT"; Mnemonics[0x17C] = "SVTS"; Mnemonics[0x17D] = "RSTS";
+    Mnemonics[0x17E] = "SMINT";
+    Operands[0x150] = "0A0A06A9"; Operands[0x151] = "0A0A06A9"; Mnemonics[0x152] = "0A0A06A9";
+    Operands[0x154] = "0A0A06AF"; Operands[0x155] = "0A0A06A9";
+    Operands[0x158] = "0A0A06AF"; Operands[0x159] = "0A0A06A9"; Mnemonics[0x15A] = "0A0A06AF";
+    Operands[0x15B] = "0A0A06AF"; Operands[0x15C] = "0A0A06AF"; Mnemonics[0x15D] = "0A0A06A9";
+    Operands[0x15E] = "0A0A06AF";
+    Operands[0x178] = "30000A08"; Operands[0x179] = "0A083000"; Operands[0x17A] = "3000";
+    Operands[0x17B] = "3000"; Operands[0x17C] = "3000"; Operands[0x17D] = "3000";
+    Operands[0x17E] = "";
+  }
+  
+  //Adjust the Mnemonics, and Operand encoding, for the Geode processor.
+  
+  if( type === 3 )
+  {
+    Mnemonics[0x138] = "SMINT"; Mnemonics[0x139] = "DMINT"; Mnemonics[0x13A] = "RDM";
+  }
+  
+  //Adjust the Mnemonics, for the Centaur processor.
+
+  if( type === 4 )
+  {
+    Mnemonics[0x13F] = "ALTINST";
+    Mnemonics[0x1A6] = ["???",["MONTMUL","XSA1","XSA256","???","???","???","???","???"]];
+    Mnemonics[0x1A7] = [
+      "???",
+      [
+        "XSTORE",
+        ["???","???","XCRYPT-ECB","???"],
+        ["???","???","XCRYPT-CBC","???"],
+        ["???","???","XCRYPT-CTR","???"],
+        ["???","???","XCRYPT-CFB","???"],
+        ["???","???","XCRYPT-OFB","???"],
+        "???",
+        "???"
+      ]
+    ];
+    Operands[0x1A6] = ["",["","","","","","","",""]];
+    Operands[0x1A7] = [
+      "",
+      [
+        "",
+        ["","","",""],
+        ["","","",""],
+        ["","","",""],
+        ["","","",""],
+        ["","","",""],
+        "",
+        ""
+      ]
+    ];
+  }
+  
+  //Adjust the Mnemonics, for the X86/486 processor and older.
+  
+  if( type === 5 )
+  {
+    Mnemonics[0x110] = "UMOV"; Mnemonics[0x111] = "UMOV"; Mnemonics[0x112] = "UMOV"; Mnemonics[0x113] = "UMOV";
+    Mnemonics[0x1A6] = "CMPXCHG"; Mnemonics[0x1A7] = "CMPXCHG";
+    Operands[0x110] = "06000A00"; Operands[0x111] = "070E0B0E"; Operands[0x112] = "0A000600"; Operands[0x113] = "0B0E070E";
+    Operands[0x1A6] = ""; Operands[0x1A7] = "";
+  }
+
+}
 
 /*-------------------------------------------------------------------------------------------------------------------------
 This function loads the BinCode array using an hex string as input, and Resets the Code position along the array, but does not
@@ -3738,19 +3919,19 @@ function Decode_ModRM_SIB_Address( ModRM, BySize, Setting )
 	    ( ( ( ConversionMode >= 4 ) && ( ( VectS & 0x40 ) === 0x40 ) ) || //Integer conversion.
 	      ( ( ConversionMode === 3 ) && ( ( VectS & 0x20 ) === 0x20 ) ) || //Float conversion.
 	      ( ( ConversionMode > 0 && ConversionMode < 3 ) && ( ( VectS & 0x10 ) === 0x10 ) ) ) && //Broadcast Round control.
-	    !( ( ConversionMode === 5 ) && ( ( VectS & 0x70 ) === 0x70 ) ) //If I/F/B format Then SINT8 is not supported.
+	     !( ( ConversionMode === 5 ) && ( ( VectS & 0x70 ) === 0x70 ) ) //If I/F/B format Then SINT8 is not supported.
 	  )
 	  {
-        //If broadcast round control is allowed the Width bit controls the Broadcast size.
+            //If broadcast round control is allowed the Width bit controls the Broadcast size.
         
-		out += "]" + ConversionModes[ ( ConversionMode << 1 ) | ( WidthBit & 1 ) ];
+            out += "]" + ConversionModes[ ( ConversionMode << 1 ) | ( WidthBit & 1 ) ];
 	  }
 		
       //Else bad Setting.
       
       else
       {
-		out += "]{Error}";
+        out += "]{Error}";
       }
     
     } //END of Conversion control, and broadcast Round logic.
@@ -3766,7 +3947,7 @@ function Decode_ModRM_SIB_Address( ModRM, BySize, Setting )
     
     if( Extension === 3 && EH_ZeroMerg )
     {
-	  out += "{EH}";
+      out += "{EH}";
     }
 
   } //End of Memory address Modes 00, 01, 10 decode.
@@ -3784,8 +3965,8 @@ function Decode_ModRM_SIB_Address( ModRM, BySize, Setting )
  
     if ( ( Extension === 3 && EH_ZeroMerg ) || ( Extension === 2 && ConversionMode === 1 ) )
     {
-	  RoundMode |= ( ( VectS & 3 ) << 3 );
-	}
+      RoundMode |= ( ( VectS & 3 ) << 3 );
+    }
 
     //If the upper 4 bits are defined and by size is false then the upper four bits is the selected register.
 
@@ -3799,7 +3980,7 @@ function Decode_ModRM_SIB_Address( ModRM, BySize, Setting )
     
     if( Extension === 3 && !EH_ZeroMerg )
     {
-	  out += RegSwizzleModes[ ConversionMode ];
+      out += RegSwizzleModes[ ConversionMode ];
     }
   }
 
@@ -3833,7 +4014,7 @@ function DecodePrefixAdjustments()
 
   //if 38 hex while using two byte opcode.
 
-  else if(Opcode === 0x138)
+  else if(Opcode === 0x138 && Mnemonics[0x138] === "")
   {
     Opcode = 0x200; //By starting at 0x200 with binary bit 10 set one then adding the 8 bit opcode then Opcode goes 512 to 767.
     return(DecodePrefixAdjustments()); //restart function decode more prefix settings that can effect the decode instruction.
@@ -3841,7 +4022,7 @@ function DecodePrefixAdjustments()
 
   //if 3A hex while using two byte opcode go three byte opcodes.
 
-  else if(Opcode === 0x13A)
+  else if(Opcode === 0x13A && Mnemonics[0x13A] === "")
   {
     Opcode = 0x300; //By starting at 0x300 hex and adding the 8 bit opcode then Opcode goes 768 to 1023.
     return(DecodePrefixAdjustments()); //restart function decode more prefix settings that can effect the decode instruction.
@@ -3868,7 +4049,7 @@ function DecodePrefixAdjustments()
 
     if( Opcode === 0xC5 )
     {
-	  Extension = 1;
+      Extension = 1;
       //-------------------------------------------------------------------------------------------------------------------------
       Opcode = BinCode[CodePos]; //read VEX2 byte settings.
       NextByte(); //Move to the next byte.
@@ -3903,7 +4084,7 @@ function DecodePrefixAdjustments()
 
     if( Opcode === 0xC4 )
     {
-	  Extension = 1;
+      Extension = 1;
       //-------------------------------------------------------------------------------------------------------------------------
       Opcode = BinCode[CodePos]; //read VEX3 byte settings.
       NextByte(); //Move to the next byte.
@@ -3946,7 +4127,7 @@ function DecodePrefixAdjustments()
 
       if( Code >= 8 && Code <= 10 )
       {
-		Extension = 1;
+        Extension = 1;
         //-------------------------------------------------------------------------------------------------------------------------
         Opcode = BinCode[CodePos]; //read XOP byte settings.
         NextByte(); //Move to the next byte.
@@ -3985,7 +4166,7 @@ function DecodePrefixAdjustments()
 
     if( Opcode === 0x62 )
     {
-	  Extension = 2;
+      Extension = 2;
       //-------------------------------------------------------------------------------------------------------------------------
       Opcode = BinCode[CodePos]; //read MVEX/EVEX byte settings.
       NextByte(); //Move to the next byte.
@@ -4019,19 +4200,19 @@ function DecodePrefixAdjustments()
       
       if ( ( Opcode & 0x0400 ) > 0 )
       {
-		SizeAttrSelect = ( Opcode & 0x600000 ) >> 21; //The EVEX.L'L Size combination.
-		RoundMode = SizeAttrSelect | 4; //Rounding mode is Vector length if used.
+        SizeAttrSelect = ( Opcode & 0x600000 ) >> 21; //The EVEX.L'L Size combination.
+        RoundMode = SizeAttrSelect | 4; //Rounding mode is Vector length if used.
         ConversionMode = (Opcode & 0x100000 ) >> 20; //Broadcast Round Memory address system.
-	  }
+      }
       
       //MVEX Vector Length, and Broadcast round.
       
       else
       {
-	    SizeAttrSelect = 2; //Max Size by default.
-	    ConversionMode = ( Opcode & 0x700000 ) >> 20; //"MVEX.sss" Option bits.
-	    RoundMode = ConversionMode; //Rounding mode selection is ConversionMode if used.
-	    Extension = 3;
+        SizeAttrSelect = 2; //Max Size by default.
+        ConversionMode = ( Opcode & 0x700000 ) >> 20; //"MVEX.sss" Option bits.
+        RoundMode = ConversionMode; //Rounding mode selection is ConversionMode if used.
+        Extension = 3;
       }
       
       VectorRegister |= ( Opcode & 0x080000 ) >> 15; //The MVEX/EVEX.V' vector extension adds an extra V bit to the vector register selection for 0 to 31.
@@ -4410,7 +4591,7 @@ function DecodeOperands()
   if( X86Decoder[3].Active )
   {
 	  
-	var t = DecodeImmediate(
+    var t = DecodeImmediate(
       X86Decoder[3].Type, //Immediate input type.
       X86Decoder[3].BySizeAttrubute, //By size attribute or not.
       X86Decoder[3].Size //Size settings.
@@ -4422,12 +4603,12 @@ function DecodeOperands()
 	{
 	  Instruction = Instruction.split(",");
 	  
-	  if( ( Extension >= 1 && Extension <= 2 && Opcode <= 0x400 && IMMValue < 0x20 ) || IMMValue < 0x08 )
-	  {
-		IMMValue |= ( ( ( Opcode > 0x400 ) & 1 ) << 5 ); //XOP adjust.
-	    Instruction = Instruction[0] + ConditionCodes[ IMMValue ] + Instruction[1];
-      }
-      else { Instruction = Instruction[0] + Instruction[1]; out[ X86Decoder[3].OpNum ] = t; }
+          if( ( Extension >= 1 && Extension <= 2 && Opcode <= 0x400 && IMMValue < 0x20 ) || IMMValue < 0x08 )
+          {
+            IMMValue |= ( ( ( Opcode > 0x400 ) & 1 ) << 5 ); //XOP adjust.
+            Instruction = Instruction[0] + ConditionCodes[ IMMValue ] + Instruction[1];
+          }
+          else { Instruction = Instruction[0] + Instruction[1]; out[ X86Decoder[3].OpNum ] = t; }
 	}
 	
 	//else add the Immediate byte encoding to the decoded instruction operands.
@@ -4524,7 +4705,7 @@ function DecodeOperands()
 
       else if( X86Decoder[i].Type >= 7 )
       {
-        out[ X86Decoder[i].OpNum ] = ["ST", "FS", "GS", "1", "3", "XMM0"][ ( X86Decoder[i].Type - 7 ) ];
+        out[ X86Decoder[i].OpNum ] = [ "ST", "FS", "GS", "1", "3", "XMM0", "M10" ][ ( X86Decoder[i].Type - 7 ) ];
       }
     }
 
@@ -4598,7 +4779,7 @@ function DecodeInstruction()
 
     if( !InvalidOp && ( Extensions > 1 ) && ( ( VectS & 0x08 ) !== 0x08 ) && Extension >= 2 )
     {
-      InvalidOp = ( ( SIMD & 1 ) !== ( WidthBit & 1 ) ); //Note use, and ignore width bit pastern EVEX.
+      InvalidOp = ( ( SIMD & 1 ) !== ( WidthBit & 1 ) ); //Note use, and ignore width bit pastern MVEX/EVEX.
     }
   }
 
