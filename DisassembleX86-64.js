@@ -931,12 +931,13 @@ const Mnemonics = [
   "???",
   [
     [
+      ["???",["","","",["GATHERPF0HINTDPS","","GATHERPF0HINTDPD"]],"???","???"],
+      ["???",["","",["GATHERPF0DPS","","GATHERPF0DPD"],["GATHERPF0DPS","",""]],"???","???"],
+      ["???",["","",["GATHERPF1DPS","","GATHERPF1DPD"],["GATHERPF1DPS","",""]],"???","???"],
       "???",
-      ["???",["","",["GATHERPF0DPS","","GATHERPF0DPD"],""],"???","???"],
-      ["???",["","",["GATHERPF1DPS","","GATHERPF1DPD"],""],"???","???"],
-      "???","???",
-      ["???",["","",["SCATTERPF0DPS","","SCATTERPF0DPD"],""],"???","???"],
-      ["???",["","",["SCATTERPF1DPS","","SCATTERPF1DPD"],""],"???","???"],
+      ["???",["","","",["SCATTERPF0HINTDPS","","SCATTERPF0HINTDPD"]],"???","???"],
+      ["???",["","",["SCATTERPF0DPS","","SCATTERPF0DPD"],["VSCATTERPF0DPS","",""]],"???","???"],
+      ["???",["","",["SCATTERPF1DPS","","SCATTERPF1DPD"],["VSCATTERPF1DPS","",""]],"???","???"],
       "???"
     ],"???"
   ],
@@ -1936,10 +1937,10 @@ const Operands = [
   "",
   ["",["","",["0B70137007700108","","0B7013700770"],""],"",""],
   "","",
-  ["",["",["0B3007301330","","0B3006481330"],["0B700770010C","","0B7007380104"],["0A06066C014C","","0A06065A0104"]],"",""],
-  ["",["",["0A0407301204","","0B3007301330"],["0B380770010C","","0B3807700104"],""],"",""],
-  ["",["",["0B3007301330","","0B3006481330"],["0B700770010C","","0B7007380104"],["0A06066C016C","","0A06065A0104"]],"",""],
-  ["",["",["0A0407301204","","0B3007301330"],["0B380770010C","","0B7007700104"],""],"",""],
+  ["",["",["0B3007301330010430","","0B3006481330010410"],["0B700770010C70","","0B700770010430"],["0A06066C014C70","","0A06066C010430"]],"",""],
+  ["",["",["0A0407301204010430","","0B30073013300430"],["0B380770010C70","","0B380770010470"],""],"",""],
+  ["",["",["0B3007301330010430","","0B30064813300430"],["0B700770010C70","","0B700770010430"],["0A06066C016C70","","0A06066C010430"]],"",""],
+  ["",["",["0A040730120470","","0B300730133070"],["0B380770010C70","","0B700770010470"],""],"",""],
   "","",
   ["",["",["0B3013300730","","0B3013300730"],["0B7013700770011A","","0B70137007700112"],""],"",""],
   ["",["",["0B3013300730","","0B3013300730"],["0B7013700770011A","","0B70137007700112"],""],"",""],
@@ -1951,10 +1952,10 @@ const Operands = [
   ["",["",["0A0412040714","","0A0412040718"],["0A0412040644010A","","0A04120406460102"],""],"",""],
   ["",["",["0B3013300730","","0B3013300730"],["0B7013700770011A","","0B70137007700112"],["0A061206066C017A","","0A061206066C0112"]],"",""],
   ["",["",["0A0412040714","","0A0412040718"],["0A0412040644010A","","0A04120406460102"],""],"",""],
-  ["",["","",["07700B70010C","","07380B700104"],["066C0A06014C","","065A0A060104"]],"",""],
-  ["",["","",["07700B38010C","","07700B700104"],""],"",""],
-  ["",["","",["07700B70010C","","07380B700104"],["066C0A06016C","","065A0A060104"]],"",""],
-  ["",["","",["07700B38010C","","07700B700104"],""],"",""],
+  ["",["","",["07700B70010C70","","07700B70010430"],["066C0A06014C70","","066C0A06010430"]],"",""],
+  ["",["","",["07700B38010C70","","07700B70010470"],""],"",""],
+  ["",["","",["07700B70010C70","","07700B70010470"],["066C0A06016C70","","066C0A06010470"]],"",""],
+  ["",["","",["07700B38010C70","","07700B70010470"],""],"",""],
   ["",["","","",["0A061206066C011A","",""]],"",""],
   "",
   ["",["",["0B3013300730","","0B3013300730"],["0B7013700770011A","","0B70137007700112"],""],"",""],
@@ -1985,23 +1986,24 @@ const Operands = [
   "",
   [
     [
+      ["",["","","",["060C010C70","","060A010430"]],"",""],
+      ["",["","",["0770010C70","","0770010430"],["060C016C70","",""]],"",""],
+      ["",["","",["0770010C70","","0770010430"],["060C016C70","",""]],"",""],
       "",
-      ["",["","",["060C0108","","060A"],""],"",""],
-      ["",["","",["060C0108","","060A"],""],"",""],
-      "","",
-      ["",["","",["060C0108","","060A"],""],"",""],
-      ["",["","",["060C0108","","060A"],""],"",""],
+      ["",["","","",["060C010C70","","060A010430"]],"",""],,
+      ["",["","",["0770010C70","","0770010430"],["060C016C70","",""]],"",""],
+      ["",["","",["0770010C70","","0770010430"],["060C016C70","",""]],"",""],
       ""
     ],""
   ],
   [
     [
       "",
-      ["",["","",["060C0108","","060C"],""],"",""],
-      ["",["","",["060C0108","","060C"],""],"",""],
+      ["",["","",["0738010C70","","0770010470"],""],"",""],
+      ["",["","",["0738010C70","","0770010470"],""],"",""],
       "","",
-      ["",["","",["060C0108","","060C"],""],"",""],
-      ["",["","",["060C0108","","060C"],""],"",""],
+      ["",["","",["0738010C70","","0770010470"],""],"",""],
+      ["",["","",["0738010C70","","0770010470"],""],"",""],
       ""
     ],""
   ],
@@ -2599,6 +2601,12 @@ or {SAE} suppresses all exceptions then it can not change rounding mode by vecto
 -------------------------------------------------------------------------------------------------------------------------*/
 
 var VectS = 0x00;
+
+/*-------------------------------------------------------------------------------------------------------------------------
+VIDX_Length is the adjustable length of the index vector register if used. Used with the VSIB address.
+-------------------------------------------------------------------------------------------------------------------------*/
+
+var VIDX_Length = 0x00;
 
 /*-------------------------------------------------------------------------------------------------------------------------
 The Extension is set 2 during opcode 62 hex for EVEX in which the ^DecodePrefixAdjustments()^ decodes the settings, but if
@@ -3898,7 +3906,7 @@ function Decode_ModRM_SIB_Address( ModRM, BySize, Setting )
   //If the ModR/M is not in register mode decode it as an Effective address.
   //-------------------------------------------------------------------------------------------------------------------------
 
-  if(ModRM[0] !== 3)
+  if( ModRM[0] !== 3 )
   {
 
     //If the instruction is a Vector instruction, and no extension is active like EVEX, VEX Make sure Size attribute uses the default vector size.
@@ -4041,7 +4049,7 @@ function Decode_ModRM_SIB_Address( ModRM, BySize, Setting )
 
       //if Mode is 0 and Base Register value is 5 then it uses an Relative (RIP) disp32.
 
-      if(ModRM[0] === 0 && ModRM[2] === 5)
+      if( ModRM[0] === 0 && ModRM[2] === 5 )
       {
         Disp = 2;
         DispType = 2;
@@ -4049,7 +4057,7 @@ function Decode_ModRM_SIB_Address( ModRM, BySize, Setting )
 
       //check if Base Register is 4 which goes into the SIB address system
 
-      if(ModRM[2] === 4)
+      if( ModRM[2] === 4 )
       {
         //Decode the SIB byte.
 
@@ -4061,7 +4069,7 @@ function Decode_ModRM_SIB_Address( ModRM, BySize, Setting )
 
         //check if the base register is 5 in value in the SIB without it's added extended value, and that the ModR/M Mode is 0 this activates Disp32
 
-        if (ModRM[0] === 0 && SIB[2] === 5)
+        if ( ModRM[0] === 0 && SIB[2] === 5 && VIDX_Length === 0x00 )
         {
           Disp = 2; //Set Disp32
 
@@ -4073,7 +4081,7 @@ function Decode_ModRM_SIB_Address( ModRM, BySize, Setting )
 
             //*if the Address size is 64 then the 32 bit Immediate must pad to the full 64 bit address.
 
-            if(AddressSize === 3) { Disp = 50; }
+            if( AddressSize === 3 ) { Disp = 50; }
           }
         }
 
@@ -4085,18 +4093,29 @@ function Decode_ModRM_SIB_Address( ModRM, BySize, Setting )
 
           //If the Index Register is not Canceled out (Note this is only reachable if base register was decoded and not canceled out)
 
-          if (IndexReg !== 4)
+          if ( IndexReg !== 4 || VIDX_Length !== 0x00 )
           {
             out = out + "+"; //Then add the Plus in front of the Base register to add the index register
           }
         }
 
-        //if Index Register is not Canceled out at the end then decode the Index with the possibility of the base register.
+        //if Index Register is not Canceled, and that it is not an Vector register then decode the Index with the possibility of the base register.
 
-        if (IndexReg !== 4)
+        if ( IndexReg !== 4 && VIDX_Length === 0x00 )
         {
           out += REG[ AddressSize ][ IndexExtend | IndexReg ];
 
+          //add what the scale bits decode to the Index register by the value of the scale bits which select the name from the scale array.
+
+          out = out + scale[SIB[0]];
+        }
+        
+        //Else if it is an vector register
+        
+        else if ( VIDX_Length !== 0x00 )
+        {
+	  out += DecodeRegValue( ( ( VectorRegister & 0x10 ) | IndexExtend | IndexReg ), true, VIDX_Length ); //Decode Vector register by length setting and the V' extension.
+		  
           //add what the scale bits decode to the Index register by the value of the scale bits which select the name from the scale array.
 
           out = out + scale[SIB[0]];
@@ -4630,7 +4649,15 @@ function DecodeOperandString()
       if(BySize) //Vector adjustment settings.
       {
         VectS = Setting & 0xFF;
+        
         if( ( Setting & 0x80 ) == 0x80 ) { Vect = false; } //If Non vector instruction set Vect false.
+        
+        //If VSIB the next byte is the variable length control for the vector index register.
+        
+        if( ( VectS & 0x04 ) === 0x04 )
+        {
+          VIDX_Length = parseInt( InsOperands.substring( ( i + 4 ), ( i + 6 ) ), 16 ); i += 2; //Convert to number value.
+        }
       }
       else //Instruction Prefix types.
       {
@@ -5174,7 +5201,7 @@ function Reset()
 
   Extension = 0; SIMD = 0; Vect = false; ConversionMode = 0; WidthBit = false;
   VectorRegister = 0; MaskRegister = 0; EH_ZeroMerg = false; RoundMode = 0x00;
-  VectS = 0x00;
+  VIDX_Length = 0x00; VectS = 0x00;
 
   //Reset IMMValue used for Imm register encoding, and Predicates.
 
