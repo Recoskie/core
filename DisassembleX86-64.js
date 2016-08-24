@@ -3650,6 +3650,7 @@ function Decode_ModRM_SIB_Value()
   ];
 
   //Move the Decoders Position by one.
+  
   NextByte();
 
   //return the array containing the decoded values of the byte.
@@ -3869,18 +3870,26 @@ function DecodeRegValue( RValue, BySize, Setting )
 
   //If By size is true Use the Setting with the GetOperandSize
 
-  if (BySize)
+  if ( BySize )
   {
     Setting = GetOperandSize( Setting ); //get decoded size value.
 
-    //If it is an Vector Operation any operation smaller than 128 has to XMM because XMM is the smallest SIMD Vector register.
+    //Any Vector register smaller than 128 has to XMM because XMM is the smallest SIMD Vector register.
 
     if( Vect && Setting < 4 ) { Setting = 4; }
   }
 
+  //If XOP only vector 0 to 15 are usable.
+      
+  if( Opcode >= 0x400 ) { RValue &= 15; }
+
+  //Else If 16/32 bit mode in VEX/EVEX/MVEX vctor register can only go 0 though 7.
+
+  else if( BitMode <= 1 && Extension >= 1 ) { RValue &= 7; }
+
   //if 8 bit high/low Registers
 
-  if (Setting === 0)
+  if ( Setting === 0 )
   {
     return (REG[0][RexActive][ RValue ]);
   }
@@ -3888,7 +3897,6 @@ function DecodeRegValue( RValue, BySize, Setting )
   //Return the Register.
 
   return (REG[Setting][ RValue ]);
-
 }
 
 /*-------------------------------------------------------------------------------------------------------------------------
@@ -4089,7 +4097,7 @@ function Decode_ModRM_SIB_Address( ModRM, BySize, Setting )
 
         else
         {
-          out += REG[ AddressSize ][ BaseExtend | SIB[2] ];
+          out += REG[ AddressSize ][ BaseExtend & 8 | SIB[2] ];
 
           //If the Index Register is not Canceled out (Note this is only reachable if base register was decoded and not canceled out)
 
@@ -4114,8 +4122,8 @@ function Decode_ModRM_SIB_Address( ModRM, BySize, Setting )
         
         else if ( VIDX_Length !== 0x00 )
         {
-	  out += DecodeRegValue( ( ( VectorRegister & 0x10 ) | IndexExtend | IndexReg ), true, VIDX_Length ); //Decode Vector register by length setting and the V' extension.
-		  
+          out += DecodeRegValue( ( ( VectorRegister & 0x10 ) | IndexExtend | IndexReg ), true, VIDX_Length ); //Decode Vector register by length setting and the V' extension.
+
           //add what the scale bits decode to the Index register by the value of the scale bits which select the name from the scale array.
 
           out = out + scale[SIB[0]];
@@ -4141,18 +4149,18 @@ function Decode_ModRM_SIB_Address( ModRM, BySize, Setting )
     if( ConversionMode !== 0 )
     {
       //Check if Control is valid.
-		
-	  if(
-	    ( ( ( ConversionMode >= 4 ) && ( ( VectS & 0x40 ) === 0x40 ) ) || //Integer conversion.
-	      ( ( ConversionMode === 3 ) && ( ( VectS & 0x20 ) === 0x20 ) ) || //Float conversion.
-	      ( ( ConversionMode > 0 && ConversionMode < 3 ) && ( ( VectS & 0x10 ) === 0x10 ) ) ) && //Broadcast Round control.
-	     !( ( ConversionMode === 5 ) && ( ( VectS & 0x70 ) === 0x70 ) ) //If I/F/B format Then SINT8 is not supported.
-	  )
-	  {
-            //If broadcast round control is allowed the Width bit controls the Broadcast size.
+
+      if(
+          ( ( ( ConversionMode >= 4 ) && ( ( VectS & 0x40 ) === 0x40 ) ) || //Integer conversion.
+          ( ( ConversionMode === 3 ) && ( ( VectS & 0x20 ) === 0x20 ) ) || //Float conversion.
+          ( ( ConversionMode > 0 && ConversionMode < 3 ) && ( ( VectS & 0x10 ) === 0x10 ) ) ) && //Broadcast Round control.
+         !( ( ConversionMode === 5 ) && ( ( VectS & 0x70 ) === 0x70 ) ) //If I/F/B format Then SINT8 is not supported.
+      )
+      {
+        //If broadcast round control is allowed the Width bit controls the Broadcast size.
             
-            out += "]" + ConversionModes[ ( ConversionMode << 1 ) | ( WidthBit & 1 ) ];
-	  }
+        out += "]" + ConversionModes[ ( ConversionMode << 1 ) | ( WidthBit & 1 ) ];
+      }
 		
       //Else bad Setting.
       
@@ -4255,68 +4263,115 @@ function DecodePrefixAdjustments()
     return(DecodePrefixAdjustments()); //restart function decode more prefix settings that can effect the decode instruction.
   }
 
-  //Prefix codes that are only active well in 64 bit mode.
+  //Rex prefix decodes only in 64 bit mode.
 
-  if( BitMode === 2 )
+  if( Opcode >= 0x40 & Opcode <= 0x4F && BitMode === 2 )
   {
-    //The Rex prefix bit settings decoding
+    RexActive = 1; //Set Rex active uses 8 bit registers in lower order as 0 to 15.
+    BaseExtend = ( Opcode & 0x01 ) << 3; //Base Register extend setting.
+    IndexExtend = ( Opcode & 0x02 ) << 2; //Index Register extend setting.
+    RegExtend = ( Opcode & 0x04 ) << 1; //Register Extend Setting.
+    WidthBit = ( Opcode & 0x08 ) >> 3; //Set The Width Bit setting if active.
+    SizeAttrSelect = WidthBit ? 2 : 1; //The width Bit open all 64 bits.
+    return(DecodePrefixAdjustments()); //restart function decode more prefix settings that can effect the decode instruction.
+  }
 
-    if( Opcode >= 0x40 & Opcode <= 0x4F)
+  //The VEX2 Operation code Extension to SSE settings decoding.
+
+  if( Opcode === 0xC5 && ( BinCode[CodePos] >= 0xC0 || BitMode === 2 ) )
+  {
+    Extension = 1;
+    //-------------------------------------------------------------------------------------------------------------------------
+    Opcode = BinCode[CodePos]; //read VEX2 byte settings.
+    NextByte(); //Move to the next byte.
+    //-------------------------------------------------------------------------------------------------------------------------
+
+    //some bits are inverted, so uninvert them arithmetically.
+
+    Opcode ^= 0xF8;
+
+    //Decode bit settings.
+
+    if( BitMode === 2 )
     {
-      RexActive = 1; //Set Rex active uses 8 bit registers in lower order as 0 to 15.
-      BaseExtend = ( Opcode & 0x01 ) << 3; //Base Register extend setting.
-      IndexExtend = ( Opcode & 0x02 ) << 2; //Index Register extend setting.
-      RegExtend = ( Opcode & 0x04 ) << 1; //Register Extend Setting.
-      WidthBit = ( Opcode & 0x08 ) >> 3; //Set The Width Bit setting if active.
-      SizeAttrSelect = WidthBit ? 2 : 1; //The width Bit open all 64 bits.
-      return(DecodePrefixAdjustments()); //restart function decode more prefix settings that can effect the decode instruction.
-    }
-
-    //The VEX2 Operation code Extension to SSE settings decoding.
-
-    if( Opcode === 0xC5 )
-    {
-      Extension = 1;
-      //-------------------------------------------------------------------------------------------------------------------------
-      Opcode = BinCode[CodePos]; //read VEX2 byte settings.
-      NextByte(); //Move to the next byte.
-      //-------------------------------------------------------------------------------------------------------------------------
-
-      //some bits are inverted, so uninvert them arithmetically.
-
-      Opcode ^= 0xF8;
-
-      //Decode bit settings.
-
       RegExtend = ( Opcode & 0x80 ) >> 4; //Register Extend.
       VectorRegister = ( Opcode & 0x78 ) >> 3; //The added in Vector register to SSE.
-      SizeAttrSelect = ( Opcode & 0x04 ) >> 2; //The L bit for 256 vector size.
-      SIMD = Opcode & 0x03; //The SIMD mode.
-
-      //Automatically uses the two byte opcode map starts at 256 goes to 511.
-
-      Opcode = 0x100;
-
-      //-------------------------------------------------------------------------------------------------------------------------
-      Opcode = ( Opcode & 0x300 ) | BinCode[CodePos]; //read the opcode.
-      NextByte(); //Move to the next byte.
-      //-------------------------------------------------------------------------------------------------------------------------
-
-      //Stop decoding prefixes.
-
-      return(null);
     }
 
-    //The VEX3 prefix settings decoding.
+    SizeAttrSelect = ( Opcode & 0x04 ) >> 2; //The L bit for 256 vector size.
+    SIMD = Opcode & 0x03; //The SIMD mode.
 
-    if( Opcode === 0xC4 )
+    //Automatically uses the two byte opcode map starts at 256 goes to 511.
+
+    Opcode = 0x100;
+
+    //-------------------------------------------------------------------------------------------------------------------------
+    Opcode = ( Opcode & 0x300 ) | BinCode[CodePos]; //read the opcode.
+    NextByte(); //Move to the next byte.
+    //-------------------------------------------------------------------------------------------------------------------------
+
+    //Stop decoding prefixes.
+
+    return(null);
+  }
+
+  //The VEX3 prefix settings decoding.
+
+  if( Opcode === 0xC4 && ( BinCode[CodePos] >= 0xC0 || BitMode === 2 ) )
+  {
+    Extension = 1;
+    //-------------------------------------------------------------------------------------------------------------------------
+    Opcode = BinCode[CodePos]; //read VEX3 byte settings.
+    NextByte(); //Move to the next byte.
+    //-------------------------------------------------------------------------------------------------------------------------
+    Opcode |= ( BinCode[CodePos] << 8 ); //Read next VEX3 byte settings.
+    NextByte(); //Move to the next byte.
+    //-------------------------------------------------------------------------------------------------------------------------
+
+    //Some bits are inverted, so uninvert them arithmetically.
+
+    Opcode ^= 0x78E0;
+
+    //Decode bit settings.
+
+    if( BitMode === 2 )
+    {
+      RegExtend = ( Opcode & 0x0080 ) >> 4; //Extend Register Setting.
+      IndexExtend = ( Opcode & 0x0040 ) >> 3; //Extend Index register setting.
+      BaseExtend = ( Opcode & 0x0020 ) >> 2; //Extend base Register setting.
+    }
+
+    WidthBit = ( Opcode & 0x8000 ) >> 15; //The width bit works as a separator.
+    VectorRegister = ( Opcode & 0x7800 ) >> 11; //The added in Vector register to SSE.
+    SizeAttrSelect = ( Opcode & 0x0400 ) >> 10; //Vector length for 256 setting.
+    SIMD = ( Opcode & 0x0300 ) >> 8; //The SIMD mode.
+    Opcode = ( Opcode & 0x001F ) << 8; //Change Operation code map.
+
+    //-------------------------------------------------------------------------------------------------------------------------
+    Opcode = ( Opcode & 0x300 ) | BinCode[CodePos]; //read the 8 bit opcode put them in the lower 8 bits away from opcode map bit's.
+    NextByte(); //Move to the next byte.
+    //-------------------------------------------------------------------------------------------------------------------------
+
+    return(null);
+
+  }
+
+  //The AMD XOP prefix.
+
+  if( Opcode === 0x8F )
+  {
+    //If XOP
+
+    var Code = BinCode[ CodePos ] & 0x0F;
+
+    if( Code >= 8 && Code <= 10 )
     {
       Extension = 1;
       //-------------------------------------------------------------------------------------------------------------------------
-      Opcode = BinCode[CodePos]; //read VEX3 byte settings.
+      Opcode = BinCode[CodePos]; //read XOP byte settings.
       NextByte(); //Move to the next byte.
       //-------------------------------------------------------------------------------------------------------------------------
-      Opcode |= ( BinCode[CodePos] << 8 ); //Read next VEX3 byte settings.
+      Opcode |= ( BinCode[CodePos] << 8 ); //Read next XOP byte settings.
       NextByte(); //Move to the next byte.
       //-------------------------------------------------------------------------------------------------------------------------
 
@@ -4333,135 +4388,92 @@ function DecodePrefixAdjustments()
       VectorRegister = ( Opcode & 0x7800 ) >> 11; //The added in Vector register to SSE.
       SizeAttrSelect = ( Opcode & 0x0400 ) >> 10; //Vector length for 256 setting.
       SIMD = ( Opcode & 0x0300 ) >> 8; //The SIMD mode.
-      Opcode = ( Opcode & 0x001F ) << 8; //Change Operation code map.
+      if( SIMD > 0 ) { InvalidOp = true; } //If SIMD MODE is set anything other than 0 the instruction is invalid.
+      Opcode = 0x400 | ( ( Opcode & 0x0003 ) << 8 ); //Change Operation code map.
 
       //-------------------------------------------------------------------------------------------------------------------------
-      Opcode = ( Opcode & 0x300 ) | BinCode[CodePos]; //read the 8 bit opcode put them in the lower 8 bits away from opcode map bit's.
+      Opcode = ( Opcode & 0x700 ) | BinCode[CodePos]; //read the 8 bit opcode put them in the lower 8 bits away from opcode map bit's.
       NextByte(); //Move to the next byte.
       //-------------------------------------------------------------------------------------------------------------------------
 
       return(null);
-
     }
+  }
+  
+  //The MVEX/EVEX prefix settings decoding.
 
-    //The AMD XOP prefix.
+  if ( Opcode === 0x62 && ( BinCode[CodePos] >= 0xC0 || BitMode === 2 ) )
+  {
+    Extension = 2;
+    //-------------------------------------------------------------------------------------------------------------------------
+    Opcode = BinCode[CodePos]; //read MVEX/EVEX byte settings.
+    NextByte(); //Move to the next byte.
+    //-------------------------------------------------------------------------------------------------------------------------
+    Opcode |= ( BinCode[CodePos] << 8 ); //read next MVEX/EVEX byte settings.
+    NextByte(); //Move to the next byte.
+    //-------------------------------------------------------------------------------------------------------------------------
+    Opcode |= ( BinCode[CodePos] << 16 ); //read next MVEX/EVEX byte settings.
+    NextByte(); //Move to the next byte.
+    //-------------------------------------------------------------------------------------------------------------------------
 
-    if( Opcode === 0x8F )
+    //Some bits are inverted, so uninvert them arithmetically.
+
+    Opcode ^= 0x0878F0;
+
+    //Check if Reserved bits are 0 if they are not 0 the MVEX/EVEX instruction is invalid.
+
+    InvalidOp = ( Opcode & 0x00000C ) > 0;
+
+    //Decode bit settings.
+    
+    if( BitMode === 2 )
     {
-      //If XOP
-
-      var Code = BinCode[ CodePos ] & 0x0F;
-
-      if( Code >= 8 && Code <= 10 )
-      {
-        Extension = 1;
-        //-------------------------------------------------------------------------------------------------------------------------
-        Opcode = BinCode[CodePos]; //read XOP byte settings.
-        NextByte(); //Move to the next byte.
-        //-------------------------------------------------------------------------------------------------------------------------
-        Opcode |= ( BinCode[CodePos] << 8 ); //Read next XOP byte settings.
-        NextByte(); //Move to the next byte.
-        //-------------------------------------------------------------------------------------------------------------------------
-
-        //Some bits are inverted, so uninvert them arithmetically.
-
-        Opcode ^= 0x78E0;
-
-        //Decode bit settings.
-
-        RegExtend = ( Opcode & 0x0080 ) >> 4; //Extend Register Setting.
-        IndexExtend = ( Opcode & 0x0040 ) >> 3; //Extend Index register setting.
-        BaseExtend = ( Opcode & 0x0020 ) >> 2; //Extend base Register setting.
-        WidthBit = ( Opcode & 0x8000 ) >> 15; //The width bit works as a separator.
-        VectorRegister = ( Opcode & 0x7800 ) >> 11; //The added in Vector register to SSE.
-        SizeAttrSelect = ( Opcode & 0x0400 ) >> 10; //Vector length for 256 setting.
-        SIMD = ( Opcode & 0x0300 ) >> 8; //The SIMD mode.
-        if( SIMD > 0 ) { InvalidOp = true; } //If SIMD MODE is set anything other than 0 the instruction is invalid.
-        Opcode = 0x400 | ( ( Opcode & 0x0003 ) << 8 ); //Change Operation code map.
-
-        //-------------------------------------------------------------------------------------------------------------------------
-        Opcode = ( Opcode & 0x700 ) | BinCode[CodePos]; //read the 8 bit opcode put them in the lower 8 bits away from opcode map bit's.
-        NextByte(); //Move to the next byte.
-        //-------------------------------------------------------------------------------------------------------------------------
-
-        return(null);
-
-      }
-
-    }
-
-    //The MVEX/EVEX prefix settings decoding.
-
-    if( Opcode === 0x62 )
-    {
-      Extension = 2;
-      //-------------------------------------------------------------------------------------------------------------------------
-      Opcode = BinCode[CodePos]; //read MVEX/EVEX byte settings.
-      NextByte(); //Move to the next byte.
-      //-------------------------------------------------------------------------------------------------------------------------
-      Opcode |= ( BinCode[CodePos] << 8 ); //read next MVEX/EVEX byte settings.
-      NextByte(); //Move to the next byte.
-      //-------------------------------------------------------------------------------------------------------------------------
-      Opcode |= ( BinCode[CodePos] << 16 ); //read next MVEX/EVEX byte settings.
-      NextByte(); //Move to the next byte.
-      //-------------------------------------------------------------------------------------------------------------------------
-
-      //Some bits are inverted, so uninvert them arithmetically.
-
-      Opcode ^= 0x0878F0;
-
-      //Check if Reserved bits are 0 if they are not 0 the MVEX/EVEX instruction is invalid.
-
-      InvalidOp = ( Opcode & 0x00000C ) > 0;
-
-      //Decode bit settings.
-
       RegExtend = ( ( Opcode & 0x80 ) >> 4 ) | ( Opcode & 0x10 ); //The Double R'R bit decode for Register Extension 0 to 32.
       BaseExtend = ( Opcode & 0x60 ) >> 2; //The X bit, and B Bit base register extend combination 0 to 32.
       IndexExtend = ( Opcode & 0x40 ) >> 3; //The X extends the SIB Index by 8.
-      WidthBit = ( Opcode & 0x8000 ) >> 15; //The width bit separator for MVEX/EVEX.
-      VectorRegister = ( Opcode & 0x7800 ) >> 11; //The Added in Vector Register for SSE under MVEX/EVEX.
-      SIMD = ( Opcode & 0x0300 ) >> 8; //decode the SIMD mode setting.
-      EH_ZeroMerg = ( Opcode & 0x800000 ) >> 23; //Zero Merge to destination control, or MVEX EH control.
-      
-      //EVEX option bits take the place of Vector length control.
-      
-      if ( ( Opcode & 0x0400 ) > 0 )
-      {
-		SizeAttrSelect = ( Opcode & 0x600000 ) >> 21; //The EVEX.L'L Size combination.
-		RoundMode = SizeAttrSelect | 4; //Rounding mode is Vector length if used.
-        ConversionMode = (Opcode & 0x100000 ) >> 20; //Broadcast Round Memory address system.
-	  }
-      
-      //MVEX Vector Length, and Broadcast round.
-      
-      else
-      {
-	    SizeAttrSelect = 2; //Max Size by default.
-	    ConversionMode = ( Opcode & 0x700000 ) >> 20; //"MVEX.sss" Option bits.
-	    RoundMode = ConversionMode; //Rounding mode selection is ConversionMode if used.
-	    Extension = 3;
-      }
-      
-      VectorRegister |= ( Opcode & 0x080000 ) >> 15; //The EVEX.V' vector extension adds an extra V bit to the vector register selection for 0 to 31.
-      MaskRegister = ( Opcode & 0x070000 ) >> 16; //Mask to destination.
-      Opcode = ( Opcode & 0x03 ) << 8; //Change Operation code map.
-
-      //-------------------------------------------------------------------------------------------------------------------------
-      Opcode = ( Opcode & 0x300 ) | BinCode[CodePos]; //read the 8 bit opcode put them in the lower 8 bits away from opcode map extend bit's.
-      NextByte(); //Move to the next byte.
-      //-------------------------------------------------------------------------------------------------------------------------
-
-      //Stop decoding prefixes.
-
-      return(null);
-
     }
+    
+    VectorRegister = ( ( Opcode & 0x7800 ) >> 11 ) | ( ( Opcode & 0x080000 ) >> 15 ); //The Added in Vector Register for SSE under MVEX/EVEX.
+    
+    WidthBit = ( Opcode & 0x8000 ) >> 15; //The width bit separator for MVEX/EVEX.
+    SIMD = ( Opcode & 0x0300 ) >> 8; //decode the SIMD mode setting.
+    EH_ZeroMerg = ( Opcode & 0x800000 ) >> 23; //Zero Merge to destination control, or MVEX EH control.
+      
+    //EVEX option bits take the place of Vector length control.
+      
+    if ( ( Opcode & 0x0400 ) > 0 )
+    {
+      SizeAttrSelect = ( Opcode & 0x600000 ) >> 21; //The EVEX.L'L Size combination.
+      RoundMode = SizeAttrSelect | 4; //Rounding mode is Vector length if used.
+      ConversionMode = (Opcode & 0x100000 ) >> 20; //Broadcast Round Memory address system.
+    }
+      
+    //MVEX Vector Length, and Broadcast round.
+      
+    else
+    {
+      SizeAttrSelect = 2; //Max Size by default.
+      ConversionMode = ( Opcode & 0x700000 ) >> 20; //"MVEX.sss" Option bits.
+      RoundMode = ConversionMode; //Rounding mode selection is ConversionMode if used.
+      Extension = 3;
+    }
+
+    MaskRegister = ( Opcode & 0x070000 ) >> 16; //Mask to destination.
+    Opcode = ( Opcode & 0x03 ) << 8; //Change Operation code map.
+
+    //-------------------------------------------------------------------------------------------------------------------------
+    Opcode = ( Opcode & 0x300 ) | BinCode[CodePos]; //read the 8 bit opcode put them in the lower 8 bits away from opcode map extend bit's.
+    NextByte(); //Move to the next byte.
+    //-------------------------------------------------------------------------------------------------------------------------
+
+    //Stop decoding prefixes.
+
+    return(null);
   }
 
   //Segment overrides
 
-  if (Opcode === 0x26 || Opcode === 0x2E || Opcode === 0x36 || Opcode === 0x3E || Opcode === 0x64 || Opcode === 0x65)
+  if ( ( Opcode & 0xE7 ) === 0x26 || ( Opcode & 0xFE ) === 0x64 )
   {
     SegOverride = Mnemonics[ Opcode ]; //Set the Left Bracket for the ModR/M memory address.
     return(DecodePrefixAdjustments()); //restart function decode more prefix settings that can effect the decode instruction.
@@ -4775,7 +4787,7 @@ function DecodeOperands()
         ModRMByte, //The ModR/M byte.
         X86Decoder[1].BySizeAttrubute, //By size attribute or not.
         X86Decoder[1].Size //Size settings.
-        );
+      );
     }
 
     //Else If the ModR/M type is 0 then it is a moffs address.
@@ -4874,7 +4886,7 @@ function DecodeOperands()
   {
     if( !IMM_Used ) { DecodeImmediate(0, false, 0); } //forces IMM8 if no Immediate has been used.
     out[ X86Decoder[6].OpNum ] = DecodeRegValue(
-      ( IMMValue & 0xF0 ) >> 4 , //Register value.
+      ( ( ( IMMValue & 0xF0 ) >> 4 ) | ( ( IMMValue & 0x08 ) << 1 ) ), //Register value.
       X86Decoder[6].BySizeAttrubute, //By size attribute or not.
       X86Decoder[6].Size //Size settings.
     );
@@ -4923,10 +4935,10 @@ function DecodeOperands()
         s = 1; //If 32, or 64 bit ModR/M.
         if( ( BitMode === 0 && !AddressOverride ) || ( BitMode === 1 & AddressOverride ) ) { s = -1; } //If 16 bit ModR/M.
         out[ X86Decoder[i].OpNum ] = Decode_ModRM_SIB_Address(
-            [ 0, 0, ( X86Decoder[i].Type + s ) ], //source and destination pointer register by type value.
-            X86Decoder[i].BySizeAttrubute, //By size attribute or not.
-            X86Decoder[i].Size //size attributes.
-          );
+          [ 0, 0, ( X86Decoder[i].Type + s ) ], //source and destination pointer register by type value.
+          X86Decoder[i].BySizeAttrubute, //By size attribute or not.
+          X86Decoder[i].Size //size attributes.
+        );
       }
 
       //The ST only Operand, and FS, GS.
