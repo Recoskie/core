@@ -165,7 +165,7 @@ const Mnemonics = [
   "PUSH","PUSH","PUSH","PUSH","PUSH","PUSH","PUSH","PUSH",
   "POP","POP","POP","POP","POP","POP","POP","POP",
   ["PUSHA","PUSHAD",""],["POPA","POPAD",""],
-  [["BOUND","BOUND",""],"???"], //EVEX prefix adjustment settings only used in 64 bit mode, otherwise the defined BOUND instruction is used.
+  ["BOUND","BOUND",""], //EVEX prefix adjustment settings only if used in register to register, or in 64 bit mode, otherwise the defined BOUND instruction is used.
   "MOVSXD",
   "FS:[","GS:[", //Sets SegOveride "FS:[" next opcode sets "GS:[".
   "","", //Operand Size, and Address size adjustment to ModR/M.
@@ -202,8 +202,8 @@ const Mnemonics = [
   ["ROL","ROR","RCL","RCR","SHL","SHR","SAL","SAR"],
   ["ROL","ROR","RCL","RCR","SHL","SHR","SAL","SAR"],
   "RET","RET",
-  "LES", //VEX prefix adjustment settings only used in 64 bit mode, otherwise the defined instruction is used.
-  "LDS", //VEX prefix adjustment settings only used in 64 bit mode, otherwise the defined instruction is used.
+  "LES", //VEX prefix adjustment settings only if used in register to register, or in 64 bit mode, otherwise the defined instruction is used.
+  "LDS", //VEX prefix adjustment settings only if used in register to register, or in 64 bit mode, otherwise the defined instruction is used.
   [
     "MOV","???","???","???","???","???","???",
     ["XABORT","XABORT","XABORT","XABORT","XABORT","XABORT","XABORT","XABORT"]
@@ -1233,7 +1233,7 @@ const Operands = [
   "030A","030A","030A","030A","030A","030A","030A","030A",
   "030A","030A","030A","030A","030A","030A","030A","030A",
   ["","",""],["","",""],
-  [["0A020606","0A010604",""],""],
+  ["0A020606","0A010604",""],
   "0B0E0704",
   "","","","",
   "0DE6","0B0E070E0DE6",
@@ -1937,10 +1937,13 @@ const Operands = [
   "",
   ["",["","",["0B70137007700108","","0B7013700770"],""],"",""],
   "","",
-  ["",["",["0B3007301330010430","","0B3006481330010410"],["0B700770010C70","","0B700770010430"],["0A06066C014C70","","0A06066C010430"]],"",""],
-  ["",["",["0A0407301204010430","","0B30073013300430"],["0B380770010C70","","0B380770010470"],""],"",""],
-  ["",["",["0B3007301330010430","","0B30064813300430"],["0B700770010C70","","0B700770010430"],["0A06066C016C70","","0A06066C010430"]],"",""],
-  ["",["",["0A040730120470","","0B300730133070"],["0B380770010C70","","0B700770010470"],""],"",""],
+  
+  //90.
+  
+  ["",["",["0B30073013300104","","0B30064813300104"],["0B700770010C","","0B7007380104"],["0A06066C014C","","0A06065A0104"]],"",""],
+  ["",["",["0A04073012040104","","0B30073013300104"],["0B380770010C","","0B7007700104"],""],"",""],
+  ["",["",["0B30073013300104","","0B30064813300104"],["0B700770010C","","0B7007380104"],["0A06066C016C","","0A06065A0104"]],"",""],
+  ["",["",["0A04073012040104","","0B30073013300104"],["0B380770010C","","0B7007700104"],""],"",""],
   "","",
   ["",["",["0B3013300730","","0B3013300730"],["0B7013700770011A","","0B70137007700112"],""],"",""],
   ["",["",["0B3013300730","","0B3013300730"],["0B7013700770011A","","0B70137007700112"],""],"",""],
@@ -1952,10 +1955,10 @@ const Operands = [
   ["",["",["0A0412040714","","0A0412040718"],["0A0412040644010A","","0A04120406460102"],""],"",""],
   ["",["",["0B3013300730","","0B3013300730"],["0B7013700770011A","","0B70137007700112"],["0A061206066C017A","","0A061206066C0112"]],"",""],
   ["",["",["0A0412040714","","0A0412040718"],["0A0412040644010A","","0A04120406460102"],""],"",""],
-  ["",["","",["07700B70010C70","","07700B70010430"],["066C0A06014C70","","066C0A06010430"]],"",""],
-  ["",["","",["07700B38010C70","","07700B70010470"],""],"",""],
-  ["",["","",["07700B70010C70","","07700B70010470"],["066C0A06016C70","","066C0A06010470"]],"",""],
-  ["",["","",["07700B38010C70","","07700B70010470"],""],"",""],
+  ["",["","",["07700B70010C","","07380B700104"],["066C0A06014C","","065A0A060104"]],"",""],
+  ["",["","",["07700B38010C","","07700B700104"],""],"",""],
+  ["",["","",["07700B70010C","","07380B700104"],["066C0A06016C","","065A0A060104"]],"",""],
+  ["",["","",["07700B38010C","","07700B700104"],""],"",""],
   ["",["","","",["0A061206066C011A","",""]],"",""],
   "",
   ["",["",["0B3013300730","","0B3013300730"],["0B7013700770011A","","0B70137007700112"],""],"",""],
@@ -1986,24 +1989,24 @@ const Operands = [
   "",
   [
     [
-      ["",["","","",["060C010C70","","060A010430"]],"",""],
-      ["",["","",["0770010C70","","0770010430"],["060C016C70","",""]],"",""],
-      ["",["","",["0770010C70","","0770010430"],["060C016C70","",""]],"",""],
+      ["",["","","",["060C010C","","060A0104"]],"",""],
+      ["",["","",["060C010C","","060A0104"],["060C016C","",""]],"",""],
+      ["",["","",["060C010C","","070A0104"],["060C016C","",""]],"",""],
       "",
-      ["",["","","",["060C010C70","","060A010430"]],"",""],,
-      ["",["","",["0770010C70","","0770010430"],["060C016C70","",""]],"",""],
-      ["",["","",["0770010C70","","0770010430"],["060C016C70","",""]],"",""],
+      ["",["","","",["060C010C","","060A0104"]],"",""],
+      ["",["","",["060C010C","","060A0104"],["060C016C","",""]],"",""],
+      ["",["","",["060C010C","","060A0104"],["060C016C","",""]],"",""],
       ""
     ],""
   ],
   [
     [
       "",
-      ["",["","",["0738010C70","","0770010470"],""],"",""],
-      ["",["","",["0738010C70","","0770010470"],""],"",""],
+      ["",["","",["060C010C","","060C0104"],""],"",""],
+      ["",["","",["060C010C","","060C0104"],""],"",""],
       "","",
-      ["",["","",["0738010C70","","0770010470"],""],"",""],
-      ["",["","",["0738010C70","","0770010470"],""],"",""],
+      ["",["","",["060C010C","","060C0104"],""],"",""],
+      ["",["","",["060C010C","","060C0104"],""],"",""],
       ""
     ],""
   ],
@@ -2601,12 +2604,6 @@ or {SAE} suppresses all exceptions then it can not change rounding mode by vecto
 -------------------------------------------------------------------------------------------------------------------------*/
 
 var VectS = 0x00;
-
-/*-------------------------------------------------------------------------------------------------------------------------
-VIDX_Length is the adjustable length of the index vector register if used. Used with the VSIB address.
--------------------------------------------------------------------------------------------------------------------------*/
-
-var VIDX_Length = 0x00;
 
 /*-------------------------------------------------------------------------------------------------------------------------
 The Extension is set 2 during opcode 62 hex for EVEX in which the ^DecodePrefixAdjustments()^ decodes the settings, but if
@@ -3957,15 +3954,15 @@ function Decode_ModRM_SIB_Address( ModRM, BySize, Setting )
 
     if( Extension !== 0 && Setting === 9 ){ Setting = 6; }
 
-    //Bround control.
+    //Bround control, or 32/64 VSIB.
 
-    if ( ConversionMode === 1 || ConversionMode === 2 ) { Setting = WidthBit > 0 ? 6 : 4; }
+    if ( ConversionMode === 1 || ConversionMode === 2 || ( VectS & 0x04 ) === 0x04 ) { out += PTR[WidthBit > 0 ? 6 : 4]; }
 
     //-------------------------------------------------------------------------------------------------------------------------
     //Get the pointer size by Size setting.
     //-------------------------------------------------------------------------------------------------------------------------
 
-    out = PTR[Setting];
+    else{ out = PTR[Setting]; }
 
     //Add the Segment override left address bracket if any segment override was used otherwise the SegOverride string should be just a normal left bracket.
 
@@ -4077,7 +4074,7 @@ function Decode_ModRM_SIB_Address( ModRM, BySize, Setting )
 
         //check if the base register is 5 in value in the SIB without it's added extended value, and that the ModR/M Mode is 0 this activates Disp32
 
-        if ( ModRM[0] === 0 && SIB[2] === 5 && VIDX_Length === 0x00 )
+        if ( ModRM[0] === 0 && SIB[2] === 5 && ( VectS & 0x04 ) !== 0x04 )
         {
           Disp = 2; //Set Disp32
 
@@ -4101,7 +4098,7 @@ function Decode_ModRM_SIB_Address( ModRM, BySize, Setting )
 
           //If the Index Register is not Canceled out (Note this is only reachable if base register was decoded and not canceled out)
 
-          if ( IndexReg !== 4 || VIDX_Length !== 0x00 )
+          if ( IndexReg !== 4 || ( VectS & 0x04 ) === 0x04 )
           {
             out = out + "+"; //Then add the Plus in front of the Base register to add the index register
           }
@@ -4109,7 +4106,7 @@ function Decode_ModRM_SIB_Address( ModRM, BySize, Setting )
 
         //if Index Register is not Canceled, and that it is not an Vector register then decode the Index with the possibility of the base register.
 
-        if ( IndexReg !== 4 && VIDX_Length === 0x00 )
+        if ( IndexReg !== 4 && ( VectS & 0x04 ) !== 0x04 )
         {
           out += REG[ AddressSize ][ IndexExtend | IndexReg ];
 
@@ -4120,9 +4117,10 @@ function Decode_ModRM_SIB_Address( ModRM, BySize, Setting )
         
         //Else if it is an vector register
         
-        else if ( VIDX_Length !== 0x00 )
+        else if ( ( VectS & 0x04 ) === 0x04 )
         {
-          out += DecodeRegValue( ( ( VectorRegister & 0x10 ) | IndexExtend | IndexReg ), true, VIDX_Length ); //Decode Vector register by length setting and the V' extension.
+          Setting = ( Setting < 8 ) ? 4 : Setting >> 1;
+          out += DecodeRegValue( ( ( VectorRegister & 0x10 ) | IndexExtend | IndexReg ), false, Setting ); //Decode Vector register by length setting and the V' extension.
 
           //add what the scale bits decode to the Index register by the value of the scale bits which select the name from the scale array.
 
@@ -4225,10 +4223,9 @@ function Decode_ModRM_SIB_Address( ModRM, BySize, Setting )
 }
 
 /*-------------------------------------------------------------------------------------------------------------------------
-Decode Prefix Mnemonic codes. Note Some disable depending on the bit mode of the CPU.
-If a prefix is disabled and not read by this function it allows it to be decoded as an instruction in the Decode Opcode function.
-Some instructions can only be used in 32 bit mode such as instructions LDS and LES.
-LDS and LES where changed to Vector extension attribute adjustments to SSE instructions in 64 bit.
+Decode Prefix Mnemonic codes. Prefixes are instruction codes that do not do an operation instead adjust
+controls in the CPU to be applied to an select instruction code that is not an Prefix instruction.
+---------------------------------------------------------------------------------------------------------------------------
 At the end of this function "Opcode" should not hold any prefix code, so then Opcode contains an operation code.
 -------------------------------------------------------------------------------------------------------------------------*/
 
@@ -4473,7 +4470,7 @@ function DecodePrefixAdjustments()
 
   //Segment overrides
 
-  if ( ( Opcode & 0xE7 ) === 0x26 || ( Opcode & 0xFE ) === 0x64 )
+  if ( ( Opcode & 0x7E7 ) === 0x26 || ( Opcode & 0x7FE ) === 0x64 )
   {
     SegOverride = Mnemonics[ Opcode ]; //Set the Left Bracket for the ModR/M memory address.
     return(DecodePrefixAdjustments()); //restart function decode more prefix settings that can effect the decode instruction.
@@ -4663,13 +4660,6 @@ function DecodeOperandString()
         VectS = Setting & 0xFF;
         
         if( ( Setting & 0x80 ) == 0x80 ) { Vect = false; } //If Non vector instruction set Vect false.
-        
-        //If VSIB the next byte is the variable length control for the vector index register.
-        
-        if( ( VectS & 0x04 ) === 0x04 )
-        {
-          VIDX_Length = parseInt( InsOperands.substring( ( i + 4 ), ( i + 6 ) ), 16 ); i += 2; //Convert to number value.
-        }
       }
       else //Instruction Prefix types.
       {
@@ -5213,7 +5203,7 @@ function Reset()
 
   Extension = 0; SIMD = 0; Vect = false; ConversionMode = 0; WidthBit = false;
   VectorRegister = 0; MaskRegister = 0; EH_ZeroMerg = false; RoundMode = 0x00;
-  VIDX_Length = 0x00; VectS = 0x00;
+  VectS = 0x00;
 
   //Reset IMMValue used for Imm register encoding, and Predicates.
 
