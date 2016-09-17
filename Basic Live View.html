@@ -169,8 +169,56 @@ Lastly the instruction encoding's used by knights corner using the MVEX encoding
 The only instructions that cause an problem for knights corner support are above.<br /><br />\
 The full Knights corner instruction set is supported under the \"Full X86 Architecture\" compatibility mode. Just that enabling the \"Knights corner\" compatibility mode will correct the mask instruction problem.";
         }
-
+        
         if( h === 3 )
+        {
+          var win = window.open("", "L1OM", "toolbar=no, location=no, directories=no, status=no, menubar=no, scrollbars=yes, resizable=yes");
+          win.document.body.innerHTML = "The Intel Larrabee co-processor is fully supported by this dissembler without having to set Larrabee compatibility mode.<br />\
+Except there are an few special Larrabee instructions that use the Knights corner, and Knights landing vector format.<br />\
+Enabling Larrabee compatibility mode will enable Larrabee mask, and memory instructions listed bellow.<br /><br />\
+62E0C0 = BSFI RAX,RAX<br />\
+62E1C0 = BSRI RAX,RAX<br />\
+62E2C0 = BSFF RAX,RAX<br />\
+62E3C0 = BSRF RAX,RAX<br />\
+62E4C0 = BITINTERLEAVE11 RAX,RAX<br />\
+62E5C0 = BITINTERLEAVE21 RAX,RAX<br />\
+62E6C011116677 = INSERTFIELD RAX,RAX,1111,66,77<br />\
+62E7C011116677 = ROTATEFIELD RAX,RAX,1111,66,77<br />\
+62E8C0 = COUNTBITS RAX,RAX<br />\
+62E9C0 = QUADMASK16 RAX,RAX<br />\
+62CB00 = VPREFETCH1 [RAX]<br />\
+62CB08 = VPREFETCH2 [RAX]<br />\
+62EB00 = CLEVICT1 [RAX]<br />\
+62EB08 = CLEVICT2 [RAX]<br />\
+62EB10 = LDVXCSR DWORD PTR [RAX]<br />\
+62EB18 = STVXCSR DWORD PTR [RAX]<br />\
+62FBC0 = VKMOVLHB K0,K0<br />\
+62DCC0 = VKMOV EAX,K0<br />\
+62ECC0 = VKMOV K0,EAX<br />\
+62FCC0 = VKMOV K0,K0<br />\
+62CDC0 = VKAND K0,K0<br />\
+62DDC0 = VKANDN K0,K0<br />\
+62EDC0 = VKANDNR K0,K0<br />\
+62FDC0 = VKNOT K0,K0<br />\
+62CEC0 = VKOR K0,K0<br />\
+62DEC0 = VKORTEST K0,K0<br />\
+62EEC0 = VKXOR K0,K0<br />\
+62FEC0 = VKXNOR K0,K0<br />\
+62DFC0 = DELAY R8D<br />\
+62DFC8 = SPFLT R9D<br />\
+62EFC0 = VKSWAPB K0,K0<br /><br />\
+Once the above instructions are enabled the dissembler will not decode AVX512 code anymore, for Knights corner, or Knights landing and later.<br />\
+However Larrabee vector instructions decode without Larrabee compatibility mode. Bellow is an few sample Larrabee vector instructions.<br /><br />\
+D600016200 = VMADD213PS V0{K1},V0,[RAX]<br />\
+66D610076200 = VMADD213PD V0{K7},V0,QWORD PTR [RAX]{1To8}<br />\
+D690979100 = VCVTPS2PI V0{K7},DWORD PTR [RAX]{1To16,5B}{NT}, {RU}<br />\
+D600F09100 = VCVTPS2PI V0,[RAX]{31B}, {RZ}<br />\
+D600181000 = VLOADD V0,[RAX]{SRGB8}<br />\
+D610181000 = VLOADD V0,DWORD PTR [RAX]{1To16,SRGB8}<br /><br />\
+So actually Larrabee compatibility mode should not have to be set except in very rare cases.";
+        }
+
+        if( h === 4 )
         {
           var win = window.open("", "Cyrix", "toolbar=no, location=no, directories=no, status=no, menubar=no, scrollbars=yes, resizable=yes");
           win.document.body.innerHTML = "Cyrix, and Geode instruction SMINT is the three byte opcode map instruction 0F38.<br />\
@@ -223,7 +271,7 @@ Also the conflicting Vector, and virtual machine instructions will be changed in
 Only enable this mode if you Are certain the code is optimized, and meant specifically for the Cyrix CPU otherwise some vector, and virtual machine codes will decode as Cyrix instructions.";
         }
 
-        if( h === 4 )
+        if( h === 5 )
         {
           var win = window.open("", "Geode", "toolbar=no, location=no, directories=no, status=no, menubar=no, scrollbars=yes, resizable=yes");
           win.document.body.innerHTML = "AMD created the Geode CPU which derived from the Cyrix CPU. The key differences are listed bellow.<br /><br />\
@@ -234,7 +282,7 @@ The rest of the instruction encoding's remain unchanged to the \"Full X86 Archit
 Setting Geode compatibility mode will allow the instructions SMINT, DMINT, and RDM to disassemble, but at an cost of disabling an lot of vector instructions that are under the three byte opcodes.";
         }
 
-        if( h === 5 )
+        if( h === 6 )
         {
           var win = window.open("", "Centaur", "toolbar=no, location=no, directories=no, status=no, menubar=no, scrollbars=yes, resizable=yes");
           win.document.body.innerHTML = "The Centaur CPU instruction ALTINST Conflicts with the three byte opcode map 0F3F, however 0F3F is reserved for future instructions if necessary.<br /><br />\
@@ -244,7 +292,7 @@ The rest of the instruction encoding's remain unchanged to the \"Full X86 Archit
 Setting Centaur compatibility mode will allow the Centaur CPU instructions to disassemble instead, of the XBIT, and IBITS instructions.";
         }
 
-        if( h === 6 )
+        if( h === 7 )
         {
           var win = window.open("", "486", "toolbar=no, location=no, directories=no, status=no, menubar=no, scrollbars=yes, resizable=yes");
           win.document.body.innerHTML = "In 486 and older CPU's the instruction UMOV conflicts with the new vector MOV instructions: MOVU[PS|PD], MOV[SS|SD], MOVL[PS|PD], MOV[SLD|SS]UP, MOVHLPS, MOVL[PS|PD].<br /><br />\
@@ -263,7 +311,7 @@ Setting 486 compatibility mode will allow UMOV, and CMPXCHG to disassemble inste
       <h1>
         Full X86 Disassembler by Damian Recoskie.
       </h1>
-      <h4>Version 2.</h4>
+      <h4>Version 2.1.</h4>
     </center>
     <form>
       <table border="1px" width="100%">
@@ -286,16 +334,19 @@ Setting 486 compatibility mode will allow UMOV, and CMPXCHG to disassemble inste
             <input type="radio" name="CMode" id="K1OM" onclick="CompatibilityMode(1);Update();">Knights Corner.<div style="float:right;display:inline-block"><input type="button" onclick="Help(2)" value="Technical info." /></div>
           </td>
           <td>
-            <input type="radio" name="CMode" id="Cyrix" onclick="CompatibilityMode(2);Update();">Cyrix.<div style="float:right;display:inline-block"><input type="button" onclick="Help(3)" value="Technical info." /></div>
+            <input type="radio" name="CMode" id="L1OM" onclick="CompatibilityMode(2);Update();">Larrabee.<div style="float:right;display:inline-block"><input type="button" onclick="Help(3)" value="Technical info." /></div>
           </td>
           <td>
-            <input type="radio" name="CMode" id="Geode" onclick="CompatibilityMode(3);Update();">Geode.<div style="float:right;display:inline-block"><input type="button" onclick="Help(4)" value="Technical info." /></div>
+            <input type="radio" name="CMode" id="Cyrix" onclick="CompatibilityMode(3);Update();">Cyrix.<div style="float:right;display:inline-block"><input type="button" onclick="Help(4)" value="Technical info." /></div>
           </td>
           <td>
-            <input type="radio" name="CMode" id="Centaur" onclick="CompatibilityMode(4);Update();">Centaur.<div style="float:right;display:inline-block"><input type="button" onclick="Help(5)" value="Technical info." /></div>
+            <input type="radio" name="CMode" id="Geode" onclick="CompatibilityMode(4);Update();">Geode.<div style="float:right;display:inline-block"><input type="button" onclick="Help(5)" value="Technical info." /></div>
           </td>
           <td>
-            <input type="radio" name="CMode" id="X86/486" onclick="CompatibilityMode(5);Update();">X86/486.<div style="float:right;display:inline-block"><input type="button" onclick="Help(6)" value="Technical info." /></div>
+            <input type="radio" name="CMode" id="Centaur" onclick="CompatibilityMode(5);Update();">Centaur.<div style="float:right;display:inline-block"><input type="button" onclick="Help(6)" value="Technical info." /></div>
+          </td>
+          <td>
+            <input type="radio" name="CMode" id="X86/486" onclick="CompatibilityMode(6);Update();">X86/486.<div style="float:right;display:inline-block"><input type="button" onclick="Help(7)" value="Technical info." /></div>
           </td>
         </tr>
       </table>
