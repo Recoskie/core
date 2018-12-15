@@ -4020,17 +4020,21 @@ function DecodeImmediate( type, BySize, SizeSetting )
     
     var C64 = 0;
     
-    //Add position.
-    
-    V32 += Pos32;
-    
     //Relative size.
     
     var n = Math.min( 0x100000000, Math.pow( 2, 4 << ( S + 1 ) ) );
     
+    //Sing bit adjust.
+    
+    if( V32 >= ( n >> 1 ) ) { V32 -= n; }
+    
+    //Add position.
+    
+    V32 += Pos32;
+    
     //Remove carry bit and add it to C64.
 
-    ( C64 = ( ( V32 ) >= n ) ) && ( V32 -= n );
+    ( C64 = ( ( V32 ) >= 0x100000000 ) ) && ( V32 -= 0x100000000 );
     
     //Do not carry to 64 if address is 32, and below.
     
