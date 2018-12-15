@@ -4016,21 +4016,29 @@ function DecodeImmediate( type, BySize, SizeSetting )
 
     Pad32 = ( Math.min( BitMode, 1 ) << 2 ) + 4; Pad64 = Math.max( Math.min( BitMode, 2 ), 1 ) << 3;
 
-    //Add the 32 bit section to V32.
+    //Carry bit to 64 bit section.
+    
+    var C64 = 0;
+    
+    //Add position.
+    
+    V32 += Pos32;
+    
+    //Relative size.
+    
+    var n = Math.min( 0x100000000, Math.pow( 2, 4 << ( S + 1 ) ) );
+    
+    //Remove carry bit and add it to C64.
 
-    var C64 = 0; V32 += Pos32;
+    ( C64 = ( ( V32 ) >= n ) ) && ( V32 -= n );
+    
+    //Do not carry to 64 if address is 32, and below.
+    
+    if ( S <= 2 ) { C64 = false; }
 
-    //If bit mode is 16 bits only the first 16 bits are used, or if Size Attribute is 16 bit.
+    //Add the 64 bit position plus carry.
 
-    ( BitMode <= 0 || SizeAttrSelect <= 0 ) && ( V32 &= 0xFFFF );
-
-    //Adjust the 32 bit relative address section if it was not cropped to 16 bit's.
-
-    ( C64 = ( ( V32 ) > 0xFFFFFFFF ) ) && ( V32 -= 0x100000000 );
-
-    //Add the 64 bit address section if in 64 bit mode, or higher.
-
-    ( BitMode >= 2 ) && ( ( V64 += Pos64 + C64 ) > 0xFFFFFFFF ) && ( V64 -= 0x100000000 );
+    ( ( V64 += Pos64 + C64 ) > 0xFFFFFFFF ) && ( V64 -= 0x100000000 );
   }
 
   /*---------------------------------------------------------------------------------------------------------------------------
