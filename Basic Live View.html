@@ -131,17 +131,17 @@
       {
         if( h === 0 )
         {
-          alert("x86 is a family of backwards compatible instruction set architectures which means there should be no conflicts, but they are only minor.\r\n\
-If the CPU is not listed in compatibility modes then the code is compatible with the Full X86 architecture mode. For more information on what each compatibility mode effects click the technical info buttons.\r\n\
-*There are very few conflicting instructions though all X86 cores. You should only set compatibility mode if you know the code is designed for one of the conflicting architecture otherwise everything else matches the X86 architecture code standard.");
+          alert("x86 is a family of backwards compatible instruction set architectures. Which means there should be no conflicts, but they are only minor.\r\n\
+If the CPU is not listed in compatibility modes. Then the code is compatible with the Full X86 architecture mode. For more information on what each compatibility mode effects click the technical info buttons.\r\n\
+*There are very few conflicting instructions through all X86 cores. You should only set compatibility mode if you know the code is designed for one of the conflicting architectures otherwise everything else matches the X86 architecture code standard.");
         }
 
         if( h === 1 )
         {
           var win = window.open("", "X86", "toolbar=no, location=no, directories=no, status=no, menubar=no, scrollbars=yes, resizable=yes");
-          win.document.body.innerHTML = "Enables decoding of all binary instructions this is the proper setting if the CPU is not listed in compatibility mode meaning the architecture is fully backwards comparable from the modern architecture.<br /><br />\
+          win.document.body.innerHTML = "Enables decoding of all binary instructions. This is the proper setting if the CPU is not listed in compatibility mode. Meaning the architecture is fully backwards comparable from the modern architecture.<br /><br />\
   x86 is a family of backwards compatible instruction set architectures with almost full backwards compatibility.<br /><br />\
-  However not all processors match the modern X86 architecture encoding perfectly which is the reason for compatibility modes settings.";
+  However not all processors match the modern X86 architecture encoding perfectly. Which is the reason for compatibility modes settings.";
         }
 
         if( h === 2 )
@@ -314,7 +314,7 @@ Setting 486 compatibility mode will allow UMOV, and CMPXCHG to disassemble inste
       <h1>
         Full X86 Disassembler by Damian Recoskie.
       </h1>
-      <h4>Version 2.2.</h4>
+      <h4>Version 2.3.</h4>
     </center>
     <form>
       <table border="1px" width="100%">
