@@ -169,6 +169,16 @@ KXNOR[B|W|D|Q] is adjusted to KXNOR.<br />\
 KXOR[B|W|D|Q] is adjusted to KXOR.<br />\
 KMOV[B|W|D|Q] is adjusted to KMOV.<br />\
 KORTEST[B|W|D|Q] is adjusted to KORTEST.<br /><br />\
+The Jump with mask register instructions.<br /><br />\
+C5 F8 84 00 00 00 00 = VJKZD K0,0000000000000007<br />\
+C5 F8 85 00 00 00 00 = VJKNZD K0,0000000000000007<br /><br />\
+Semi Conflicts with the jump instructions.<br /><br />\
+66 0F 84 00 00 = JE 0000000000000005<br />\
+66 0F 85 00 00 = JNE 0000000000000005<br /><br />\
+These tow jump instructions are still enclosable with K1OM set active.<br /><br />\
+0F 84 00 00 00 00 = JE 0000000000000006<br />\
+0F 85 00 00 00 00 = JNE 0000000000000006<br /><br />\
+Just they can not be adjust to 16 bit in size with K1OM active.<br /><br />\
 Lastly the instruction encoding's used by knights corner using the MVEX encoding is distinguishable from the EVEX encoding used by the Knights landing processor and later without error. \
 The only instructions that cause an problem for knights corner support are above.<br /><br />\
 The full Knights corner instruction set is supported under the \"Full X86 Architecture\" compatibility mode. Just that enabling the \"Knights corner\" compatibility mode will correct the mask instruction problem.";
@@ -315,7 +325,7 @@ Setting 486 compatibility mode will allow UMOV, and CMPXCHG to disassemble inste
       <h1>
         Full X86 Disassembler by Damian Recoskie.
       </h1>
-      <h4>Version 2.3.</h4>
+      <h4>Version 2.4.</h4>
     </center>
     <form>
       <table border="1px" width="100%">

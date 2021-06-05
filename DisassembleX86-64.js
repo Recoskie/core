@@ -178,9 +178,10 @@ const Mnemonics = [
   ["ADD","OR","ADC","SBB","AND","SUB","XOR","CMP"],
   ["ADD","OR","ADC","SBB","AND","SUB","XOR","CMP"],
   "TEST","TEST","XCHG","XCHG",
-  "MOV","MOV","MOV","MOV","MOV",
+  "MOV","MOV","MOV","MOV",
+  ["MOV","MOV"],
   ["LEA","???"], //*ModR/M Register, and memory mode separation.
-  "MOV",
+  ["MOV","MOV"],
   ["POP","???","???","???","???","???","???","???"],
   [["NOP","","",""],["NOP","","",""],["PAUSE","","",""],["NOP","","",""]],
   "XCHG","XCHG","XCHG","XCHG","XCHG","XCHG","XCHG",
@@ -591,9 +592,8 @@ const Mnemonics = [
     ["MOVDQU","MOVDQU",["MOVDQU32","","MOVDQU64"],""],
     ["???","",["MOVDQU8","","MOVDQU16"],""]
   ],
-  "JO","JNO","JB","JAE",
-  [["JE","JKZD","",""],"","",""],[["JNE","JKNZD","",""],"","",""], //K1OM.
-  "JBE","JA","JS","JNS","JP","JNP","JL","JGE","JLE","JG",
+  "JO","JNO","JB","JAE","JE","JNE","JBE","JA",
+  "JS","JNS","JP","JNP","JL","JGE","JLE","JG",
   [
     ["SETO",["KMOVW","","KMOVQ"],"",""],
     ["SETO",["KMOVB","","KMOVD"],"",""],"",""
@@ -1328,8 +1328,8 @@ const Operands = [
   "0DE6","0B0E070E0DE6",
   "0DA1","0B0E070E0DE1",
   "22001A01","230E1A01","1A012000","1A01210E",
-  "10000002000C","10000002000C","10000002000C","10000002000C","10000002000C","10000002000C","10000002000C","10000002000C",
-  "10000002000C","10000002000C","10000002000C","10000002000C","10000002000C","10000002000C","10000002000C","10000002000C",
+  "1000000E","1000000E","1000000E","1000000E","1000000E","1000000E","1000000E","1000000E",
+  "1000000E","1000000E","1000000E","1000000E","1000000E","1000000E","1000000E","1000000E",
   ["06000C000003","06000C000003","06000C000003","06000C000003","06000C000003","06000C000003","06000C000003","06000C00"],
   ["070E0DE60003","070E0DE60003","070E0DE60003","070E0DE60003","070E0DE60003","070E0DE60003","070E0DE60003","070E0DE6"],
   ["06000C000003","06000C000003","06000C000003","06000C000003","06000C000003","06000C000003","06000C000003","06000C00"],
@@ -1338,9 +1338,9 @@ const Operands = [
   "0A0006000003","0B0E070E0003",
   "06000A000001","070E0B0E0001",
   "0A0006000001","0B0E070E0001",
-  "06020A080001",
+  ["06020A080001","070E0A080001"],
   ["0B0E0601",""],
-  "0A0806020001",
+  ["0A0806020001","0A08070E0001"],
   ["070A","","","","","","",""],
   [["","","",""],["","","",""],["","","",""],["","","",""]],
   "170E030E0003","170E030E0003","170E030E0003","170E030E0003","170E030E0003","170E030E0003","170E030E0003",
@@ -1737,9 +1737,8 @@ const Operands = [
     ["06480A04","07300B30",["07700B70","","07700B700108"],""],
     ["","",["07700B700108","","07700B70"],""]
   ],
-  "1106000C","1106000C","1106000C","1106000C",
-  [["1106000C","120F1002","",""],"","",""],[["1106000C","120F1002","",""],"","",""],
-  "1106000C","1106000C","1106000C","1106000C","1106000C","1106000C","1106000C","1106000C","1106000C","1106000C",
+  "1106000C","1106000C","1106000C","1106000C","1106000C","1106000C","1106000C","1106000C",
+  "1106000C","1106000C","1106000C","1106000C","1106000C","1106000C","1106000C","1106000C",
   [
     ["0600",["0A0F06F2","","0A0F06F6"],"",""],
     ["0600",["0A0F06F0","","0A0F06F4"],"",""],"",""
@@ -3351,6 +3350,7 @@ function CompatibilityMode( type )
   Mnemonics[0x17C] = ["???",["HADDPD","HADDPD","",""],"???",["HADDPS","HADDPS","",""]];
   Mnemonics[0x17D] = ["???",["HSUBPD","HSUBPD","",""],"???",["HSUBPS","HSUBPS","",""]];
   Mnemonics[0x17E] = [["MOVD","","",""],["MOVD","","MOVQ"],["MOVQ","MOVQ",["???","","MOVQ"],""],"???"],
+  Mnemonics[0x184] = "JE"; Mnemonics[0x185] = "JNE";
   Mnemonics[0x190] = [["SETO",["KMOVW","","KMOVQ"],"",""],["SETO",["KMOVB","","KMOVD"],"",""],"",""];
   Mnemonics[0x192] = [["SETB",["KMOVW","","???"],"",""],["SETB",["KMOVB","","???"],"",""],"",["SETB",["KMOVD","","KMOVQ"],"",""]];
   Mnemonics[0x193] = [["SETAE",["KMOVW","","???"],"",""],["SETAE",["KMOVB","","???"],"",""],"",["SETAE",["KMOVD","","KMOVQ"],"",""]];
@@ -3387,6 +3387,7 @@ function CompatibilityMode( type )
   Operands[0x17C] = ["",["0A040604","0B7013700770","",""],"",["0A040604","0B7013700770","",""]];
   Operands[0x17D] = ["",["0A040604","0B7013700770","",""],"",["0A040604","0B7013700770","",""]];
   Operands[0x17E] = [["070C0A0A","","",""],["06240A040108","","06360A040108"],["0A040646","0A040646",["","","0A0406460108"],""],""];
+  Operands[0x184] = "1106000C"; Operands[0x185] = "1106000C";
   Operands[0x190] = [["0600",["0A0F0612","","0A0F0636"],"",""],["0600",["0A0F0600","","0A0F0624"],"",""],"",""];
   Operands[0x192] = [["0600",["0A0F06F4","",""],"",""],["0600",["0A0F06F4","",""],"",""],"",["0600",["0A0F06F6","","0A0F06F6"],"",""]];
   Operands[0x193] = [["0600",["06F40A0F","",""],"",""],["0600",["06F40A0F","",""],"",""],"",["0600",["06F60A0F","","06F60A0F"],"",""]];
@@ -3404,6 +3405,8 @@ function CompatibilityMode( type )
     Mnemonics[0x145] = [["CMOVNE","KOR","",""],"","",""];
     Mnemonics[0x146] = [["CMOVBE","KXNOR","",""],"","",""];
     Mnemonics[0x147] = [["CMOVA","KXOR","",""],"","",""];
+    Mnemonics[0x184] = [["JE","JKZD","",""],"","",""];
+    Mnemonics[0x185] = [["JNE","JKNZD","",""],"","",""];
     Mnemonics[0x190] = [["SETO","KMOV","",""],"","",""];
     Mnemonics[0x192] = [["SETB","KMOV","",""],"","",""];
     Mnemonics[0x193] = [["SETAE","KMOV","",""],"","",""];
@@ -3414,6 +3417,8 @@ function CompatibilityMode( type )
     Operands[0x145] = [["0A02070E0180","0A0F06FF","",""],"","",""];
     Operands[0x146] = [["0B0E070E0180","0A0F06FF","",""],"","",""];
     Operands[0x147] = [["0B0E070E0180","0A0F06FF","",""],"","",""];
+    Operands[0x184] = [["1106000C","120F1002","",""],"","",""];
+    Operands[0x185] = [["1106000C","120F1002","",""],"","",""];
     Operands[0x190] = [["0600","0A0F06FF","",""],"","",""];
     Operands[0x192] = [["0600","06FF0B06","",""],"","",""];
     Operands[0x193] = [["0600","07060A0F","",""],"","",""];
@@ -3932,7 +3937,6 @@ If BySize is false the SizeSetting is used numerically as a single size selectio
 
 function DecodeImmediate( type, BySize, SizeSetting )
 {
-
   /*-------------------------------------------------------------------------------------------------------------------------
   Initialize V32, and V64 which will store the Immediate value.
   JavaScript Float64 numbers can not accurately work with numbers 64 bit's long.
@@ -3980,7 +3984,7 @@ function DecodeImmediate( type, BySize, SizeSetting )
   S=0 is 1 byte, S=1 is 2 bytes, S=2 is 4 bytes, S=3 is 8 bytes.
   The Number of bytes to read is 2 to the power of S.
   -------------------------------------------------------------------------------------------------------------------------*/
-
+  
   var n = 1 << S;
 
   //Adjust Pad32, and Pad64.
@@ -4043,6 +4047,10 @@ function DecodeImmediate( type, BySize, SizeSetting )
     //Add the 64 bit position plus carry.
 
     ( ( V64 += Pos64 + C64 ) > 0xFFFFFFFF ) && ( V64 -= 0x100000000 );
+
+    //Relative address can not e bigger than the bit mode length.
+
+    if( BitMode == 0 ) { V64 = 0; V32 &= 0xFFFF; } else if ( BitMode == 1 ) { V32 &= 0xFFFFFFFF; }
   }
 
   /*---------------------------------------------------------------------------------------------------------------------------
@@ -4336,8 +4344,7 @@ function Decode_ModRM_SIB_Address( ModRM, BySize, Setting )
 
       if( ModRM[0] === 0 && ModRM[2] === 5 )
       {
-        Disp = 2;
-        DispType = 2;
+        Disp = 2; DispType = BitMode == 2 ? 2 : 0;
       }
 
       //check if Base Register is 4 which goes into the SIB address system
@@ -4414,7 +4421,7 @@ function Decode_ModRM_SIB_Address( ModRM, BySize, Setting )
       //else Base register is not 4 and does not go into the SIB ADDRESS.
       //Decode the Base register regularly plus it's Extended value if relative (RIP) disp32 is not used.
 
-      else if(DispType !== 2)
+      else if( ( ModRM[0] == 0 && ModRM[2] != 5 ) || ModRM[0] > 0 )
       {
         out += REG[ AddressSize ][ BaseExtend & 8 | ModRM[2] ];
       }
