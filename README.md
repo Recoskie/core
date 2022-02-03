@@ -46,3 +46,6 @@ In the past there use to be viruses that wrote to sector 0 on memory cards, and 
 
 The disassembler can be tried by running the Basic Live View file, but you would first need to download this project as a zip, or clone it.
 -----------------------------------------------------------------------------------------------
+
+You may also like the project JDissasembly which guides you through the process of taking a Microsoft, Linux, or macOS binary program apart and visualizing binary file formats. Also lets you see how boot sectors decompile and work. See https://github.com/Recoskie/JDisassembly
+
