@@ -1,6 +1,6 @@
 Core Code Disassembler.
 ==========================
-X86 disassembler Page: <a href="https://recoskie.github.io/X86-64-Disassembler-JS/Basic%20Live%20View.html">Link</a>
+X86 disassembler Page: <a href="https://recoskie.github.io/core/x86%20Live%20View.html">Link</a>
 
 -----------------------------------------------------------------------------------------------
 ### This disassembler is mainly designed as a Disassembly library, for JavaScript/Java that can run on any system.
