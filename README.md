@@ -1,14 +1,13 @@
-X86 Disassembler.
+Core Code Disassembler.
 ==========================
 X86 disassembler Page: <a href="https://recoskie.github.io/X86-64-Disassembler-JS/Basic%20Live%20View.html">Link</a>
 
 -----------------------------------------------------------------------------------------------
-### This disassembler is mainly designed as a X86 Disassembly library, for JavaScript that can run on any system.
-### Supports decoding 64 bit, and 32 bit programs, also is completely backwards compatible to 16 bit 8086.
+### This disassembler is mainly designed as a Disassembly library, for JavaScript/Java that can run on any system.
 
 -----------------------------------------------------------------------------------------------
 
-Supports Instruction sets:<br />
+Supports x86 Instruction sets:<br />
 MMX, F16C, 3DNow.<br />
 SSE, SSE2, SSE3, SSSE3, SSE4, SSE4a, SSE4.1, SSE4.2.<br />
 SMX, VMX, AMD-V, Intel VT-x.<br />
@@ -44,8 +43,5 @@ By reading the binary at sector 0 in hex you could give the code to the disassem
 Thus you could follow the boot process of the operating system.
 In the past there use to be viruses that wrote to sector 0 on memory cards, and internal disks to infect other computers when the disk was inserted.
 
-The disassembler can be tried by running the Basic Live View file, but you would first need to download this project as a zip, or clone it.
 -----------------------------------------------------------------------------------------------
-
 You may also like the project JDissasembly which guides you through the process of taking a Microsoft, Linux, or macOS binary program apart and visualizing binary file formats. Also lets you see how boot sectors decompile and work. See https://github.com/Recoskie/JDisassembly
-
