@@ -10,14 +10,14 @@
       {
         //Update disassembler controls to the current default settings.
 
-        if( BitMode == 0 ) { document.getElementById("B16").checked = true; }
-        if( BitMode == 1 ) { document.getElementById("B32").checked = true; }
-        if( BitMode == 2 ) { document.getElementById("B64").checked = true; }
+        if( core.BitMode == 0 ) { document.getElementById("B16").checked = true; }
+        if( core.BitMode == 1 ) { document.getElementById("B32").checked = true; }
+        if( core.BitMode == 2 ) { document.getElementById("B64").checked = true; }
 
         //Hex, and position display modes.
 
-        document.getElementById("DHex").checked = ShowInstructionHex;
-        document.getElementById("DPos").checked = ShowInstructionPos;
+        document.getElementById("DHex").checked = core.ShowInstructionHex;
+        document.getElementById("DPos").checked = core.ShowInstructionPos;
 
         //Update base position, and disassemble the 64 bit sample code.
 
@@ -34,7 +34,7 @@
 
         //Load the Hex string into the Disassembler.
 
-        if (LoadBinCode(Hex)) //Check if loaded correctly.
+        if (core.LoadBinCode(Hex)) //Check if loaded correctly.
         {
           //Clear error output.
 
@@ -42,7 +42,7 @@
 
           //Use the Linear Disassemble algorithm, for the Section of binary.
 
-          out = LDisassemble();
+          out = core.LDisassemble();
 
           //Update the disassemble output.
 
@@ -68,14 +68,14 @@
 
         //8086 binary mode 16 bit, and up to X86-64.
 
-        if( document.getElementById("B16").checked ) { BitMode = 0; UpdateBase(); }
-        if( document.getElementById("B32").checked ) { BitMode = 1; UpdateBase(); }
-        if( document.getElementById("B64").checked ) { BitMode = 2; UpdateBase(); }
+        if( document.getElementById("B16").checked ) { core.BitMode = 0; UpdateBase(); }
+        if( document.getElementById("B32").checked ) { core.BitMode = 1; UpdateBase(); }
+        if( document.getElementById("B64").checked ) { core.BitMode = 2; UpdateBase(); }
 
         //Hex, and position display modes.
 
-        ShowInstructionHex = document.getElementById("DHex").checked;
-        ShowInstructionPos = document.getElementById("DPos").checked;
+        core.ShowInstructionHex = document.getElementById("DHex").checked;
+        core.ShowInstructionPos = document.getElementById("DPos").checked;
 
         //Decode the binary with the new settings.
 
@@ -93,11 +93,11 @@
 
         //Set the position the binary is read from.
 
-        SetBasePosition(CodeSegment + ":" + Offset);
+        core.SetBasePosition(CodeSegment + ":" + Offset);
 
         //Depending on format 8086 (X86-16), 386 (X86-32), and X86-64 Instruction Pointer Size changes.
 
-        var P = GetPosition().split(":"); //Split code segment, and instruction offset separator.
+        var P = core.GetPosition().split(":"); //Split code segment, and instruction offset separator.
         var Offset = P[P.length - 1]; //Read the last element for the Instruction pointer.
 
         var Seg = (document.getElementById("CS").value).slice(-4);
@@ -342,25 +342,25 @@ Setting 486 compatibility mode will allow UMOV, and CMPXCHG to disassemble inste
             <input type="button" onclick="Help(0)" value="Compatibility Mode Help." />Compatibility Mode:
           </td>
           <td>
-            <input type="radio" name="CMode" id="Defualt" onclick="CompatibilityMode(0);Update();" checked>Full X86 Architecture.<div style="float:right;display:inline-block"><input type="button" onclick="Help(1)" value="Technical info." /></div>
+            <input type="radio" name="CMode" id="Defualt" onclick="core.CompatibilityMode(0);Update();" checked>Full X86 Architecture.<div style="float:right;display:inline-block"><input type="button" onclick="Help(1)" value="Technical info." /></div>
           </td>
           <td>
-            <input type="radio" name="CMode" id="K1OM" onclick="CompatibilityMode(1);Update();">Knights Corner.<div style="float:right;display:inline-block"><input type="button" onclick="Help(2)" value="Technical info." /></div>
+            <input type="radio" name="CMode" id="K1OM" onclick="core.CompatibilityMode(1);Update();">Knights Corner.<div style="float:right;display:inline-block"><input type="button" onclick="Help(2)" value="Technical info." /></div>
           </td>
           <td>
-            <input type="radio" name="CMode" id="L1OM" onclick="CompatibilityMode(2);Update();">Larrabee.<div style="float:right;display:inline-block"><input type="button" onclick="Help(3)" value="Technical info." /></div>
+            <input type="radio" name="CMode" id="L1OM" onclick="core.CompatibilityMode(2);Update();">Larrabee.<div style="float:right;display:inline-block"><input type="button" onclick="Help(3)" value="Technical info." /></div>
           </td>
           <td>
-            <input type="radio" name="CMode" id="Cyrix" onclick="CompatibilityMode(3);Update();">Cyrix.<div style="float:right;display:inline-block"><input type="button" onclick="Help(4)" value="Technical info." /></div>
+            <input type="radio" name="CMode" id="Cyrix" onclick="core.CompatibilityMode(3);Update();">Cyrix.<div style="float:right;display:inline-block"><input type="button" onclick="Help(4)" value="Technical info." /></div>
           </td>
           <td>
-            <input type="radio" name="CMode" id="Geode" onclick="CompatibilityMode(4);Update();">Geode.<div style="float:right;display:inline-block"><input type="button" onclick="Help(5)" value="Technical info." /></div>
+            <input type="radio" name="CMode" id="Geode" onclick="core.CompatibilityMode(4);Update();">Geode.<div style="float:right;display:inline-block"><input type="button" onclick="Help(5)" value="Technical info." /></div>
           </td>
           <td>
-            <input type="radio" name="CMode" id="Centaur" onclick="CompatibilityMode(5);Update();">Centaur.<div style="float:right;display:inline-block"><input type="button" onclick="Help(6)" value="Technical info." /></div>
+            <input type="radio" name="CMode" id="Centaur" onclick="core.CompatibilityMode(5);Update();">Centaur.<div style="float:right;display:inline-block"><input type="button" onclick="Help(6)" value="Technical info." /></div>
           </td>
           <td>
-            <input type="radio" name="CMode" id="X86/486" onclick="CompatibilityMode(6);Update();">X86/486.<div style="float:right;display:inline-block"><input type="button" onclick="Help(7)" value="Technical info." /></div>
+            <input type="radio" name="CMode" id="X86/486" onclick="core.CompatibilityMode(6);Update();">X86/486.<div style="float:right;display:inline-block"><input type="button" onclick="Help(7)" value="Technical info." /></div>
           </td>
         </tr>
       </table>
