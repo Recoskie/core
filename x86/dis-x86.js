@@ -4,16 +4,13 @@ Processor cores are defined as core objects allowing us to load in different cor
 
 core = {
   /*-------------------------------------------------------------------------------------------------------------------------
-  This tells us the core type that we currently have loaded.
-  -------------------------------------------------------------------------------------------------------------------------*/
-
-  type: "x86",
-
-  /*-------------------------------------------------------------------------------------------------------------------------
-  Binary byte code array.
+  Binary byte code array. This can be a memory reference from a real byte array from an actual file or binary application, or
+  it can be loaded using a string of hexadecimal characters translated into the binary code array.
   ---------------------------------------------------------------------------------------------------------------------------
   Function ^loadBinCode()^ takes a string input of hex and loads it into the binCode array it is recommended that the location
   the hex string is read from a file, or sector matches the disassemblers set base address using function ^setBasePosition()^.
+  Function ^setBinCode()^ takes an array input and sets binCode array to the memory reference of real byte data, and takes a
+  position within the array we wish to start disassembling code at.
   -------------------------------------------------------------------------------------------------------------------------*/
   
   binCode: [],
@@ -35,7 +32,7 @@ core = {
   
   /*-------------------------------------------------------------------------------------------------------------------------
   The pos64, and pos32 is the actual base address that instructions are supposed to be from in memory when they are loaded
-  into the binCode array using the Function ^loadBinCode()^.
+  into the binCode array using the Function ^loadBinCode()^, or set by array memory reference using ^setBinCode()^.
   ---------------------------------------------------------------------------------------------------------------------------
   The function ^setBasePosition()^ sets the base location in pos64, and pos32, and Code Segment.
   -------------------------------------------------------------------------------------------------------------------------*/
@@ -3533,6 +3530,17 @@ core = {
   
     return ( true );
   },
+
+  /*-------------------------------------------------------------------------------------------------------------------------
+  This function sets the binCode array from a real byte buffer, and lets us set the code position in the array, but does not
+  reset the base address. This allows programs to be decoded in sections well maintaining the accurate 64 bit base address.
+  ---------------------------------------------------------------------------------------------------------------------------
+  The function "setBasePosition()" sets the location that the Code is from in memory.
+  The function "gotoPosition()" tests if the address is within rage of the current loaded binary.
+  The function "getPosition()" Gives back the current base address in it's proper format for the current bitMode.
+  -------------------------------------------------------------------------------------------------------------------------*/
+  
+  setBinCode: function( uintArray, codePos ) { this.binCode = uintArray; this.codePos = codePos; },
   
   /*-------------------------------------------------------------------------------------------------------------------------
   This function moves the address by one and caries to 64 section for the Base address. The bitMode settings limit how much of
