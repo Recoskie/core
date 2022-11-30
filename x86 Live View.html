@@ -3,29 +3,32 @@
     <title>x86-Disassembler (Intel/AMD/Other).</title>
     <meta property="og:image" content="https://repository-images.githubusercontent.com/25504860/fa13ff80-65fc-11ea-82a9-44a6ba3079b7" />
   </head>
-  <body onload="Setup()">
+  <body onload="setup()">
     <script type="text/javascript" src="x86/dis-x86.js"></script>
     <script type="text/javascript">
-      function Setup()
+      coreType = undefined;
+
+      function setup()
       {
+        coreType = document.getElementById("coreType");
+
         //Update disassembler controls to the current default settings.
 
-        if( core.BitMode == 0 ) { document.getElementById("B16").checked = true; }
-        if( core.BitMode == 1 ) { document.getElementById("B32").checked = true; }
-        if( core.BitMode == 2 ) { document.getElementById("B64").checked = true; }
+        if( core.bitMode == 0 ) { document.getElementById("B16").checked = true; }
+        if( core.bitMode == 1 ) { document.getElementById("B32").checked = true; }
+        if( core.bitMode == 2 ) { document.getElementById("B64").checked = true; }
 
         //Hex, and position display modes.
 
-        document.getElementById("DHex").checked = core.ShowInstructionHex;
-        document.getElementById("DPos").checked = core.ShowInstructionPos;
+        document.getElementById("DHex").checked = core.showInstructionHex;
+        document.getElementById("DPos").checked = core.showInstructionPos;
 
         //Update base position, and disassemble the 64 bit sample code.
 
-        UpdateBase();
-        Decode(document.getElementById('T').value);
+        updateBase(); decode(document.getElementById('T').value);
       }
 
-      function Decode(e)
+      function decode(e)
       {
         //Read the X86 hex code entered by user.
 
@@ -34,7 +37,7 @@
 
         //Load the Hex string into the Disassembler.
 
-        if (core.LoadBinCode(Hex)) //Check if loaded correctly.
+        if (core.loadBinCode(Hex)) //Check if loaded correctly.
         {
           //Clear error output.
 
@@ -42,7 +45,7 @@
 
           //Use the Linear Disassemble algorithm, for the Section of binary.
 
-          out = core.LDisassemble();
+          out = core.lDisassemble();
 
           //Update the disassemble output.
 
@@ -58,33 +61,33 @@
 
         //Reset the base position.
 
-        UpdateBase();
+        updateBase();
       }
 
       //Updates the disassembly output when a setting changes.
 
-      function Update()
+      function update()
       {
 
         //8086 binary mode 16 bit, and up to X86-64.
 
-        if( document.getElementById("B16").checked ) { core.BitMode = 0; UpdateBase(); }
-        if( document.getElementById("B32").checked ) { core.BitMode = 1; UpdateBase(); }
-        if( document.getElementById("B64").checked ) { core.BitMode = 2; UpdateBase(); }
+        if( document.getElementById("B16").checked ) { core.bitMode = 0; updateBase(); }
+        if( document.getElementById("B32").checked ) { core.bitMode = 1; updateBase(); }
+        if( document.getElementById("B64").checked ) { core.bitMode = 2; updateBase(); }
 
         //Hex, and position display modes.
 
-        core.ShowInstructionHex = document.getElementById("DHex").checked;
-        core.ShowInstructionPos = document.getElementById("DPos").checked;
+        core.showInstructionHex = document.getElementById("DHex").checked;
+        core.showInstructionPos = document.getElementById("DPos").checked;
 
         //Decode the binary with the new settings.
 
-        Decode(document.getElementById('T').value);
+        decode(document.getElementById('T').value);
       }
 
       //Update Base Position.
 
-      function UpdateBase()
+      function updateBase()
       {
         //Get the Base address for the binary based on the base address entered by user.
 
@@ -93,11 +96,11 @@
 
         //Set the position the binary is read from.
 
-        core.SetBasePosition(CodeSegment + ":" + Offset);
+        core.setBasePosition(CodeSegment + ":" + Offset);
 
         //Depending on format 8086 (X86-16), 386 (X86-32), and X86-64 Instruction Pointer Size changes.
 
-        var P = core.GetPosition().split(":"); //Split code segment, and instruction offset separator.
+        var P = core.getPosition().split(":"); //Split code segment, and instruction offset separator.
         var Offset = P[P.length - 1]; //Read the last element for the Instruction pointer.
 
         var Seg = (document.getElementById("CS").value).slice(-4);
@@ -128,7 +131,7 @@
         document.getElementById("CS").value = Seg; //Update the CodeSegment.
       }
 
-      function Help( h )
+      function help( h )
       {
         if( h === 0 )
         {
@@ -331,9 +334,9 @@ Setting 486 compatibility mode will allow UMOV, and CMPXCHG to disassemble inste
       <table border="1px" width="100%">
         <tr>
           <td>Format:</td>
-          <td><input type="radio" name="Format" id="B16" onclick="Update();" value="16bit">16 bit binaries (X86-16).</td>
-          <td><input type="radio" name="Format" id="B32" onclick="Update();" value="32bit">32 bit binaries (X86-32).</td>
-          <td><input type="radio" name="Format" id="B64" onclick="Update();" value="64bit" checked>64 bit binaries (X86-64).</td>
+          <td><input type="radio" name="Format" id="B16" onclick="update();" value="16bit">16 bit binaries (X86-16).</td>
+          <td><input type="radio" name="Format" id="B32" onclick="update();" value="32bit">32 bit binaries (X86-32).</td>
+          <td><input type="radio" name="Format" id="B64" onclick="update();" value="64bit" checked>64 bit binaries (X86-64).</td>
         </tr>
       </table>
       <table border="1px" width="100%">
@@ -342,40 +345,40 @@ Setting 486 compatibility mode will allow UMOV, and CMPXCHG to disassemble inste
             <input type="button" onclick="Help(0)" value="Compatibility Mode Help." />Compatibility Mode:
           </td>
           <td>
-            <input type="radio" name="CMode" id="Defualt" onclick="core.CompatibilityMode(0);Update();" checked>Full X86 Architecture.<div style="float:right;display:inline-block"><input type="button" onclick="Help(1)" value="Technical info." /></div>
+            <input type="radio" name="CMode" id="Defualt" onclick="core.compatibilityMode(0);update();" checked>Full X86 Architecture.<div style="float:right;display:inline-block"><input type="button" onclick="help(1)" value="Technical info." /></div>
           </td>
           <td>
-            <input type="radio" name="CMode" id="K1OM" onclick="core.CompatibilityMode(1);Update();">Knights Corner.<div style="float:right;display:inline-block"><input type="button" onclick="Help(2)" value="Technical info." /></div>
+            <input type="radio" name="CMode" id="K1OM" onclick="core.compatibilityMode(1);update();">Knights Corner.<div style="float:right;display:inline-block"><input type="button" onclick="help(2)" value="Technical info." /></div>
           </td>
           <td>
-            <input type="radio" name="CMode" id="L1OM" onclick="core.CompatibilityMode(2);Update();">Larrabee.<div style="float:right;display:inline-block"><input type="button" onclick="Help(3)" value="Technical info." /></div>
+            <input type="radio" name="CMode" id="L1OM" onclick="core.compatibilityMode(2);update();">Larrabee.<div style="float:right;display:inline-block"><input type="button" onclick="help(3)" value="Technical info." /></div>
           </td>
           <td>
-            <input type="radio" name="CMode" id="Cyrix" onclick="core.CompatibilityMode(3);Update();">Cyrix.<div style="float:right;display:inline-block"><input type="button" onclick="Help(4)" value="Technical info." /></div>
+            <input type="radio" name="CMode" id="Cyrix" onclick="core.compatibilityMode(3);update();">Cyrix.<div style="float:right;display:inline-block"><input type="button" onclick="help(4)" value="Technical info." /></div>
           </td>
           <td>
-            <input type="radio" name="CMode" id="Geode" onclick="core.CompatibilityMode(4);Update();">Geode.<div style="float:right;display:inline-block"><input type="button" onclick="Help(5)" value="Technical info." /></div>
+            <input type="radio" name="CMode" id="Geode" onclick="core.compatibilityMode(4);update();">Geode.<div style="float:right;display:inline-block"><input type="button" onclick="help(5)" value="Technical info." /></div>
           </td>
           <td>
-            <input type="radio" name="CMode" id="Centaur" onclick="core.CompatibilityMode(5);Update();">Centaur.<div style="float:right;display:inline-block"><input type="button" onclick="Help(6)" value="Technical info." /></div>
+            <input type="radio" name="CMode" id="Centaur" onclick="core.compatibilityMode(5);update();">Centaur.<div style="float:right;display:inline-block"><input type="button" onclick="help(6)" value="Technical info." /></div>
           </td>
           <td>
-            <input type="radio" name="CMode" id="X86/486" onclick="core.CompatibilityMode(6);Update();">X86/486.<div style="float:right;display:inline-block"><input type="button" onclick="Help(7)" value="Technical info." /></div>
+            <input type="radio" name="CMode" id="X86/486" onclick="core.compatibilityMode(6);update();">X86/486.<div style="float:right;display:inline-block"><input type="button" onclick="help(7)" value="Technical info." /></div>
           </td>
         </tr>
       </table>
       <table border="1px" width="100%">
         <tr>
           <td>Display Options:</td>
-          <td><input type="checkbox" name="Display" id="DHex" onclick="Update();" value="Hex" checked>Show Disassembled Instruction Hex.</td>
-          <td><input type="checkbox" name="Display" id="DPos" onclick="Update();" value="Pos" checked>Show Instruction Memory Position.</td>
+          <td><input type="checkbox" name="Display" id="DHex" onclick="update();" value="Hex" checked>Show Disassembled Instruction Hex.</td>
+          <td><input type="checkbox" name="Display" id="DPos" onclick="update();" value="Pos" checked>Show Instruction Memory Position.</td>
         </tr>
       </table>
       <table border="1px" width="100%">
         <tr>
           <td>Base Address:</td>
           <td>
-            CS:<input type="text" id="CS" value="0016" onkeyup="Update();" onpaste="Update();">(Code Segment).
+            CS:<input type="text" id="CS" value="0016" onkeyup="update();" onpaste="update();">(Code Segment).
           </td>
           <td>
             <table>
@@ -383,7 +386,7 @@ Setting 486 compatibility mode will allow UMOV, and CMPXCHG to disassemble inste
                 <td>
                   <div id="XIP">RIP:</div>
                 </td>
-                <td><input type="text" id="RIP" value="7777777777777777" onkeyup="Update();" onpaste="Update();">(Instruction Pointer Register).</td>
+                <td><input type="text" id="RIP" value="7777777777777777" onkeyup="update();" onpaste="update();">(Instruction Pointer Register).</td>
               </tr>
             </table>
           </td>
@@ -412,7 +415,7 @@ Setting 486 compatibility mode will allow UMOV, and CMPXCHG to disassemble inste
         </tr>
         <tr>
           <td width="30%">
-            <textarea id="T" style="font-family:monospace;width:100%;" rows="27" onkeyup="var e=this; Decode(e.value);" onpaste="var e=this; setTimeout(function(){Decode(e.value);}, 100);">CCEB004883C438C3CCCCCCCCCCCCCCCC488BC448895810488970184889782055488DA8E8FDFFFF4881EC10030000488B05930A0A004833C4488985000200004C8B05AAD8090033C0488944244233F6C74424582A002C00488D05B23F05004889442460488D45F04889442448488BF9C744244000000802</textarea>
+            <textarea id="T" style="font-family:monospace;width:100%;" rows="27" onkeyup="var e=this; decode(e.value);" onpaste="var e=this; setTimeout(function(){decode(e.value);}, 100);">CCEB004883C438C3CCCCCCCCCCCCCCCC488BC448895810488970184889782055488DA8E8FDFFFF4881EC10030000488B05930A0A004833C4488985000200004C8B05AAD8090033C0488944244233F6C74424582A002C00488D05B23F05004889442460488D45F04889442448488BF9C744244000000802</textarea>
           </td>
           <td width="70%">
             <textarea id="DisAsm" style="font-family:monospace;width:100%;" rows="27" wrap="off" readonly></textarea>
