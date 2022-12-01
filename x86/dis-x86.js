@@ -75,7 +75,25 @@ core = {
   
   showInstructionHex: true, //setting to show the hex code of the instruction beside the decoded instruction output.
   showInstructionPos: true, //setting to show the instruction address position.
+
+  /*-------------------------------------------------------------------------------------------------------------------------
+  Simple location mapping, for method calls, And data.
+  -------------------------------------------------------------------------------------------------------------------------*/
+
+  addressMap: false, //Address mapping is not enabled by default.
+
+  lookup: false, pointerSize: 0, rel: false, //Basic properties needed to map read data, or jump/function locations.
+
+  addressMode: false, //Changes the address mapping type.
+
+  //Mapped pos are the locations, and mapped loc is the name of an function.
+
+  mapped_pos: [], mapped_loc: [],
   
+  //Data offset and function crawling list.
+  
+  data_off: [], linear: [], crawl: [],
+
   /*-------------------------------------------------------------------------------------------------------------------------
   The opcode, and opcode map.
   ---------------------------------------------------------------------------------------------------------------------------
@@ -4091,6 +4109,115 @@ core = {
   
       for (; imm.length < extend; imm = spd + imm);
     }
+
+    /*---------------------------------------------------------------------------------------------------------------------------
+    Start address mapping the location.
+    ---------------------------------------------------------------------------------------------------------------------------*/
+
+    if( this.addressMap )
+    {
+      //53 bits out of 64 is more than enough. Very unlikly we will ever use all 64 bits in address space.
+      //If we do end up using all 64 bits then the comparisions can be modifiyed.
+
+      var pos = ( parseInt(imm.substring(0,8), 16) * 0x100000000 ) + parseInt(imm.substring(8,16), 16);
+
+      //Check if the immediate is a pointer location.
+
+      if( this.pointerSize > 0 && this.segOverride == "[" )
+      {
+        if( !this.addressMode )
+        {
+          s = this.bitMode == 2 ? 3 : 2;
+
+          for( var i = 0, r = 0; i < mapped_pos.length; i += 2 )
+          {
+            if( pos >= mapped_pos[i] && pos < mapped_pos[i + 1] )
+            {
+              this.pointerSize = 0; this.lookup = false; this.rel = false;
+       
+              return( this.mapped_loc[ r + ( pos - this.mapped_pos.get[ i ] ) >> s ] );
+            }
+
+            r += ( ( ( this.mapped_pos[ i + 1 ] - this.mapped_pos[ i ] ) ) >> s ) - 1;
+          }
+        }
+        else
+        {
+          for( var i = 0, r = 0; i < mapped_pos.length; i += 2 )
+          {
+            if( pos >= mapped_pos[ i ] && pos < mapped_pos[ i + 1 ] )
+            {
+              this.pointerSize = 0; this.lookup = false; this.rel = false;
+       
+              return( mapped_loc[ r ] );
+            }
+
+            r += 1;
+          }
+        }
+
+        //Add variable data location if not jump, or call.
+
+        if( !this.lookup )
+        {
+          //Do not add duplicate addresses.
+
+          for( var i = 0; i < this.data_off.length; i += 2 )
+          {
+            if( this.data_off[i] == pos ) { this.pointerSize = 0; this.lookup = false; this.rel = false; break; }
+          }
+
+          if( i == this.data_off.length ) { this.data_off[this.data_off.length] = pos; this.data_off[this.data_off.length] = 1 << ( this.pointerSize >> 1 ); }
+        }
+      }
+
+      //Else pointer is not > 0. Is then jump/call/loop location.
+
+      else if( this.rel )
+      {
+        if( !this.addressMode )
+        {
+          s = this.bitMode == 2 ? 3 : 2;
+
+          for( var i = 0, r = 0; i < this.mapped_pos.length; i += 2 )
+          {
+            if( pos >= this.mapped_pos.get( i ) && pos < this.mapped_pos.get( i + 1 ) )
+            {
+              this.pointerSize = 0; this.lookup = false; this.rel = false;
+       
+              return( this.mapped_loc[ r + ( pos - this.mapped_pos[ i ] ) >> s ] + "()" );
+            }
+
+            r += ( ( ( this.mapped_pos[ i + 1 ] - this.mapped_pos[ i ] ) ) >> s ) - 1;
+          }
+        }
+        else
+        {
+          for( var i = 0, r = 0; i < this.mapped_pos.length; i += 2 )
+          {
+            if( pos >= this.mapped_pos[ i ] && pos < this.mapped_pos[ i + 1 ] )
+            {
+              this.pointerSize = 0; this.lookup = false; this.rel = false;
+       
+              return( this.mapped_loc[ r ] + "()");
+            }
+
+            r += 1;
+          }
+        }
+
+        //Do not add duplicate addresses.
+
+        for( var i = 0; i < this.crawl.length; i++ )
+        {
+          if( this.crawl[i] == pos ) { this.lookup = false; rel = false; break; }
+        }
+
+        if( i == this.crawl.length ) { this.crawl[this.crawl.length] = pos; }
+      }
+ 
+      this.pointerSize = 0; this.lookup = false; this.rel = false;
+    }
   
     //*Return the imm.
   
@@ -4394,7 +4521,7 @@ core = {
   
       //Finally the Immediate displacement is put into the Address last.
   
-      if( disp >= 0 ) { out += this.decodeImmediate( dispType, false, disp ); }
+      if( disp >= 0 ) { this.pointerSize = ( modRM[0] == 0 && modRM[2] == 5 ) ? setting : 0; out += this.decodeImmediate( dispType, false, disp ); }
   
       //Put the right bracket on the address.
   
@@ -5061,6 +5188,8 @@ core = {
   
       else if( code >= 6 && code <= 8 && immOp <= 5 )
       {
+        rel = ( code - 6 ) == 2;
+
         this.x86Decoder[immOp++].set( ( code - 6 ), bySize, setting, opNum++ );
       }
   
@@ -5145,19 +5274,19 @@ core = {
   
       else
       {
-        var s=0, AddrsSize = 0;
+        var s=0, addrsSize = 0;
         if( this.x86Decoder[1].bySizeAttrubute )
         {
-          AddrsSize = ( Math.pow( 2, this.bitMode ) << 1 );
-          s = this.getOperandSize( this.x86Decoder[1].size, true ) << 1;
+          addrsSize = ( Math.pow( 2, this.bitMode ) << 1 );
+          s = this.getOperandSize( this.x86Decoder[1].size, true ) << 1; this.pointerSize = addrsSize;
         }
         else
         {
-          AddrsSize =  this.bitMode + 1;
+          addrsSize =  this.bitMode + 1;
           s = this.x86Decoder[1].size;
         }
         out[ this.x86Decoder[1].opNum ] = this.ptr[ s ];
-        out[ this.x86Decoder[1].opNum ] += this.segOverride + this.decodeImmediate( 0, this.x86Decoder[1].bySizeAttrubute, AddrsSize ) + "]";
+        out[ this.x86Decoder[1].opNum ] += this.segOverride + this.decodeImmediate( 0, this.x86Decoder[1].bySizeAttrubute, addrsSize ) + "]";
       }
     }
   
@@ -5363,6 +5492,10 @@ core = {
       //Decode the instruction.
   
       this.decodeOpcode();
+
+      //If the jump or call operation uses a pointer. Then the pointer is the location and has to be read.
+
+      this.lookup = this.instruction == "CALL" || this.instruction == "JMP";
   
       //-------------------------------------------------------------------------------------------------------------------------
       //Intel Larrabee CCCCC condition codes.
@@ -5623,7 +5756,7 @@ core = {
   
     //Reset Invalid operation code.
   
-    this.invalidOp = false;
+    this.invalidOp = false; this.pointerSize = 0; this.lookup = false;
   
     //Reset instruction hex because it is used to check if the instruction is longer than 15 bytes which is impossible for the X86 Decoder Circuit.
   
@@ -5633,15 +5766,21 @@ core = {
   
     for( var i = 0; i < this.x86Decoder.length; this.x86Decoder[i++].deactivate() );
   },
+
+  /*-------------------------------------------------------------------------------------------------------------------------
+  Reset address map.
+  -------------------------------------------------------------------------------------------------------------------------*/
+
+  resetMap: function() { this.mapped_pos = []; this.mapped_loc = []; this.data_off = []; this.linear = []; this.crawl = []; },
   
   /*-------------------------------------------------------------------------------------------------------------------------
   do an linear disassemble.
   -------------------------------------------------------------------------------------------------------------------------*/
   
-  lDisassemble: function()
+  disassemble: function(crawl)
   {
     var instruction = ""; //Stores the Decoded instruction.
-    var Out = "";  //The Disassemble output
+    var out = "";  //The Disassemble output
   
     //Disassemble binary code using an linear pass.
   
@@ -5649,7 +5788,7 @@ core = {
   
     //Backup the base address.
   
-    var BPos64 = this.pos64, BPos32 = this.pos32;
+    var bpos64 = this.pos64, bpos32 = this.pos32;
   
     while( this.codePos < len )
     {
@@ -5657,10 +5796,7 @@ core = {
   
       //Add the 64 bit address of the output if showInstructionPos decoding is active.
   
-      if( this.showInstructionPos )
-      {
-        Out += this.instructionPos + " ";
-      }
+      if(this.showInstructionPos) { out += this.instructionPos + " "; }
   
       //Show Each byte that was read to decode the instruction if showInstructionHex decoding is active.
   
@@ -5668,24 +5804,26 @@ core = {
       {
         this.instructionHex = this.instructionHex.toUpperCase();
         for(; this.instructionHex.length < 32; this.instructionHex = this.instructionHex + " " );
-        Out += this.instructionHex + "";
+        out += this.instructionHex + "";
       }
   
       //Put the decoded instruction into the output and make a new line.
   
-      Out += instruction + "\r\n";
+      out += instruction + "\r\n";
   
       //Reset instruction Pos and Hex.
   
       this.instructionPos = ""; this.instructionHex = "";
+
+      if( crawl && ( this.instruction == "RET" || this.instruction == "JMP" ) ) { break; }
     }
   
     this.codePos = 0; //Reset the Code position
-    this.pos32 = BPos32; this.pos64 = BPos64; //Reset Base address.
+    this.pos32 = bpos32; this.pos64 = bpos64; //Reset Base address.
   
     //return the decoded binary code
   
-    return(Out);
+    return(out);
   }
 }, operand = core.operand, core.x86Decoder = [
     /*-------------------------------------------------------------------------------------------------------------------------
