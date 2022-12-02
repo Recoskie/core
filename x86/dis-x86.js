@@ -4119,7 +4119,16 @@ core = {
       //53 bits out of 64 is more than enough. Very unlikly we will ever use all 64 bits in address space.
       //If we do end up using all 64 bits then the comparisions can be modifiyed.
 
-      var pos = ( parseInt(imm.substring(0,8), 16) * 0x100000000 ) + parseInt(imm.substring(8,16), 16);
+      var pos = 0;
+      
+      if( imm.length <= 8 )
+      {
+        pos = parseInt(imm, 16);
+      }
+      else
+      {
+        pos = ( parseInt(imm.substring(0,8), 16) * 0x100000000 ) + parseInt(imm.substring(8,16), 16);
+      }
 
       //Check if the immediate is a pointer location.
 
@@ -4129,9 +4138,9 @@ core = {
         {
           s = this.bitMode == 2 ? 3 : 2;
 
-          for( var i = 0, r = 0; i < mapped_pos.length; i += 2 )
+          for( var i = 0, r = 0; i < this.mapped_pos.length; i += 2 )
           {
-            if( pos >= mapped_pos[i] && pos < mapped_pos[i + 1] )
+            if( pos >= this.mapped_pos[i] && pos < this.mapped_pos[i + 1] )
             {
               this.pointerSize = 0; this.lookup = false; this.rel = false;
        
@@ -4143,13 +4152,13 @@ core = {
         }
         else
         {
-          for( var i = 0, r = 0; i < mapped_pos.length; i += 2 )
+          for( var i = 0, r = 0; i < this.mapped_pos.length; i += 2 )
           {
-            if( pos >= mapped_pos[ i ] && pos < mapped_pos[ i + 1 ] )
+            if( pos >= this.mapped_pos[ i ] && pos < this.mapped_pos[ i + 1 ] )
             {
               this.pointerSize = 0; this.lookup = false; this.rel = false;
        
-              return( mapped_loc[ r ] );
+              return( this.mapped_loc[ r ] );
             }
 
             r += 1;
@@ -5188,7 +5197,7 @@ core = {
   
       else if( code >= 6 && code <= 8 && immOp <= 5 )
       {
-        rel = ( code - 6 ) == 2;
+        this.rel = ( code - 6 ) == 2;
 
         this.x86Decoder[immOp++].set( ( code - 6 ), bySize, setting, opNum++ );
       }
@@ -5880,4 +5889,4 @@ core = {
     new operand(), //Explicit operand two.
     new operand(), //Explicit operand three.
     new operand()  //Explicit operand four.
-], operand = undefined;
+    ], operand = undefined;
