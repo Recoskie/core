@@ -3602,15 +3602,15 @@ core = {
   
     //Set the 16 bit code segment position if there is one.
   
-    if ( typeof t[1] !== "undefined" ){ this.codeSeg = parseInt( t[0].slice( t[0].length - 4 ), 16 ); Address = t[1]; }
+    if ( typeof t[1] !== "undefined" ){ this.codeSeg = parseInt( t[0].slice( Math.max( 0, t[0].length - 4 ) ), 16 ); Address = t[1]; }
   
     //Adjust the instruction pointer 16(IP)/32(EIP)/64(RIP). Also varies based on Bit Mode.
   
     var Len = Address.length;
   
-    if( Len >= 9 && this.bitMode == 2 ){ this.pos64 = parseInt( Address.slice( Len - 16, Len - 8 ), 16 ); }
-    if( Len >= 5 && this.bitMode >= 1 && !( this.bitMode == 1 & this.codeSeg >= 36 ) ){ this.pos32 = parseInt( Address.slice( Len - 8 ), 16 ); }
-    else if( Len >= 1 && this.bitMode >= 0 ){ this.pos32 = ( this.pos32 & 0xFFFF0000 ) | ( parseInt( Address.slice( Len - 4 ), 16 ) ); }
+    if( Len >= 9 && this.bitMode == 2 ){ this.pos64 = parseInt( Address.slice( Math.max(0, Len - 16), Len - 8 ), 16 ); }
+    if( Len >= 5 && this.bitMode >= 1 && !( this.bitMode == 1 & this.codeSeg >= 36 ) ){ this.pos32 = parseInt( Address.slice( Math.max( 0, Len - 8 ) ), 16 ); }
+    else if( Len >= 1 && this.bitMode >= 0 ){ this.pos32 = ( this.pos32 & 0xFFFF0000 ) | ( parseInt( Address.slice( Math.max( 0, Len - 4 ) ), 16 ) ); }
   
     //Convert this.pos32 to undignified integer.
   
