@@ -94,6 +94,10 @@ core = {
   
   data_off: [], linear: [], crawl: [],
 
+  //Number of rows that are visible to the data descriptor.
+
+  rows: 0,
+
   /*-------------------------------------------------------------------------------------------------------------------------
   The opcode, and opcode map.
   ---------------------------------------------------------------------------------------------------------------------------
@@ -5780,7 +5784,7 @@ core = {
   Reset address map.
   -------------------------------------------------------------------------------------------------------------------------*/
 
-  resetMap: function() { this.mapped_pos = []; this.mapped_loc = []; this.data_off = []; this.linear = []; this.crawl = []; },
+  resetMap: function() { this.mapped_pos = []; this.mapped_loc = []; this.data_off = []; this.linear = []; this.crawl = []; this.rows = 0; },
   
   /*-------------------------------------------------------------------------------------------------------------------------
   do an linear disassemble.
@@ -5829,6 +5833,10 @@ core = {
   
     this.codePos = 0; //Reset the Code position
     this.pos32 = bpos32; this.pos64 = bpos64; //Reset Base address.
+
+    //If address mapping is activated we should always calculate the number of rows to display all the mapped loactions.
+
+    if( this.addressMap ){ this.rows = ((this.data_off.length + this.linear.length) >> 1) + this.crawl.length; }
   
     //return the decoded binary code
   
