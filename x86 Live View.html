@@ -98,7 +98,7 @@
 
         //Depending on format 8086 (X86-16), 386 (X86-32), and X86-64 Instruction Pointer Size changes.
 
-        var P = core.getPosition().split(":"); //Split code segment, and instruction offset separator.
+        var P = core.getBasePosition().split(":"); //Split code segment, and instruction offset separator.
         var Offset = P[P.length - 1]; //Read the last element for the Instruction pointer.
 
         var Seg = (document.getElementById("CS").value).slice(-4);

@@ -5604,21 +5604,13 @@ core = {
   
         this.instructionHex = this.instructionHex.substring( 0, 30 );
   
-        //Calculate the Difference between the Disassembler current position.
-  
-        dif32 = this.pos32 - dif32;
-  
-        //Convert Dif to unsignified numbers.
-  
-        if( dif32 < 0 ) { dif32 += 0x100000000; }
-  
         //Go to the Calculated address right after the instruction UD.
   
         this.pos32 -= dif32; this.codePos -= dif32;
   
         //Set prefixes, and operands to empty strings, and set instruction to UD.
   
-        this.prefixG1 = "";this.prefixG2 = ""; this.instruction = "???"; this.insOperands = "";
+        this.prefixG1 = ""; this.prefixG2 = ""; this.instruction = "???"; this.insOperands = "";
       }
   
       //Put the instruction sequence together.
