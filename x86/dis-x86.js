@@ -64,7 +64,7 @@ core = {
   instructionHex: "",
   
   /*-------------------------------------------------------------------------------------------------------------------------
-  The instructionPos String stores the start position of a decoded binary instruction in memory from the function ^getPosition()^.
+  The instructionPos String stores the start position of a decoded binary instruction in memory from the function ^getBasePosition()^.
   -------------------------------------------------------------------------------------------------------------------------*/
   
   instructionPos: "",
@@ -3492,8 +3492,7 @@ core = {
   reset the base address. This allows programs to be decoded in sections well maintaining the accurate 64 bit base address.
   ---------------------------------------------------------------------------------------------------------------------------
   The function "setBasePosition()" sets the location that the Code is from in memory.
-  The function "gotoPosition()" tests if the address is within rage of the current loaded binary.
-  The function "getPosition()" Gives back the current base address in it's proper format for the current bitMode.
+  The function "getBasePosition()" Gives back the current base address in it's proper format for the current bitMode.
   ---------------------------------------------------------------------------------------------------------------------------
   If the hex input is invalid returns false.
   -------------------------------------------------------------------------------------------------------------------------*/
@@ -3558,15 +3557,14 @@ core = {
   reset the base address. This allows programs to be decoded in sections well maintaining the accurate 64 bit base address.
   ---------------------------------------------------------------------------------------------------------------------------
   The function "setBasePosition()" sets the location that the Code is from in memory.
-  The function "gotoPosition()" tests if the address is within rage of the current loaded binary.
-  The function "getPosition()" Gives back the current base address in it's proper format for the current bitMode.
+  The function "getBasePosition()" Gives back the current base address in it's proper format for the current bitMode.
   -------------------------------------------------------------------------------------------------------------------------*/
   
   setBinCode: function( uintArray, codePos ) { this.binCode = uintArray; this.codePos = codePos; },
   
   /*-------------------------------------------------------------------------------------------------------------------------
   This function moves the address by one and caries to 64 section for the Base address. The bitMode settings limit how much of
-  the 64 bit address is used in functions "getPosition()", and "gotoPosition()", for the type of binary being disassemble.
+  the 64 bit address is used in functions "getBasePosition()", for the type of binary being disassemble.
   This function also moves the binary code array position codePos by one basically this function is used to progress the
   disassembler as it is decoding a sequence of bytes.
   -------------------------------------------------------------------------------------------------------------------------*/
@@ -3627,7 +3625,7 @@ core = {
   In 32 bit an instruction location uses the first 32 bit's of the instruction pointer.
   -------------------------------------------------------------------------------------------------------------------------*/
   
-  getPosition: function()
+  getBasePosition: function()
   {
     //If 16 bit Seg:Offset, or if 32 bit and codeSeg is 36, or higher.
   
@@ -3662,90 +3660,12 @@ core = {
   },
   
   /*-------------------------------------------------------------------------------------------------------------------------
-  Moves the dissembler 64 bit address, and codePos to correct address. Returns false if address location is out of bounds.
+  Functions that are designed to allow direct access to the address position and code segment rather than using the string representation.
   -------------------------------------------------------------------------------------------------------------------------*/
-  
-  gotoPosition: function( address )
-  {
-    //Current address location.
-  
-    var locPos32 = this.pos32;
-    var locPos64 = this.pos64;
-    var locCodeSeg = this.codeSeg;
-  
-    //Split the by Segment:offset address format.
-  
-    var t = address.split(":");
-  
-    //Set the 16 bit code segment location if there is one.
-  
-    if ( typeof t[1] !== "undefined" )
-    {
-      locCodeSeg = parseInt(t[0].slice( t[0].length - 4 ), 16);
-      address = t[1];
-    }
-  
-    var len = address.length;
-  
-    //If the address is 64 bit's long, and bit mode is 64 bit adjust the 64 bit location.
-  
-    if( len >= 9 && this.bitMode === 2 )
-    {
-      locPos64 = parseInt( address.slice( len - 16, len - 8 ), 16 );
-    }
-  
-    //If the address is 32 bit's long, and bit mode is 32 bit, or higher adjust the 32 bit location.
-  
-    if( len >= 5 && this.bitMode >= 1 & !( this.bitMode === 1 & this.codeSeg >= 36 ) )
-    {
-      locPos32 = parseInt( address.slice( len - 8 ), 16 );
-    }
-  
-    //Else If the address is 16 bit's long, and bit mode is 16 bit, or higher adjust the first 16 bit's in location 32.
-  
-    else if( len >= 1 && this.bitMode >= 0 )
-    {
-      locPos32 = ( locPos32 - locPos32 + parseInt( address.slice( len - 4 ), 16 ) );
-    }
-  
-    //Find the difference between the current base address and the selected address location.
-  
-    var dif32 = this.pos32 - locPos32, dif64 = this.pos64 - locPos64;
-  
-    //Only calculate the Code Segment location if The program uses 16 bit address mode otherwise the
-    //code segment does not affect the address location.
-  
-    if( ( this.bitMode === 1 & this.codeSeg >= 36 ) || this.bitMode === 0 )
-    {
-      dif32 += ( this.codeSeg - locCodeSeg ) << 4;
-    }
-  
-    //Before adjusting the Code Position Backup the Code Position in case that the address is out of bounds.
-  
-    t = this.codePos;
-  
-    //Subtract the difference to the codePos position.
-  
-    this.codePos -= dif64 * 4294967296 + dif32;
-  
-    //If code position is out of bound for the loaded binary in the binCode array, or
-    //is a negative index return false and reset codePos.
-  
-    if( this.codePos < 0 || this.codePos > this.binCode.length )
-    {
-      this.codePos = t; return ( false );
-    }
-  
-    //Set the base address so that it matches the Selected address location that Code position is moved to in relative space in the binCode Array.
-  
-    this.codeSeg = locCodeSeg;
-    this.pos32 = locPos32
-    this.pos64 = locPos64;
-  
-    //Return true for that the address Position is moved in range correctly.
-  
-    return ( true );
-  },
+
+  setCodeSeg: function( v ) { this.codeSeg = v & 0xFFFF; }, getCodeSeg: function( v ) { return(this.codeSeg); },
+  setAddress: function( v ) { this.pos64 = (v / 0x100000000) & -1; this.pos32 = v & -1; }, setAddress64: function( v64, v32 ) { this.pos64 = v64 & -1; this.pos32 = v32 & -1; },
+  getAddress: function() { return(this.pos64 * 0x100000000 + this.pos32); }, getAddress64: function() { return([this.pos64, this.pos32]); },
   
   /*-------------------------------------------------------------------------------------------------------------------------
   Finds bit positions to the Size attribute indexes in reg array, and the Pointer Array. For the Size Attribute variations.
@@ -5491,7 +5411,7 @@ core = {
   
     //Record the starting position.
   
-    this.instructionPos = this.getPosition();
+    this.instructionPos = this.getBasePosition();
   
     //First read any opcodes (prefix) that act as adjustments to the main three operand decode functions ^decodeRegValue()^,
     //^decode_modRM_SIB_Address()^, and ^decodeImmediate()^.
@@ -5692,14 +5612,9 @@ core = {
   
         if( dif32 < 0 ) { dif32 += 0x100000000; }
   
-        //Convert to strings.
-  
-        for (var S32 = dif32.toString(16) ; S32.length < 8; S32 = "0" + S32);
-        for (var S64 = this.pos64.toString(16) ; S64.length < 8; S64 = "0" + S64);
-  
         //Go to the Calculated address right after the instruction UD.
   
-        this.gotoPosition( S64 + S32 );
+        this.pos32 -= dif32; this.codePos -= dif32;
   
         //Set prefixes, and operands to empty strings, and set instruction to UD.
   
