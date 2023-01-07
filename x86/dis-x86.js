@@ -5706,10 +5706,6 @@ core = {
   
     var len = this.binCode.length;
   
-    //Backup the base address.
-  
-    var bpos64 = this.pos64, bpos32 = this.pos32;
-  
     while( this.codePos < len )
     {
       instruction = this.decodeInstruction();
@@ -5737,9 +5733,6 @@ core = {
 
       if( crawl && ( this.instruction == "RET" || this.instruction == "JMP" ) ) { break; }
     }
-  
-    this.codePos = 0; //Reset the Code position
-    this.pos32 = bpos32; this.pos64 = bpos64; //Reset Base address.
 
     //If address mapping is activated we should always calculate the number of rows to display all the mapped loactions.
 
