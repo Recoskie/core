@@ -44,4 +44,4 @@ Thus you could follow the boot process of the operating system.
 In the past there use to be viruses that wrote to sector 0 on memory cards, and internal disks to infect other computers when the disk was inserted.
 
 -----------------------------------------------------------------------------------------------
-You may also like the project JDissasembly which guides you through the process of taking a Microsoft, Linux, or macOS binary program apart and visualizing binary file formats. Also lets you see how boot sectors decompile and work. See https://github.com/Recoskie/JDisassembly
+You may also like the project JDissasembly which guides you through the process of taking a Microsoft, Linux, or macOS binary program apart and visualizing binary file formats. Also lets you see how boot sectors decompile and work. See https://github.com/Recoskie/JDasm
