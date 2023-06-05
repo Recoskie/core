@@ -4628,7 +4628,7 @@ core = {
       this.indexExtend = ( this.opcode & 0x02 ) << 2; //Index Register extend setting.
       this.regExtend = ( this.opcode & 0x04 ) << 1; //Register extend setting.
       this.widthBit = ( this.opcode & 0x08 ) >> 3; //Set The Width Bit setting if active.
-      this.sizeAttrSelect = this.widthBit ? 2 : 1; //The width Bit open all 64 bits.
+      this.sizeAttrSelect = this.widthBit ? 2 : this.sizeAttrSelect; //The width Bit opens all 64 bits.
       return(this.decodePrefixAdjustments()); //restart function decode more prefix settings that can effect the decode instruction.
     }
   
