@@ -1553,7 +1553,7 @@ public class X86 extends X86Types implements core.Core
       IndexExtend = ( Opcode & 0x02 ) << 2; //Index Register extend setting.
       RegExtend = ( Opcode & 0x04 ) << 1; //Register Extend Setting.
       WidthBit = ( Opcode & 0x08 ) == 0x08; //Set The Width Bit setting if active.
-      SizeAttrSelect = WidthBit ? 2 : 1; //The width Bit open all 64 bits.
+      SizeAttrSelect = WidthBit ? 2 : SizeAttrSelect; //The width Bit opens all 64 bits.
       decodePrefixAdjustments(); return; //restart function decode more prefix settings that can effect the decode instruction.
     }
 
@@ -2161,7 +2161,7 @@ public class X86 extends X86Types implements core.Core
       mxop = Math.max( mxop, X86Decoder[0].OpNum );
 
       out[ X86Decoder[0].OpNum ] = decodeRegValue(
-        ( RegExtend | ( Opcode & 0x07 ) ), //Register value.
+        ( BaseExtend | ( Opcode & 0x07 ) ), //Register value.
         X86Decoder[0].BySizeAttrubute, //By size attribute or not.
         X86Decoder[0].Size //Size settings.
       );
