@@ -5181,7 +5181,7 @@ core = {
     if( this.x86Decoder[0].active )
     {
       out[ this.x86Decoder[0].opNum ] = this.decodeRegValue(
-        ( this.regExtend | ( this.opcode & 0x07 ) ), //Register value.
+        ( this.baseExtend | ( this.opcode & 0x07 ) ), //Register value.
         this.x86Decoder[0].bySizeAttrubute, //By size attribute or not.
         this.x86Decoder[0].size //Size settings.
       );
