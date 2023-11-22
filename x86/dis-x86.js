@@ -5692,6 +5692,18 @@ core = {
   -------------------------------------------------------------------------------------------------------------------------*/
 
   resetMap: function() { this.mapped_pos = []; this.mapped_loc = []; this.data_off = []; this.linear = []; this.crawl = []; this.rows = 0; },
+
+  /*-------------------------------------------------------------------------------------------------------------------------
+  Define custom disassemble rules, or additional scanning. Return true when dissasebly should stop.
+  -------------------------------------------------------------------------------------------------------------------------*/
+
+  scan: function(crawl) { return(crawl && (this.instruction == "RET" || this.instruction == "JMP")); },
+
+  /*-------------------------------------------------------------------------------------------------------------------------
+  Reset custom disassemble rules.
+  -------------------------------------------------------------------------------------------------------------------------*/
+
+  scanReset: function() { this.scan = function(crawl){ return(crawl && (this.instruction == "RET" || this.instruction == "JMP")); } },
   
   /*-------------------------------------------------------------------------------------------------------------------------
   do an linear disassemble.
@@ -5729,9 +5741,7 @@ core = {
   
       //Reset instruction Pos and Hex.
   
-      this.instructionPos = ""; this.instructionHex = "";
-
-      if( crawl && ( this.instruction == "RET" || this.instruction == "JMP" ) ) { break; }
+      this.instructionPos = ""; this.instructionHex = ""; if(this.scan(crawl)) { break; }
     }
 
     //If address mapping is activated we should always calculate the number of rows to display all the mapped loactions.
