@@ -84,11 +84,20 @@ core = {
 
   lookup: false, pointerSize: 0, rel: false, //Basic properties needed to map read data, or jump/function locations.
 
-  addressMode: false, //Changes the address mapping type.
+  addressMode: true, //Changes the address mapping type.
 
   //Mapped pos are the locations, and mapped loc is the name of an function.
 
   mapped_pos: [], mapped_loc: [],
+
+  //Method for adding function locations.
+
+  add: function(loc, size, name) { this.mapped_pos.push(loc); this.mapped_pos.push(size); this.mapped_loc.push(name); },
+
+  //Methods to get/set function locations.
+
+  set: function(loc, name) { if(loc[0].length) { this.mapped_pos=loc[0]; this.mapped_loc=loc[1]; } else { this.mapped_pos=loc; this.mapped_loc=name; } },
+  get: function() { return([this.mapped_pos, this.mapped_loc]); },
   
   //Data offset and function crawling list.
   
@@ -4078,11 +4087,11 @@ core = {
         {
           for( var i = 0, r = 0; i < this.mapped_pos.length; i += 2 )
           {
-            if( pos >= this.mapped_pos[ i ] && pos < this.mapped_pos[ i + 1 ] )
+            if(pos >= this.mapped_pos[ i ] && pos < this.mapped_pos[i + 1])
             {
               this.pointerSize = 0; this.lookup = false; this.rel = false;
        
-              return( this.mapped_loc[ r ] );
+              return( this.mapped_loc[ r ] + "()");
             }
 
             r += 1;
@@ -4114,7 +4123,7 @@ core = {
 
           for( var i = 0, r = 0; i < this.mapped_pos.length; i += 2 )
           {
-            if( pos >= this.mapped_pos.get( i ) && pos < this.mapped_pos.get( i + 1 ) )
+            if( pos >= this.mapped_pos[i] && pos < this.mapped_pos.get[i + 1] )
             {
               this.pointerSize = 0; this.lookup = false; this.rel = false;
        
@@ -4128,7 +4137,7 @@ core = {
         {
           for( var i = 0, r = 0; i < this.mapped_pos.length; i += 2 )
           {
-            if( pos >= this.mapped_pos[ i ] && pos < this.mapped_pos[ i + 1 ] )
+            if(pos >= this.mapped_pos[ i ] && pos < this.mapped_pos[i + 1])
             {
               this.pointerSize = 0; this.lookup = false; this.rel = false;
        
