@@ -130,7 +130,7 @@ core = {
   {
     //Create a new linear pointer list entire.
 
-    var l = new core.pList(address, size, name.length == undefined ? name : [name]);
+    var l = new core.pList(address, size, Array.isArray(name) ? name : [name]);
 
     //Split apart linear pointer lists to fit the new locations.
 
@@ -157,11 +157,11 @@ core = {
 
     //Now check if the pointer list before this list can be joined decreasing number of iterations to lookup an address.
 
-    if(i > 0 && this.mapped_loc[i].loc == this.mapped_loc[i-1].end) { this.mapped_loc[i-1].names=this.mapped_loc[i-1].names.concat(this.mapped_loc[i].names); this.mapped_loc[i-1].end = this.mapped_loc[i].end; this.mapped_loc.splice(i,1); i-=1; }
-        
+    if(i > 0 && this.mapped_loc[i-1].end >= this.mapped_loc[i].loc) { this.mapped_loc[i-1].names=this.mapped_loc[i-1].names.concat(this.mapped_loc[i].names); this.mapped_loc[i-1].end = this.mapped_loc[i].end; this.mapped_loc.splice(i,1); i-=1; }
+
     //Now check if the pointer list after this list can be joined decreasing number of iterations to lookup an address.
 
-    if(i < (this.mapped_loc.length-1) && this.mapped_loc[i].end == this.mapped_loc[i+1].loc) { this.mapped_loc[i].names=this.mapped_loc[i].names.concat(this.mapped_loc[i+1].names); this.mapped_loc[i].end = this.mapped_loc[i+1].end; this.mapped_loc.splice(i+1,1); }
+    if(i < (this.mapped_loc.length-1) && this.mapped_loc[i+1].loc <= this.mapped_loc[i].end) { this.mapped_loc[i].names=this.mapped_loc[i].names.concat(this.mapped_loc[i+1].names); this.mapped_loc[i].end = this.mapped_loc[i+1].end; this.mapped_loc.splice(i+1,1); }
   },
 
   //Set or get our mapped locations.
