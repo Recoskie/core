@@ -77,113 +77,6 @@ core = {
   showInstructionPos: true, //setting to show the instruction address position.
 
   /*-------------------------------------------------------------------------------------------------------------------------
-  fast location mapping, for method calls, And data.
-  Data and method calls are grouped together into pointer lists at compilation time of a code or program which gives a huge performance improvement when mapped into sections for the disassembler.
-  Allow fast lookup of address locations as we subtract the start address from the section location and divide by the size of each location.
-  The number we get back is what element we are aligned to in memory which is used as an array index allowing lookups of function calls or methods in o(1) constant time regardless of number of functions or data locations that are mapped.
-  -------------------------------------------------------------------------------------------------------------------------*/
-
-  addressMap: false, //Address mapping is not enabled by default.
-
-  lookup: false, pointerSize: 0, rel: false, //Basic properties needed to map read data, or jump/function locations.
-
-  //Section mapping.
-
-  mapped_loc: [], pList: function(address,pSize,names) { var s = (Math.log(pSize)/0.6931471805599453+0.5)&-1; return({loc:address,size:s,names:names,end:address+(names.length<<s),adj:core.listAdj}); },
-
-  //Adjusts the list to fit an added list. Returns a new list if it fits in the center of a pointer list.
-
-  listAdj: function(list)
-  {
-    //Compute how many pointers remain at start and end.
-
-    var r1 = list.loc - this.loc, r2 = this.end - list.end, r = false;
-
-    //The pointer list writes after the start of the pointer list.
-
-    if(r1 > 0)
-    {
-      this.end = list.loc;
-
-      //If there are still pointers at the end of the list, then return a new list with the remaining pointers.
-
-      if(r2 > 0) { r2 = r2 >> this.size; r = new core.pList(list.end, 1<<this.size, this.names.slice(this.names.length-r2,this.names.length)); }
-
-      //Remove mapped pointers.
-
-      this.names.splice(r1 >> this.size,this.names.length);
-    }
-
-    //Else start address is less than or equal to the start address.
-
-    else { this.names.splice(0, Math.max(0, (list.end - this.loc) >> this.size)); this.start = list.end; }
-
-    //Returns pointer list in case that pointers are split.
-
-    return(r);
-  },
-
-  //The "add" method allows us to map virtual RAM addresses as function calls or data.
-  //The add method can combine lists of address locations into large lists to lookup address locations in constant o(1) time.
-
-  add: function(address, size, name)
-  {
-    //Create a new linear pointer list entire.
-
-    var l = new core.pList(address, size, Array.isArray(name) ? name : [name]);
-
-    //Split apart linear pointer lists to fit the new locations.
-
-    var i = 0; for(; i < this.mapped_loc.length; i++)
-    {
-      //Overwrites address.
-
-      if(l.loc > this.mapped_loc[i].loc && l.loc < this.mapped_loc[i].end)
-      {
-        //Adjust the pointer list to fit the new linear pointer list range.
-
-        if(r = this.mapped_loc[i].adj(l.loc,l.end)) { this.mapped_loc.splice(i,0,r); } //Returns a new pointer list if the list is split in half which is added in front of the pointer list.
-
-        //If there are no pointers remaining then the list is completely overwritten.
-
-        if(this.mapped_loc[i].names.length == 0) { this.mapped_loc.splice(i,1); }
-      }
-      else if(l.loc <= this.mapped_loc[i].loc){ break; } //No more locations conflict with this pointer list.
-    }
-
-    //Index "i" is now the position the pointer list lines up in linear space.
-
-    this.mapped_loc.splice(i,0,l);
-
-    //Now check if the pointer list before this list can be joined decreasing number of iterations to lookup an address.
-
-    if(i > 0 && this.mapped_loc[i-1].end >= this.mapped_loc[i].loc) { this.mapped_loc[i-1].names=this.mapped_loc[i-1].names.concat(this.mapped_loc[i].names); this.mapped_loc[i-1].end = this.mapped_loc[i].end; this.mapped_loc.splice(i,1); i-=1; }
-
-    //Now check if the pointer list after this list can be joined decreasing number of iterations to lookup an address.
-
-    if(i < (this.mapped_loc.length-1) && this.mapped_loc[i+1].loc <= this.mapped_loc[i].end) { this.mapped_loc[i].names=this.mapped_loc[i].names.concat(this.mapped_loc[i+1].names); this.mapped_loc[i].end = this.mapped_loc[i+1].end; this.mapped_loc.splice(i+1,1); }
-  },
-
-  //Set or get our mapped locations.
-
-  get: function() { return(this.mapped_loc); }, set: function(data) { this.mapped_loc = data; },
-
-  /*-------------------------------------------------------------------------------------------------------------------------
-  Data offset and function crawling list. Used for disassembling and creating maps of an application.
-  -------------------------------------------------------------------------------------------------------------------------*/
-  
-  data_off: [], linear: [], crawl: [],
-
-  //Number of rows that are visible to the data descriptor.
-
-  rows: 0,
-
-  //Get or set the application map. Some applications may contain more than one application. Allows us to switch between maps.
-
-  getMap: function() { return([this.data_off,this.linear,this.crawl,this.rows]); },
-  setMap: function(map) { this.data_off = map[0]; this.linear = map[1]; this.crawl = map[2]; this.rows = map[4]; },
-
-  /*-------------------------------------------------------------------------------------------------------------------------
   The opcode, and opcode map.
   ---------------------------------------------------------------------------------------------------------------------------
   The first 0 to 255 (Byte) value that is read is the selected instruction code, however some codes are used as Adjustment to
@@ -5792,58 +5685,58 @@ core = {
     return(out);
   }
 }, operand = core.operand, core.x86Decoder = [
-    /*-------------------------------------------------------------------------------------------------------------------------
-    First operand that is always decoded is "Reg opcode" if used.
-    Uses the function ^decodeRegValue()^ the input RValue is the three first bits of the opcode.
-    -------------------------------------------------------------------------------------------------------------------------*/
-    new operand(), //Reg opcode if used.
-    /*-------------------------------------------------------------------------------------------------------------------------
-    The Second operand that is decoded in series is the ModR/M address if used.
-    Reads a byte using function ^decode_modRM_SIB_Value()^ gives it to the function ^decode_modRM_SIB_Address()^ which only
-    reads the Mode, and Base register for the address, and then decodes the sib byte if base register is "100" binary in value.
-    does not use the Register value in the ModR/M because the register can also be used as a group opcode used by the
-    function ^decodeOpcode()^, or uses a different register in single size with a different address pointer.
-    -------------------------------------------------------------------------------------------------------------------------*/
-    new operand(), //ModR/M address if used.
-    /*-------------------------------------------------------------------------------------------------------------------------
-    The third operand that is decoded if used is for the ModR/M reg bits.
-    Uses the already decoded byte from ^decode_modRM_SIB_Value()^ gives the three bit reg value to the function ^decodeRegValue()^.
-    The ModR/M address, and reg are usually used together, but can also change direction in the encoding string.
-    -------------------------------------------------------------------------------------------------------------------------*/
-    new operand(), //ModR/M reg bits if used.
-    /*-------------------------------------------------------------------------------------------------------------------------
-    The fourth operand that is decoded in sequence is the first Immediate input if used.
-    The function ^decodeImmediate()^ starts reading bytes as a number for input to instruction.
-    -------------------------------------------------------------------------------------------------------------------------*/
-    new operand(), //First Immediate if used.
-    /*-------------------------------------------------------------------------------------------------------------------------
-    The fifth operand that is decoded in sequence is the second Immediate input if used.
-    The function ^decodeImmediate()^ starts reading bytes as a number for input to instruction.
-    -------------------------------------------------------------------------------------------------------------------------*/
-    new operand(), //Second Immediate if used (Note that the instruction "Enter" uses two immediate inputs).
-    /*-------------------------------------------------------------------------------------------------------------------------
-    The sixth operand that is decoded in sequence is the third Immediate input if used.
-    The function ^decodeImmediate()^ starts reading bytes as a number for input to instruction.
-    -------------------------------------------------------------------------------------------------------------------------*/
-    new operand(), //Third Immediate if used (Note that the Larrabee vector instructions can use three immediate inputs).
-    /*-------------------------------------------------------------------------------------------------------------------------
-    Vector adjustment codes allow the selection of the vector register value that is stored into variable
-    vectorRegister that applies to the selected SSE instruction that is read after that uses it.
-    The adjusted vector value is given to the function ^decodeRegValue()^.
-    -------------------------------------------------------------------------------------------------------------------------*/
-    new operand(), //Vector register if used. And if vector adjustments are applied to the SSE instruction.
-    /*-------------------------------------------------------------------------------------------------------------------------
-    Immediate Register encoding if used.
-    During the decoding of the immediate operands the ^decodeImmediate()^ function stores the read IMM into an variable called
-    immValue. The upper four bits of immValue is given to the input RValue to the function ^decodeRegValue()^.
-    -------------------------------------------------------------------------------------------------------------------------*/
-    new operand(), //Immediate Register encoding if used.
-    /*-------------------------------------------------------------------------------------------------------------------------
-    It does not matter which order the explicit operands decode as they do not require reading another byte after the opcode.
-    Explicit operands are selected internally in the cpu for instruction codes that only use one register, or pointer, or number input.
-    -------------------------------------------------------------------------------------------------------------------------*/
-    new operand(), //Explicit operand one.
-    new operand(), //Explicit operand two.
-    new operand(), //Explicit operand three.
-    new operand()  //Explicit operand four.
-    ], operand = undefined;
+  /*-------------------------------------------------------------------------------------------------------------------------
+  First operand that is always decoded is "Reg opcode" if used.
+  Uses the function ^decodeRegValue()^ the input RValue is the three first bits of the opcode.
+  -------------------------------------------------------------------------------------------------------------------------*/
+  new operand(), //Reg opcode if used.
+  /*-------------------------------------------------------------------------------------------------------------------------
+  The Second operand that is decoded in series is the ModR/M address if used.
+  Reads a byte using function ^decode_modRM_SIB_Value()^ gives it to the function ^decode_modRM_SIB_Address()^ which only
+  reads the Mode, and Base register for the address, and then decodes the sib byte if base register is "100" binary in value.
+  does not use the Register value in the ModR/M because the register can also be used as a group opcode used by the
+  function ^decodeOpcode()^, or uses a different register in single size with a different address pointer.
+  -------------------------------------------------------------------------------------------------------------------------*/
+  new operand(), //ModR/M address if used.
+  /*-------------------------------------------------------------------------------------------------------------------------
+  The third operand that is decoded if used is for the ModR/M reg bits.
+  Uses the already decoded byte from ^decode_modRM_SIB_Value()^ gives the three bit reg value to the function ^decodeRegValue()^.
+  The ModR/M address, and reg are usually used together, but can also change direction in the encoding string.
+  -------------------------------------------------------------------------------------------------------------------------*/
+  new operand(), //ModR/M reg bits if used.
+  /*-------------------------------------------------------------------------------------------------------------------------
+  The fourth operand that is decoded in sequence is the first Immediate input if used.
+  The function ^decodeImmediate()^ starts reading bytes as a number for input to instruction.
+  -------------------------------------------------------------------------------------------------------------------------*/
+  new operand(), //First Immediate if used.
+  /*-------------------------------------------------------------------------------------------------------------------------
+  The fifth operand that is decoded in sequence is the second Immediate input if used.
+  The function ^decodeImmediate()^ starts reading bytes as a number for input to instruction.
+  -------------------------------------------------------------------------------------------------------------------------*/
+  new operand(), //Second Immediate if used (Note that the instruction "Enter" uses two immediate inputs).
+  /*-------------------------------------------------------------------------------------------------------------------------
+  The sixth operand that is decoded in sequence is the third Immediate input if used.
+  The function ^decodeImmediate()^ starts reading bytes as a number for input to instruction.
+  -------------------------------------------------------------------------------------------------------------------------*/
+  new operand(), //Third Immediate if used (Note that the Larrabee vector instructions can use three immediate inputs).
+  /*-------------------------------------------------------------------------------------------------------------------------
+  Vector adjustment codes allow the selection of the vector register value that is stored into variable
+  vectorRegister that applies to the selected SSE instruction that is read after that uses it.
+  The adjusted vector value is given to the function ^decodeRegValue()^.
+  -------------------------------------------------------------------------------------------------------------------------*/
+  new operand(), //Vector register if used. And if vector adjustments are applied to the SSE instruction.
+  /*-------------------------------------------------------------------------------------------------------------------------
+  Immediate Register encoding if used.
+  During the decoding of the immediate operands the ^decodeImmediate()^ function stores the read IMM into an variable called
+  immValue. The upper four bits of immValue is given to the input RValue to the function ^decodeRegValue()^.
+  -------------------------------------------------------------------------------------------------------------------------*/
+  new operand(), //Immediate Register encoding if used.
+  /*-------------------------------------------------------------------------------------------------------------------------
+  It does not matter which order the explicit operands decode as they do not require reading another byte after the opcode.
+  Explicit operands are selected internally in the cpu for instruction codes that only use one register, or pointer, or number input.
+  -------------------------------------------------------------------------------------------------------------------------*/
+  new operand(), //Explicit operand one.
+  new operand(), //Explicit operand two.
+  new operand(), //Explicit operand three.
+  new operand()  //Explicit operand four.
+], operand = undefined;
