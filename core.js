@@ -1,19 +1,18 @@
 //Shared mapping methods plus core loader.
 
-core = {}, coreType = null, loadCore = function(src,onload,err)
-{
+core = {}, coreSys = { coreType: null, coreInit: function(){for(var i=0,k=Object.keys(coreSys);i<k.length;core[k[i]]=coreSys[k[i++]]);},
+  loadCore: function(src,onload,err)
+  {
   //If we already have the core loaded there is no need to reload the script.
   
-  if( !coreType || coreType.src.substring(coreType.src.lastIndexOf("/")+1,coreType.src.length) != src.substring(src.lastIndexOf("/")+1,src.length) )
-  {
-    if(coreType){ coreType.parentElement.removeChild(coreType); } coreType = document.createElement("script"); coreType.src = src;
-    coreType.onerror = err; coreType.addEventListener("load",coreInit); coreType.addEventListener("load",onload); document.head.appendChild(coreType);
-  }
-  else { try{ coreInit(); if(onload) { onload(); } } catch(e) { if(err){ err(); } else { throw new Error("Failed to load CPU core."); } } }
-},
-coreInit = function()
-{
-  core.x86 = function(onload,err){ loadCore("core/x86/dis-x86.js",onload,err); }
+    if( !this.coreType || this.coreType.src.substring(this.coreType.src.lastIndexOf("/")+1,this.coreType.src.length) != src.substring(src.lastIndexOf("/")+1,src.length) )
+    {
+      if(this.coreType){ this.coreType.parentElement.removeChild(this.coreType); } this.coreType = document.createElement("script"); this.coreType.src = src;
+      this.coreType.onerror = err; this.coreType.addEventListener("load",this.coreInit); this.coreType.addEventListener("load",onload); document.head.appendChild(this.coreType);
+    }
+    else { try{ this.coreInit(); if(onload) { onload(); } } catch(e) { if(err){ err(); } else { throw new Error("Failed to load CPU core."); } } }
+  },
+  x86: function(onload,err){ this.loadCore("core/x86/dis-x86.js",onload,err); },
 
   /*-------------------------------------------------------------------------------------------------------------------------
   fast location mapping, for method calls, And data.
@@ -22,17 +21,17 @@ coreInit = function()
   The number we get back is what element we are aligned to in memory which is used as an array index allowing lookups of function calls or methods in o(1) constant time regardless of number of functions or data locations that are mapped.
   -------------------------------------------------------------------------------------------------------------------------*/
 
-  core.addressMap = false, //Address mapping is not enabled by default.
+  addressMap: false, //Address mapping is not enabled by default.
 
-  core.lookup = false; core.pointerSize = 0; core.rel = false; //Basic properties needed to map read data, or jump/function locations.
+  lookup: false, pointerSize: 0, core: false, //Basic properties needed to map read data, or jump/function locations.
 
   //Section mapping.
 
-  core.mapped_loc = []; core.pList = function(address,pSize,names) { var s = (Math.log(pSize)/0.6931471805599453+0.5)&-1; return({loc:address,size:s,names:names,end:address+(names.length<<s),adj:core.listAdj}); },
+  mapped_loc: [], pList: function(address,pSize,names) { var s = (Math.log(pSize)/0.6931471805599453+0.5)&-1; return({loc:address,size:s,names:names,end:address+(names.length<<s),adj:core.listAdj}); },
 
   //Adjusts the list to fit an added list. Returns a new list if it fits in the center of a pointer list.
 
-  core.listAdj = function(list)
+  listAdj: function(list)
   {
     //Compute how many pointers remain at start and end.
 
@@ -65,7 +64,7 @@ coreInit = function()
   //The "add" method allows us to map virtual RAM addresses as function calls or data.
   //The add method can combine lists of address locations into large lists to lookup address locations in constant o(1) time.
 
-  core.add = function(address, size, name)
+  add: function(address, size, name)
   {
     //Create a new linear pointer list entire.
 
@@ -105,21 +104,20 @@ coreInit = function()
 
   //Set or get our mapped locations.
 
-  core.get = function() { return(this.mapped_loc); }, core.set = function(data) { this.mapped_loc = data; },
+  get: function() { return(this.mapped_loc); }, set: function(data) { this.mapped_loc = data; },
 
   /*-------------------------------------------------------------------------------------------------------------------------
   Data offset and function crawling list. Used for disassembling and creating maps of an application.
   -------------------------------------------------------------------------------------------------------------------------*/
   
-  core.data_off = []; core.linear = []; core.crawl = [],
+  data_off: [], linear: [], crawl: [],
 
   //Number of rows that are visible to the data descriptor.
 
-  core.rows = 0;
+  rows: 0,
 
   //Get or set the application map. Some applications may contain more than one application. Allows us to switch between maps.
 
-  core.getMap = function() { return([this.data_off,this.linear,this.crawl,this.rows]); }
-  core.setMap = function(map) { this.data_off = map[0]; this.linear = map[1]; this.crawl = map[2]; this.rows = map[4]; }
-}
-coreInit();
+  getMap: function() { return([this.data_off,this.linear,this.crawl,this.rows]); },
+  setMap: function(map) { this.data_off = map[0]; this.linear = map[1]; this.crawl = map[2]; this.rows = map[4]; }  
+}; coreSys.coreInit();
