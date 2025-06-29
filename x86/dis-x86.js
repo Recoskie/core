@@ -14,6 +14,12 @@ core = {
   -------------------------------------------------------------------------------------------------------------------------*/
   
   binCode: [],
+
+  /*-------------------------------------------------------------------------------------------------------------------------
+  Data out of bounds check. Allows us to disassemble code reliably in binCode buffers.
+  -------------------------------------------------------------------------------------------------------------------------*/
+  
+  dEnd: false,
   
   /*-------------------------------------------------------------------------------------------------------------------------
   When Bit Mode is 2 the disassembler will default to decoding 64 bit binary code possible settings are 0=16 bit, 1=32 bit, 2=64 bit.
@@ -3564,8 +3570,9 @@ core = {
   
       //Continue the Base address.
   
-      ( ( this.pos32 += 1 ) > 0xFFFFFFFF ) && ( this.pos32 = 0, ( ( this.pos64 += 1 ) > 0xFFFFFFFF ) && ( this.pos64 = 0 ) );
+      ( ( this.pos32 += 1 ) > 0xFFFFFFFF ) && ( this.pos32 = 0, ( ( this.pos64 += 1 ) > 0xFFFFFFFF ) && ( this.pos64 = 0 ) ); return;
     }
+    this.dEnd = true; //Out of bounds.
   },
   
   /*-------------------------------------------------------------------------------------------------------------------------
@@ -3636,6 +3643,7 @@ core = {
   
     return ( ( s64 + s32 ).toUpperCase() );
   },
+  address64: function() { return(this.pos64 * 0x100000000 + this.pos32); },
   
   /*-------------------------------------------------------------------------------------------------------------------------
   Functions that are designed to allow direct access to the address position and code segment rather than using the string representation.
@@ -4016,7 +4024,7 @@ core = {
     Start address mapping the location.
     ---------------------------------------------------------------------------------------------------------------------------*/
 
-    if( this.addressMap )
+    if( this.addressMap && !this.dEnd )
     {
       //53 bits out of 64 is more than enough. Very unlikly we will ever use all 64 bits in address space.
       //If we do end up using all 64 bits then the comparisions can be modifiyed.
@@ -5644,37 +5652,45 @@ core = {
   disassemble: function(crawl)
   {
     var instruction = ""; //Stores the Decoded instruction.
-    var out = "";  //The Disassemble output
+    var out = "";  //The Disassemble output.
+    var sc = false; //Full dissasemble within buffer.
   
     //Disassemble binary code using an linear pass.
   
     var len = this.binCode.length;
   
-    while( this.codePos < len )
+    this.dEnd = false; while( this.codePos < len && !this.dEnd )
     {
       instruction = this.decodeInstruction();
-  
-      //Add the 64 bit address of the output if showInstructionPos decoding is active.
-  
-      if(this.showInstructionPos) { out += this.instructionPos + " "; }
-  
-      //Show Each byte that was read to decode the instruction if showInstructionHex decoding is active.
-  
-      if(this.showInstructionHex)
+      
+      if(!this.dEnd)
       {
-        this.instructionHex = this.instructionHex.toUpperCase();
-        for(; this.instructionHex.length < 32; this.instructionHex = this.instructionHex + " " );
-        out += this.instructionHex + "";
+        //Add the 64 bit address of the output if showInstructionPos decoding is active.
+  
+        if(this.showInstructionPos) { out += this.instructionPos + " "; }
+  
+        //Show Each byte that was read to decode the instruction if showInstructionHex decoding is active.
+  
+        if(this.showInstructionHex)
+        {
+          this.instructionHex = this.instructionHex.toUpperCase();
+          for(; this.instructionHex.length < 32; this.instructionHex = this.instructionHex + " " );
+          out += this.instructionHex;
+        }
+  
+        //Put the decoded instruction into the output and make a new line.
+  
+        out += instruction + "\r\n";
+
+        //Reset instruction Pos and Hex.
+
+        if(sc = this.scan(crawl)) { break; }
       }
-  
-      //Put the decoded instruction into the output and make a new line.
-  
-      out += instruction + "\r\n";
-  
-      //Reset instruction Pos and Hex.
-  
-      this.instructionPos = ""; this.instructionHex = ""; if(this.scan(crawl)) { break; }
     }
+
+    //Set dEnd if scan not complete.
+
+    this.dEnd = !sc;
 
     //If address mapping is activated we should always calculate the number of rows to display all the mapped loactions.
 
