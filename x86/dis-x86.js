@@ -3643,7 +3643,6 @@ core = {
   
     return ( ( s64 + s32 ).toUpperCase() );
   },
-  address64: function() { return(this.pos64 * 0x100000000 + this.pos32); },
   
   /*-------------------------------------------------------------------------------------------------------------------------
   Functions that are designed to allow direct access to the address position and code segment rather than using the string representation.
