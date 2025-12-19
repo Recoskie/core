@@ -5147,6 +5147,9 @@ core = {
       else
       {
         var s=0, addrsSize = 0;
+
+        //Operands size.
+
         if( this.x86Decoder[1].bySizeAttrubute )
         {
           addrsSize = ( Math.pow( 2, this.bitMode ) << 1 );
@@ -5154,9 +5157,14 @@ core = {
         }
         else
         {
-          addrsSize =  this.bitMode + 1;
+          addrsSize = this.bitMode + 1;
           s = this.x86Decoder[1].size;
         }
+
+        //Address override prefix.
+
+        if(this.addressOverride){ if(addrsSize > 1) { addrsSize -= 1; } else { addrsSize = 2; } }
+
         out[ this.x86Decoder[1].opNum ] = this.ptr[ s ];
         out[ this.x86Decoder[1].opNum ] += this.segOverride + this.decodeImmediate( 0, this.x86Decoder[1].bySizeAttrubute, addrsSize ) + "]";
       }
