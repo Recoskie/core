@@ -2197,6 +2197,8 @@ public class X86 extends X86Types implements core.Core
       {
         int AddrsSize = 0;
 
+		//Operands size.
+
         if( X86Decoder[1].BySizeAttrubute )
         {
           AddrsSize = ( 1 << BitMode ) << 1;
@@ -2207,6 +2209,11 @@ public class X86 extends X86Types implements core.Core
           AddrsSize =  BitMode + 1;
           s = X86Decoder[1].Size;
         }
+
+		//Address override prefix.
+
+        if(AddressOverride){ if(AddrsSize > 1) { AddrsSize -= 1; } else { AddrsSize = 2; } }
+		
         out[ X86Decoder[1].OpNum ] = PTR[ s ];
         out[ X86Decoder[1].OpNum ] += SegOverride + decodeImmediate( 0, X86Decoder[1].BySizeAttrubute, AddrsSize ) + "]";
       }
