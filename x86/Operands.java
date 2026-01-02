@@ -573,7 +573,7 @@ public class Operands
     new Object[]{new String[]{"0A0A06A9","","",""},"0B70137007700108","",""},
     new Object[]{
       new String[]{"","06490A040100","",""},
-      new Object[]{"","06490A040100",new String[]{"0A040649","","",""},new String[]{"0A040649","","",""}}
+      new Object[]{"","06490A040100",new String[]{"0A0406A9","","",""},new String[]{"0A0A0649","","",""}}
     },
     new Object[]{"",new Object[]{new String[]{"0B0C06A0","","",""},new String[]{"0B0C0640","0B0C0730","",""},"",""}},
     new Object[]{new String[]{"0A0A06A9","","",""},"0B70137007700108","",""},
