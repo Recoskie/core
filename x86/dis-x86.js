@@ -233,7 +233,7 @@ core = {
     ["ROL","ROR","RCL","RCR","SHL","SHR","SAL","SAR"],
     ["ROL","ROR","RCL","RCR","SHL","SHR","SAL","SAR"],
     ["ROL","ROR","RCL","RCR","SHL","SHR","SAL","SAR"],
-    "AAMB","AADB","???",
+    "AAM","AAD","SALC",
     "XLAT",
     /*------------------------------------------------------------------------------------------------------------------------
     X87 FPU.
@@ -4692,36 +4692,6 @@ core = {
   
         return(null);
       }
-    }
-    
-    //The L1OM vector prefix settings decoding.
-  
-    if( this.opcode === 0xD6 )
-    {
-      //-------------------------------------------------------------------------------------------------------------------------
-      this.opcode = this.binCode[this.codePos]; //read L1OM byte settings.
-      this.nextByte(); //Move to the next byte.
-      //-------------------------------------------------------------------------------------------------------------------------
-      this.opcode |= ( this.binCode[this.codePos] << 8 ); //Read next L1OM byte settings.
-      this.nextByte(); //Move to the next byte.
-      //-------------------------------------------------------------------------------------------------------------------------
-  
-      this.widthBit = this.simd & 1;
-      this.vectorRegister = ( this.opcode & 0xF800 ) >> 11;
-      this.roundMode = this.vectorRegister >> 3;
-      this.maskRegister = ( this.opcode & 0x0700 ) >> 8;
-      this.hIntZeroMerg = ( this.opcode & 0x0080 ) >> 7;
-      this.conversionMode = ( this.opcode & 0x0070 ) >> 4;
-      this.regExtend = ( this.opcode & 0x000C ) << 1;
-      this.baseExtend = ( this.opcode & 0x0003 ) << 3;
-      this.indexExtend = ( this.opcode & 0x0002 ) << 2;
-  
-      //-------------------------------------------------------------------------------------------------------------------------
-      this.opcode = 0x700 | this.binCode[this.codePos]; //read the 8 bit opcode.
-      this.nextByte(); //Move to the next byte.
-      //-------------------------------------------------------------------------------------------------------------------------
-  
-      return(null);
     }
   
     //Only decode L1OM instead of MVEX/EVEX if L1OM compatibility mode is set.
