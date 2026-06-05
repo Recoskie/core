@@ -1674,7 +1674,7 @@ public class X86 extends X86Types implements core.Core
   
     //The L1OM vector prefix settings decoding.
 
-    if( Opcode == 0xD6 )
+    if( Opcode == 0xD6 && BitMode == 2 )
     {
       //-------------------------------------------------------------------------------------------------------------------------
       Opcode = ( data.read() & 0xFF ); //read L1OM byte settings.

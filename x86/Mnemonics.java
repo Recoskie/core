@@ -123,7 +123,7 @@ public class Mnemonics
     new String[]{"ROL","ROR","RCL","RCR","SHL","SHR","SAL","SAR"},
     new String[]{"ROL","ROR","RCL","RCR","SHL","SHR","SAL","SAR"},
     new String[]{"ROL","ROR","RCL","RCR","SHL","SHR","SAL","SAR"},
-    "AAMB","AADB","???",
+    "AAM","AAD","SALC",
     "XLAT",
     /*------------------------------------------------------------------------------------------------------------------------
     X87 FPU.
