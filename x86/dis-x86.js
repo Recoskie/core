@@ -1331,8 +1331,8 @@ core = {
     "06000A000003","070E0B0E0003","0A0006000003","0B0E070E0003","16000C000003","170E0DE60003","","",
     "06000A000003","070E0B0E0003","0A0006000003","0B0E070E0003","16000C000003","170E0DE60003","","",
     "06000A00","070E0B0E","0A000600","0B0E070E","16000C00","170E0DE6","","",
-    "03060003","03060003","03060003","03060003","03060003","03060003","03060003","03060003",
-    "03060003","03060003","03060003","03060003","03060003","03060003","03060003","03060003",
+    "030E0003","030E0003","030E0003","030E0003","030E0003","030E0003","030E0003","030E0003",
+    "030E0003","030E0003","030E0003","030E0003","030E0003","030E0003","030E0003","030E0003",
     "030A","030A","030A","030A","030A","030A","030A","030A",
     "030A","030A","030A","030A","030A","030A","030A","030A",
     ["","",""],["","",""],
@@ -2684,7 +2684,7 @@ core = {
   Used by function ^decodeRegValue()^.
   -------------------------------------------------------------------------------------------------------------------------*/
   
-  rexActive: 0,
+  rexActive: 0, rex2Active: 0,
   
   /*-------------------------------------------------------------------------------------------------------------------------
   The SIMD value is set according to SIMD MODE by prefixes (none, 66, F2, F3), or by the value of VEX.pp, and EVEX.pp.
@@ -3032,7 +3032,8 @@ core = {
         Registers 8 bit names Extended using the REX.R extend setting in the Rex prefix, or VEX.R bit, or EVEX.R.
         What ever regExtend is set based on prefix settings is added to the select Reg Index
         -------------------------------------------------------------------------------------------------------------------------*/
-        "R8B", "R9B", "R10B", "R11B", "R12B", "R13B", "R14B", "R15B"
+        "R8B", "R9B", "R10B", "R11B", "R12B", "R13B", "R14B", "R15B",
+        "R16B", "R17B", "R18B", "R19B", "R20B", "R21B", "R22B", "R23B", "R24B", "R25B", "R26B", "R27B", "R28B", "R29B", "R30B", "R31B"
       ]
     ],
     /*-------------------------------------------------------------------------------------------------------------------------
@@ -3041,7 +3042,8 @@ core = {
     -------------------------------------------------------------------------------------------------------------------------*/
     [
       //Registers 16 bit names index 0 to 15.
-      "AX", "CX", "DX", "BX", "SP", "BP", "SI", "DI", "R8W", "R9W", "R10W", "R11W", "R12W", "R13W", "R14W", "R15W"
+      "AX", "CX", "DX", "BX", "SP", "BP", "SI", "DI", "R8W", "R9W", "R10W", "R11W", "R12W", "R13W", "R14W", "R15W",
+      "R16W", "R17W", "R18W", "R19W", "R20W", "R21W", "R22W", "R23W", "R24W", "R25W", "R26W", "R27W", "R28W", "R29W", "R30W", "R31W"
     ],
     /*-------------------------------------------------------------------------------------------------------------------------
     Reg array Index 2 Is used only if the value from the getOperandSize function is 2 in value in which bellow is the
@@ -3049,7 +3051,8 @@ core = {
     -------------------------------------------------------------------------------------------------------------------------*/
     [
       //Registers 32 bit names index 0 to 15.
-      "EAX", "ECX", "EDX", "EBX", "ESP", "EBP", "ESI", "EDI", "R8D", "R9D", "R10D", "R11D", "R12D", "R13D", "R14D", "R15D"
+      "EAX", "ECX", "EDX", "EBX", "ESP", "EBP", "ESI", "EDI", "R8D", "R9D", "R10D", "R11D", "R12D", "R13D", "R14D", "R15D",
+      "R16D", "R17D", "R18D", "R19D", "R20D", "R21D", "R22D", "R23D", "R24D", "R25D", "R26D", "R27D", "R28D", "R29D", "R30D", "R31D"
     ],
     /*-------------------------------------------------------------------------------------------------------------------------
     Reg array Index 3 Is used only if the value returned from the getOperandSize function is 3 in value in which bellow is the
@@ -3057,7 +3060,8 @@ core = {
     -------------------------------------------------------------------------------------------------------------------------*/
     [
       //general use Arithmetic registers 64 names index 0 to 15.
-      "RAX", "RCX", "RDX", "RBX", "RSP", "RBP", "RSI", "RDI", "R8", "R9", "R10", "R11", "R12", "R13", "R14", "R15"
+      "RAX", "RCX", "RDX", "RBX", "RSP", "RBP", "RSI", "RDI", "R8", "R9", "R10", "R11", "R12", "R13", "R14", "R15",
+      "R16", "R17", "R18", "R19", "R20", "R21", "R22", "R23", "R24", "R25", "R26", "R27", "R28", "R29", "R30", "R31"
     ],
     /*-------------------------------------------------------------------------------------------------------------------------
     Reg array Index 4 SIMD registers 128 across in size names. The SIMD registers are used by the SIMD Vector math unit.
@@ -3155,21 +3159,24 @@ core = {
     -------------------------------------------------------------------------------------------------------------------------*/
     [
       //control Registers index 0 to 15
-      "CR0", "CR1", "CR2", "CR3", "CR4", "CR5", "CR6", "CR7", "CR8", "CR9", "CR10", "CR11", "CR12", "CR13", "CR14", "CR15"
+      "CR0", "CR1", "CR2", "CR3", "CR4", "CR5", "CR6", "CR7", "CR8", "CR9", "CR10", "CR11", "CR12", "CR13", "CR14", "CR15",
+      "CR16", "CR17", "CR18", "CR19", "CR20", "CR21", "CR22", "CR23", "CR24", "CR25", "CR26", "CR27", "CR28", "CR29", "CR30", "CR31"
     ],
     /*-------------------------------------------------------------------------------------------------------------------------
     Reg array Index 13 Debug mode registers.
     -------------------------------------------------------------------------------------------------------------------------*/
     [
       //debug registers index 0 to 15
-      "DR0", "DR1", "DR2", "DR3", "DR4", "DR5", "DR6", "DR7", "DR8", "DR9", "DR10", "DR11", "DR12", "DR13", "DR14", "DR15"
+      "DR0", "DR1", "DR2", "DR3", "DR4", "DR5", "DR6", "DR7", "DR8", "DR9", "DR10", "DR11", "DR12", "DR13", "DR14", "DR15",
+      "DR16", "DR17", "DR18", "DR19", "DR20", "DR21", "DR22", "DR23", "DR24", "DR25", "DR26", "DR27", "DR28", "DR29", "DR30", "DR31"
     ],
     /*-------------------------------------------------------------------------------------------------------------------------
     Reg array Index 14 test registers.
     -------------------------------------------------------------------------------------------------------------------------*/
     [
       //TR registers index 0 to 7
-      "TR0", "TR1", "TR2", "TR3", "TR4", "TR5", "TR6", "TR7"
+      "TR0", "TR1", "TR2", "TR3", "TR4", "TR5", "TR6", "TR7", "TR8", "TR9", "TR10", "TR11", "TR12", "TR13", "TR14", "TR15",
+      "TR16", "TR17", "TR18", "TR19", "TR20", "TR21", "TR22", "TR23", "TR24", "TR25", "TR26", "TR27", "TR28", "TR29", "TR30", "TR31"
     ],
     /*-------------------------------------------------------------------------------------------------------------------------
     Reg Array Index 15 SIMD vector mask registers.
@@ -4344,7 +4351,7 @@ core = {
   
           else
           {
-            out += this.reg[ addressSize ][ this.baseExtend & 8 | sib[2] ];
+            out += this.reg[ addressSize ][ this.baseExtend | sib[2] ];
   
             //If the Index Register is not Canceled out (Note this is only reachable if base register was decoded and not canceled out)
   
@@ -4693,6 +4700,35 @@ core = {
         return(null);
       }
     }
+
+    //Intel APX REX2 (Note 64-bit only).
+
+    if( this.opcode === 0xD5 && this.bitMode === 2 )
+    {
+      this.rex2Active = this.rexActive = 1; //Set Rex active uses 8 bit registers in lower order as 0 to 15.
+      //-------------------------------------------------------------------------------------------------------------------------
+      this.opcode = this.binCode[this.codePos]; //REX2 settings byte.
+      this.nextByte(); //Move to the next byte.
+      //-------------------------------------------------------------------------------------------------------------------------
+      this.regExtend = ( ( this.opcode & 0x40 ) >> 2 ) | ( ( this.opcode & 0x04 ) << 1 );
+      this.indexExtend = ( ( this.opcode & 0x20) >> 1 ) | ( ( this.opcode & 0x02 ) << 2 );
+      this.baseExtend = ( this.opcode & 0x10 ) | ( ( this.opcode & 0x01 ) << 3 );
+      this.widthBit = ( this.opcode & 0x08 ) >> 3;
+      this.sizeAttrSelect = this.widthBit ? 2 : this.sizeAttrSelect; //The width Bit opens all 64 bits.
+      //-------------------------------------------------------------------------------------------------------------------------
+      this.opcode = ( ( this.opcode & 0x80) << 1 ) | this.binCode[this.codePos]; //Read the 8 bit opcode with the map bit.
+      this.nextByte(); //Move to the next byte.
+      //-------------------------------------------------------------------------------------------------------------------------
+
+      //Invalid instruction code ranges.
+
+      this.invalidOp = this.opcode >= 0x70 && this.opcode <= 0x7F;
+      this.invalidOp |= this.opcode >= 0xA0 && this.opcode <= 0xAF;
+      this.invalidOp |= this.opcode >= 0xE0 && this.opcode <= 0xEF;
+      this.invalidOp |= this.opcode >= 0x180 && this.opcode <= 0x18F;
+
+      return(null);
+    }
   
     //The L1OM vector prefix settings decoding (Note 64-bit only).
   
@@ -4867,7 +4903,7 @@ core = {
     {
       this.invalidOp |= ( ( ( this.opcode & 0x07 ) >= 0x06 ) & ( this.opcode <= 0x40 ) );
       this.invalidOp |= ( this.opcode === 0x60 | this.opcode === 0x61 );
-      this.invalidOp |= ( this.opcode === 0xD4 | this.opcode === 0xD5 );
+      this.invalidOp |= ( this.opcode === 0xD4 );
       this.invalidOp |= ( this.opcode === 0x9A | this.opcode === 0xEA );
       this.invalidOp |= ( this.opcode === 0x82 );
     }
@@ -5366,7 +5402,7 @@ core = {
     this.decodePrefixAdjustments();
   
     //Only continue if an invalid opcode is not read by decodePrefixAdjustments() for cpu bit mode setting.
-  
+
     if( !this.invalidOp )
     {
       //Decode the instruction.
@@ -5424,6 +5460,11 @@ core = {
       }
       if( this.opcode >= 0x700 ) { this.widthBit ^= this.ignoresWidthbit; } //L1OM Width bit invert.
     }
+
+    //Special case instruction JUMABS.
+    //*Note if more instructions are added that overwrite other instructions we will need to add a seperation in the instruction map.
+
+    else if(this.rex2Active && this.opcode == 0xA1){ this.instruction = "JMPABS"; this.x86Decoder[3].set( 0, 0, 8, 0 ); this.invalidOp = false; }
   
     //If the instruction is invalid then set the instruction to "???"
   
@@ -5540,8 +5581,9 @@ core = {
       }
   
       //Before the instruction is put together check the length of the instruction if it is longer than 15 bytes the instruction is undefined.
+      //Note if rex2Active instructions are now allowed to be 17 bytes long.
   
-      if ( this.instructionHex.length > 30 )
+      if ( this.instructionHex.length > (this.rex2Active ? 34 : 30) )
       {
         //Calculate how many bytes over.
   
@@ -5563,7 +5605,7 @@ core = {
       //Put the instruction sequence together.
   
       out = this.prefixG1 + " " + this.prefixG2 + " " + this.instruction + " " + this.insOperands;
-  
+
       //Remove any trailing spaces because of unused prefixes.
   
       out = out.replace(/^[ ]+|[ ]+$/g,'');
@@ -5597,7 +5639,7 @@ core = {
   
     //Reset ModR/M.
   
-    this.rexActive = 0; this.regExtend = 0; this.baseExtend = 0; this.indexExtend = 0;
+    this.rexActive = 0; this.rex2Active = 0; this.regExtend = 0; this.baseExtend = 0; this.indexExtend = 0;
     this.segOverride = "["; this.addressOverride = false; this.farPointer = 0;
   
     //Reset Vector extensions controls.
