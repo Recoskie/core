@@ -19,7 +19,8 @@ XOP, TBM, LWP, AVX2.<br />
 AVX512F, AVX512CD, AVX512ER, AVX512PF.<br />
 AVX512BW, AVX512DQ, AVX512VL.<br />
 AVX512IFMA, AVX512VBMI.<br />
-APX:REX2<br />
+APX:REX2.<br />
+APX:EVEX (logic and encoding support, but instructions are not mapped yet into opcode map 4).<br />
 
 This disassembler supports every instruction ever made for all Intel, and AMD X86 processors.
 -----------------------------------------------------------------------------------------------
@@ -27,7 +28,7 @@ Except:
 
 DREX, but DREX never even shipped to any systems, so there is no software that used DREX.
 
-Is missing APX EVEX: {ND}/{NF}, and scc/dfv.
+Full APX EVEX: {ND}/{NF}, and scc/dfv support. Instructions are currently not mapped yet.
 
 This disassembler can take apart Microsoft binary programs, and Linux binaries.
 -----------------------------------------------------------------------------------------------

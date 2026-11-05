@@ -1155,6 +1155,29 @@ core = {
     ["???","???","???",["","RORX","",""]],
     "???","???","???","???","???","???","???","???","???","???","???","???","???","???","???",
     /*------------------------------------------------------------------------------------------------------------------------
+    APX instruction map 4. Note most instructions are aliases to original arithmetic instructions enhanced using the EVEX prefix expansion bits.
+    TODO list*
+    1 = Enhanced instructions need to locate to the original arithmetic instruction by reference saving RAM/CACHE space.
+    The original arithmetic instructions need updated "operand strings" for the NF flag and hidden register.
+    2 = Newly added APX only instructions need to be added into this map.
+    ------------------------------------------------------------------------------------------------------------------------*/
+    "???","???","???","???","???","???","???","???","???","???","???","???","???","???","???","???",
+    "???","???","???","???","???","???","???","???","???","???","???","???","???","???","???","???",
+    "???","???","???","???","???","???","???","???","???","???","???","???","???","???","???","???",
+    "???","???","???","???","???","???","???","???","???","???","???","???","???","???","???","???",
+    "???","???","???","???","???","???","???","???","???","???","???","???","???","???","???","???",
+    "???","???","???","???","???","???","???","???","???","???","???","???","???","???","???","???",
+    "???","???","???","???","???","???","???","???","???","???","???","???","???","???","???","???",
+    "???","???","???","???","???","???","???","???","???","???","???","???","???","???","???","???",
+    "???","???","???","???","???","???","???","???","???","???","???","???","???","???","???","???",
+    "???","???","???","???","???","???","???","???","???","???","???","???","???","???","???","???",
+    "???","???","???","???","???","???","???","???","???","???","???","???","???","???","???","???",
+    "???","???","???","???","???","???","???","???","???","???","???","???","???","???","???","???",
+    "???","???","???","???","???","???","???","???","???","???","???","???","???","???","???","???",
+    "???","???","???","???","???","???","???","???","???","???","???","???","???","???","???","???",
+    "???","???","???","???","???","???","???","???","???","???","???","???","???","???","???","???",
+    "???","???","???","???","???","???","???","???","???","???","???","???","???","???","???","???",
+    /*------------------------------------------------------------------------------------------------------------------------
     AMD XOP 8.
     ------------------------------------------------------------------------------------------------------------------------*/
     "???","???","???","???","???","???","???","???","???","???","???","???","???","???","???","???","???",
@@ -2295,6 +2318,25 @@ core = {
     ["","","",["","0B0C070C0C00","",""]],
     "","","","","","","","","","","","","","","",
     /*------------------------------------------------------------------------------------------------------------------------
+    APX instruction map 4. Note most instructions are aliases to original arithmetic instructions enhanced using the EVEX prefix expansion bits.
+    ------------------------------------------------------------------------------------------------------------------------*/
+    "","","","","","","","","","","","","","","","",
+    "","","","","","","","","","","","","","","","",
+    "","","","","","","","","","","","","","","","",
+    "","","","","","","","","","","","","","","","",
+    "","","","","","","","","","","","","","","","",
+    "","","","","","","","","","","","","","","","",
+    "","","","","","","","","","","","","","","","",
+    "","","","","","","","","","","","","","","","",
+    "","","","","","","","","","","","","","","","",
+    "","","","","","","","","","","","","","","","",
+    "","","","","","","","","","","","","","","","",
+    "","","","","","","","","","","","","","","","",
+    "","","","","","","","","","","","","","","","",
+    "","","","","","","","","","","","","","","","",
+    "","","","","","","","","","","","","","","","",
+    "","","","","","","","","","","","","","","","",
+    /*------------------------------------------------------------------------------------------------------------------------
     AMD XOP 8.
     ------------------------------------------------------------------------------------------------------------------------*/
     "","","","","","","","","","","","","","","","","",
@@ -2684,8 +2726,61 @@ core = {
   Used by function ^decodeRegValue()^.
   -------------------------------------------------------------------------------------------------------------------------*/
   
-  rexActive: 0, rex2Active: 0,
+  rexActive: 0,
+
+  /*-------------------------------------------------------------------------------------------------------------------------
+  When rex2 is active instructions can be made 17 bytes long.
+  ---------------------------------------------------------------------------------------------------------------------------
+  Set by ^decodePrefixAdjustments()^ codes 0x62, and 0xD5 APX additions. Used by function ^decodeInstruction()^.
+  -------------------------------------------------------------------------------------------------------------------------*/
+
+  rex2Active: 0,
+
+  /*-------------------------------------------------------------------------------------------------------------------------
+  Stores the APX ND and NF bit values as a 2 bit binary. 00 = 0, 01 = 1 (NF), 10 = 2 (ND), 11 = 3 (ND and NF) value 0 to 3.
+  Note apxNdNf uses the same extension for vector extension separation. Except after instruction lookup extension is zeroed out
+  when matching NdNf with xor allowing vector instructions to remain vector instructions and adding enhanced arithmetic encoding.
+  ---------------------------------------------------------------------------------------------------------------------------
+  Set by ^decodePrefixAdjustments()^ code 0x62 APX additions.
+  Used by function ^decodeInstruction()^ under 4x4 = SIMD 4 modes and extension separation 4.
+  -------------------------------------------------------------------------------------------------------------------------*/
   
+  apxNdNf: 0,
+  
+  /*-------------------------------------------------------------------------------------------------------------------------
+  Not all instructions support NF mode. APX compatible instructions now have a NF flag setting encoded in the operand string.
+  ---------------------------------------------------------------------------------------------------------------------------
+  Set by ^decodeOperandString()^. Used by function ^decodeInstruction()^ displaying {NF}, or {BAD-NF} for invalid APX NF mode.
+  -------------------------------------------------------------------------------------------------------------------------*/
+  
+  apxNF : false,
+
+  /*-------------------------------------------------------------------------------------------------------------------------
+  Some APX instructions use a new conditional instruction encoding allowing instructions to run conditionally like ARM cores.
+  APX conditional instructions have a conditional flag setting encoded in the operand string.
+  APX conditional instructions do not have NF and ND bits as the last four bits are used as APX conditional settings.
+  ---------------------------------------------------------------------------------------------------------------------------
+  Set by ^decodeOperandString()^. Used by function ^decodeInstruction()^ using apxFlags for condition code and hRegister as dfv.
+  -------------------------------------------------------------------------------------------------------------------------*/
+  
+  apxCond: false,
+
+  /*-------------------------------------------------------------------------------------------------------------------------
+  apxFlags is used by apx conditional instruction codes.
+  ---------------------------------------------------------------------------------------------------------------------------
+  Used by function ^decodeInstruction()^ using apxFlags for condition code and hRegister as dfv.
+  -------------------------------------------------------------------------------------------------------------------------*/
+  
+  apxFlags: 0,
+  
+  /*-------------------------------------------------------------------------------------------------------------------------
+  Default x86 condition codes 0 to 15. Used by APX conditional instructions and by x86 conditional jumps, and conditional MOV.
+  Note the condition flags are encoded with the instruction names when possible since it is faster to index an instruction
+  than it is to read the last four binary digits in say the jump operation code 70 to 7F.
+  -------------------------------------------------------------------------------------------------------------------------*/
+  
+  conditions: ["O", "NO", "B", "AE", "E", "NE", "BE", "A", "S", "NS", "T", "F", "L", "GE", "LE", "G"],
+
   /*-------------------------------------------------------------------------------------------------------------------------
   The SIMD value is set according to SIMD MODE by prefixes (none, 66, F2, F3), or by the value of VEX.pp, and EVEX.pp.
   Changes the selected instruction in ^decodeOpcode()^ only for SSE vector opcodes that have 4 possible instructions in
@@ -2709,7 +2804,7 @@ core = {
   
   /*-------------------------------------------------------------------------------------------------------------------------
   Vect is set true during the decoding of an instruction code. If the instruction is an Vector instruction 4 in length for
-  the four modes then vect is set true. When vect is set true the Function ^decode_modRM_SIB_Address()^ Will decode the
+  the four simd modes then vect is set true. When vect is set true the Function ^decode_modRM_SIB_Address()^ Will decode the
   ModR/M as a Vector address.
   ---------------------------------------------------------------------------------------------------------------------------
   Set By function ^decodeOpcode()^, and used by function ^decode_modRM_SIB_Address()^.
@@ -2899,15 +2994,19 @@ core = {
   
   /*-------------------------------------------------------------------------------------------------------------------------
   The VEX extension, and MVEX/EVEX extension have an Vector register selection built in for Vector operation codes that use the
-  vector register. This operand is only read in the "operand string" if an VEX, or EVEX prefix was decoded by the
-  function ^decodePrefixAdjustments()^, and making extension 1 for VEX, or 2 for EVEX instead of 0 by default.
+  hidden third register operand. Instructions that encode the third register operand in the operand string allow the third operand.
   During a VEX, or EVEX version of the SSE instruction the vector bits are a 4 bit binary value of 0 to 15, and are extended
   in EVEX and MVEX to 32 by adding the EVEX.V, or MVEX.V bit to the vector register value.
+  Allowing the hidden register to be a positive value when set. If it is positive it is decoded as a register.
   ---------------------------------------------------------------------------------------------------------------------------
-  Used with the function ^decodeRegValue()^ to decode the Register value.
+  APX additions now allow the use of the hidden register to do three operand instructions if the third register operand is
+  pressent in the arithmetic instruction operand string and that ND is set one in the APX operation code for three operand.
+  If the third register operand is not pressent and ND is set one it should be noted that this produces an invalid operation.
+  ---------------------------------------------------------------------------------------------------------------------------
+  Value adjusted by ^decodePrefixAdjustments()^. Used with the function ^decodeRegValue()^ to decode the Register value.
   -------------------------------------------------------------------------------------------------------------------------*/
   
-  vectorRegister: 0,
+  hRegister: -1,
   
   /*-------------------------------------------------------------------------------------------------------------------------
   The MVEX/EVEX extension has an mask Register value selection for {K0-K7} mask to destination operand.
@@ -4129,7 +4228,7 @@ core = {
   
     //If XOP only vector 0 to 15 are usable.
         
-    if( this.opcode >= 0x400 ) { RValue &= 15; }
+    if( this.opcode >= 0x500 ) { RValue &= 15; }
   
     //Else If 16/32 bit mode in VEX/EVEX/MVEX vctor register can only go 0 though 7.
   
@@ -4137,7 +4236,7 @@ core = {
   
     //If L1OM ZMM to V reg.
   
-    if ( this.opcode >= 0x700 && setting === 6 )
+    if ( this.opcode >= 0x800 && setting === 6 )
     {
       setting = 16;
     }
@@ -4378,7 +4477,7 @@ core = {
           {
             setting = ( setting < 8 ) ? 4 : setting >> 1;
   
-            if( this.opcode < 0x700 ) { indexReg |= ( this.vectorRegister & 0x10 ); }
+            if( this.opcode < 0x800 ) { indexReg |= ( this.hRegister & 0x10 ); }
   
             out += this.decodeRegValue( this.indexExtend | indexReg, false, setting ); //Decode Vector register by length setting and the V' extension.
   
@@ -4411,8 +4510,8 @@ core = {
       if(
           ( this.conversionMode !== 0 ) && //Not used if set 0.
          !(
-            ( this.conversionMode === 3 && ( this.opcode >= 0x700 || !( this.opcode >= 0x700 ) && !this.float ) ) || //If bad L1OM/K1OM float conversion.
-            ( !( this.opcode >= 0x700 ) && ( this.vectS === 0 || ( this.conversionMode === 5 && this.vectS === 5 ) || //If K1OM UNorm conversion L1OM only.
+            ( this.conversionMode === 3 && ( this.opcode >= 0x800 || !( this.opcode >= 0x800 ) && !this.float ) ) || //If bad L1OM/K1OM float conversion.
+            ( !( this.opcode >= 0x800 ) && ( this.vectS === 0 || ( this.conversionMode === 5 && this.vectS === 5 ) || //If K1OM UNorm conversion L1OM only.
             ( this.conversionMode !== 1 && this.vectS === 1 ) ^ ( this.conversionMode < 3 && !this.swizzle ) ) ) //Or K1OM broadcast swizzle, and special case {4to16} only.
           )
       )
@@ -4424,7 +4523,7 @@ core = {
   
         //If L1OM.
   
-        if( this.opcode >= 0x700 )
+        if( this.opcode >= 0x800 )
         {
           //If L1OM without swizzle.
   
@@ -4441,7 +4540,7 @@ core = {
   
         //Set conversion. Note K1OM special case inverts width bit.
   
-        out += sc + this.conversionModes[ ( this.conversionMode << 1 ) | ( this.widthBit ^ ( !( this.opcode >= 0x700 ) & this.vectS === 7 ) ) & 1 ]; sc = ",";
+        out += sc + this.conversionModes[ ( this.conversionMode << 1 ) | ( this.widthBit ^ ( !( this.opcode >= 0x800 ) & this.vectS === 7 ) ) & 1 ]; sc = ",";
       }
   
       //Else bad Conversion setting.
@@ -4477,34 +4576,34 @@ core = {
       
       //L1OM/K1OM Register swizzle modes.
       
-      if( this.opcode >= 0x700 || ( this.extension === 3 && !this.hIntZeroMerg && this.swizzle ) )
+      if( this.opcode >= 0x800 || ( this.extension === 3 && !this.hIntZeroMerg && this.swizzle ) )
       {
-        if( this.opcode >= 0x700 && this.conversionMode >= 3 ){ this.conversionMode++; } //L1OM skips swizzle type DACB.
+        if( this.opcode >= 0x800 && this.conversionMode >= 3 ){ this.conversionMode++; } //L1OM skips swizzle type DACB.
         if( this.conversionMode !== 0 ){ out += sc + this.regSwizzleModes[ this.conversionMode ]; sc = ","; }
       }
       if( this.extension !== 2 ){ this.hIntZeroMerg = false; } //Cache memory control is not possible in Register mode.
     }
   
     //--------------------------------------------------L1OM.CCCCC conversions-------------------------------------------------
-  
-    if( this.opcode >= 0x700 )
+    
+    if( this.opcode >= 0x800 )
     {
       //swizzle Field control Int/Float, or Exponent adjustment.
   
       if(this.swizzle)
       {
-        if( this.opcode === 0x79A ) { out += sc + this.conversionModes[ ( 18 | ( this.vectorRegister & 3 ) ) << 1 ]; sc = "}"; }
-        else if( this.opcode === 0x79B ) { out += sc + this.conversionModes[ ( 22 + ( this.vectorRegister & 3 ) ) << 1 ]; sc = "}"; }
-        else if( ( this.roundingSetting & 8 ) === 8 ) { out += sc + this.roundModes [ 24 | ( this.vectorRegister & 7 ) ]; sc = "}"; }
+        if( this.opcode === 0x89A ) { out += sc + this.conversionModes[ ( 18 | ( this.hRegister & 3 ) ) << 1 ]; sc = "}"; }
+        else if( this.opcode === 0x89B ) { out += sc + this.conversionModes[ ( 22 + ( this.hRegister & 3 ) ) << 1 ]; sc = "}"; }
+        else if( ( this.roundingSetting & 8 ) === 8 ) { out += sc + this.roundModes [ 24 | ( this.hRegister & 7 ) ]; sc = "}"; }
       }
   
       //Up/Down Conversion.
   
-      else if( this.vectorRegister !== 0 )
+      else if( this.hRegister !== 0 )
       {
-        if( ( ( this.up && this.vectorRegister !== 2 ) || //Up conversion "float16rz" is bad.
-          ( !this.up && this.vectorRegister !== 3 && this.vectorRegister <= 15 ) ) //Down conversion "srgb8", and field control is bad.
-        ) { out += sc + this.conversionModes[ ( ( this.vectorRegister + 2 ) << 1 ) | this.widthBit ]; sc = "}"; }
+        if( ( ( this.up && this.hRegister !== 2 ) || //Up conversion "float16rz" is bad.
+          ( !this.up && this.hRegister !== 3 && this.hRegister <= 15 ) ) //Down conversion "srgb8", and field control is bad.
+        ) { out += sc + this.conversionModes[ ( ( this.hRegister + 2 ) << 1 ) | this.widthBit ]; sc = "}"; }
         else { out += sc + "Error"; sc = "}"; } //Else Invalid setting.
       }
     }
@@ -4519,7 +4618,7 @@ core = {
     if( this.hIntZeroMerg )
     {
       if ( this.extension === 3 ) { out += "{EH}"; }
-      else if ( this.opcode >= 0x700 ) { out += "{NT}"; }
+      else if ( this.opcode >= 0x800 ) { out += "{NT}"; }
     }
   
     //-------------------------------------------Return the Register/Memory address--------------------------------------------
@@ -4537,10 +4636,10 @@ core = {
   decodePrefixAdjustments: function()
   {
     //-------------------------------------------------------------------------------------------------------------------------
-    this.opcode = ( this.opcode & 0x300 ) | this.binCode[this.codePos]; //Add 8 bit opcode while bits 9, and 10 are used for opcode map.
+    this.opcode = ( this.opcode & 0x700 ) | this.binCode[this.codePos]; //Add 8 bit opcode while bits 9, 10, and 11 are used for opcode map.
     this.nextByte(); //Move to the next byte.
     //-------------------------------------------------------------------------------------------------------------------------
-  
+
     //if 0F hex start at 256 for opcode.
   
     if(this.opcode === 0x0F)
@@ -4597,7 +4696,7 @@ core = {
       if( this.bitMode === 2 )
       {
         this.regExtend = ( this.opcode & 0x80 ) >> 4; //Register extend.
-        this.vectorRegister = ( this.opcode & 0x78 ) >> 3; //The added in Vector register to SSE.
+        this.hRegister = ( this.opcode & 0x78 ) >> 3; //The added in Vector register to SSE.
       }
   
       this.sizeAttrSelect = ( this.opcode & 0x04 ) >> 2; //The L bit for 256 vector size.
@@ -4644,7 +4743,7 @@ core = {
       }
   
       this.widthBit = ( this.opcode & 0x8000 ) >> 15; //The width bit works as a separator.
-      this.vectorRegister = ( this.opcode & 0x7800 ) >> 11; //The added in Vector register to SSE.
+      this.hRegister = ( this.opcode & 0x7800 ) >> 11; //The added in Vector register to SSE.
       this.sizeAttrSelect = ( this.opcode & 0x0400 ) >> 10; //Vector length for 256 setting.
       this.simd = ( this.opcode & 0x0300 ) >> 8; //The SIMD mode.
       this.opcode = ( this.opcode & 0x001F ) << 8; //Change Operation code map.
@@ -4686,12 +4785,12 @@ core = {
         this.indexExtend = ( this.opcode & 0x0040 ) >> 3; //Extend Index register setting.
         this.baseExtend = ( this.opcode & 0x0020 ) >> 2; //Extend base Register setting.
         this.widthBit = ( this.opcode & 0x8000 ) >> 15; //The width bit works as a separator.
-        this.vectorRegister = ( this.opcode & 0x7800 ) >> 11; //The added in Vector register to SSE.
+        this.hRegister = ( this.opcode & 0x7800 ) >> 11; //The added in Vector register to SSE.
         this.sizeAttrSelect = ( this.opcode & 0x0400 ) >> 10; //Vector length for 256 setting.
         this.simd = ( this.opcode & 0x0300 ) >> 8; //The SIMD mode.
         if( this.simd > 0 ) { this.invalidOp = true; } //If SIMD MODE is set anything other than 0 the instruction is invalid.
-        this.opcode = 0x400 | ( ( this.opcode & 0x0003 ) << 8 ); //Change Operation code map.
-  
+        this.opcode = 0x500 + ( ( this.opcode & 0x0003 ) << 8 ); //Change Operation code map.
+
         //-------------------------------------------------------------------------------------------------------------------------
         this.opcode = ( this.opcode & 0x700 ) | this.binCode[this.codePos]; //read the 8 bit opcode put them in the lower 8 bits away from opcode map bit's.
         this.nextByte(); //Move to the next byte.
@@ -4743,8 +4842,8 @@ core = {
       //-------------------------------------------------------------------------------------------------------------------------
   
       this.widthBit = this.simd & 1;
-      this.vectorRegister = ( this.opcode & 0xF800 ) >> 11;
-      this.roundMode = this.vectorRegister >> 3;
+      this.hRegister = ( this.opcode & 0xF800 ) >> 11;
+      this.roundMode = this.hRegister >> 3;
       this.maskRegister = ( this.opcode & 0x0700 ) >> 8;
       this.hIntZeroMerg = ( this.opcode & 0x0080 ) >> 7;
       this.conversionMode = ( this.opcode & 0x0070 ) >> 4;
@@ -4753,14 +4852,14 @@ core = {
       this.indexExtend = ( this.opcode & 0x0002 ) << 2;
   
       //-------------------------------------------------------------------------------------------------------------------------
-      this.opcode = 0x700 | this.binCode[this.codePos]; //read the 8 bit opcode.
+      this.opcode = 0x800 | this.binCode[this.codePos]; //read the 8 bit opcode.
       this.nextByte(); //Move to the next byte.
       //-------------------------------------------------------------------------------------------------------------------------
   
       return(null);
     }
     
-    //Only decode L1OM instead of MVEX/EVEX if L1OM compatibility mode is set.
+    //Only decode L1OM instead of MVEX/EVEX/APX if L1OM compatibility mode is set.
   
     if( this.mnemonics[0x62] === "" && this.opcode === 0x62 )
     {
@@ -4777,34 +4876,37 @@ core = {
   
       if ( this.simd !== 1 ) { this.sizeAttrSelect = ( ( this.opcode & 0x10 ) === 0x10 ) ? 2 : 1; } else { this.simd = 0; }
   
-      this.opcode = 0x800 | ( ( this.opcode & 0x30 ) >> 4 ) | ( ( this.opcode & 0x0F ) << 2 );
+      this.opcode = 0x900 | ( ( this.opcode & 0x30 ) >> 4 ) | ( ( this.opcode & 0x0F ) << 2 );
   
       return(null);
     }
   
-    //The MVEX/EVEX prefix settings decoding.
+    //The MVEX/EVEX/APX prefix settings decoding.
   
     if ( this.opcode === 0x62 && ( this.binCode[this.codePos] >= 0xC0 || this.bitMode === 2 ) )
     {
-      this.extension = 2;
       //-------------------------------------------------------------------------------------------------------------------------
-      this.opcode = this.binCode[this.codePos]; //read MVEX/EVEX byte settings.
+      this.opcode = this.binCode[this.codePos]; //read MVEX/EVEX/APX byte settings.
       this.nextByte(); //Move to the next byte.
       //-------------------------------------------------------------------------------------------------------------------------
-      this.opcode |= ( this.binCode[this.codePos] << 8 ); //read next MVEX/EVEX byte settings.
+      this.opcode |= ( this.binCode[this.codePos] << 8 ); //read next MVEX/EVEX/APX byte settings.
       this.nextByte(); //Move to the next byte.
       //-------------------------------------------------------------------------------------------------------------------------
-      this.opcode |= ( this.binCode[this.codePos] << 16 ); //read next MVEX/EVEX byte settings.
+      this.opcode |= ( this.binCode[this.codePos] << 16 ); //read next MVEX/EVEX/APX byte settings.
       this.nextByte(); //Move to the next byte.
       //-------------------------------------------------------------------------------------------------------------------------
   
       //Some bits are inverted, so uninvert them arithmetically.
   
-      this.opcode ^= 0x0878F0;
+      this.opcode ^= 0x087CF0;
+
+      //The new APX instruction extensions.
+
+      this.rex2Active = ( this.opcode & 0x07 ) == 4;
   
-      //Check if Reserved bits are 0 if they are not 0 the MVEX/EVEX instruction is invalid.
+      //Check if Reserved map bits are 0 if they are not 0 the MVEX/EVEX/APX instruction is invalid.
   
-      this.invalidOp = ( this.opcode & 0x00000C ) > 0;
+      this.invalidOp = ( ( this.opcode & 0x000007 ) > 4 ) || ( (this.opcode & 0x800000 ) > 0 );
   
       //Decode bit settings.
       
@@ -4815,36 +4917,59 @@ core = {
         this.indexExtend = ( this.opcode & 0x40 ) >> 3; //The X extends the sib Index by 8.
       }
       
-      this.vectorRegister = ( ( this.opcode & 0x7800 ) >> 11 ) | ( ( this.opcode & 0x080000 ) >> 15 ); //The Added in Vector Register for SSE under MVEX/EVEX.
+      this.hRegister = ( ( this.opcode & 0x7800 ) >> 11 ) | ( ( this.opcode & 0x080000 ) >> 15 ); //The Added in Vector Register for SSE under MVEX/EVEX/APX.
       
-      this.widthBit = ( this.opcode & 0x8000 ) >> 15; //The width bit separator for MVEX/EVEX.
+      this.widthBit = ( this.opcode & 0x8000 ) >> 15; //The width bit separator for MVEX/EVEX/APX.
       this.simd = ( this.opcode & 0x0300 ) >> 8; //decode the SIMD mode setting.
-      this.hIntZeroMerg = ( this.opcode & 0x800000 ) >> 23; //Zero Merge to destination control, or MVEX EH control.
-        
-      //EVEX option bits take the place of Vector length control.
-        
-      if ( ( this.opcode & 0x0400 ) > 0 )
+
+      if( !this.rex2Active )
       {
-        this.sizeAttrSelect = ( this.opcode & 0x600000 ) >> 21; //The EVEX.L'L Size combination.
-        this.roundMode = this.sizeAttrSelect | 4; //Rounding mode is Vector length if used.
-        this.conversionMode = (this.opcode & 0x100000 ) >> 20; //Broadcast Round Memory address system.
+        //EVEX option bits take the place of Vector length control.
+      
+        if ( ( this.opcode & 0x0400 ) === 0 )
+        {
+          this.sizeAttrSelect = ( this.opcode & 0x600000 ) >> 21; //The EVEX.L'L Size combination.
+          this.roundMode = this.sizeAttrSelect | 4; //Rounding mode is Vector length if used.
+          this.conversionMode = (this.opcode & 0x100000 ) >> 20; //Broadcast Round Memory address system.
+          this.extension = 2;
+        }
+          
+        //MVEX Vector Length, and Broadcast round.
+        
+        else
+        {
+          this.sizeAttrSelect = 2; //Max Size by default.
+          this.conversionMode = ( this.opcode & 0x700000 ) >> 20; //"MVEX.sss" Option bits.
+          this.roundMode = this.conversionMode; //Rounding mode selection is conversionMode if used.
+          this.extension = 3;
+        }
+
+        this.hIntZeroMerg = ( this.opcode & 0x800000 ) >> 23; //Zero Merge to destination control, or MVEX EH control.
+        this.maskRegister = ( this.opcode & 0x070000 ) >> 16; //Mask to destination.
       }
-        
-      //MVEX Vector Length, and Broadcast round.
-        
+
+      //APX
+
       else
       {
-        this.sizeAttrSelect = 2; //Max Size by default.
-        this.conversionMode = ( this.opcode & 0x700000 ) >> 20; //"MVEX.sss" Option bits.
-        this.roundMode = this.conversionMode; //Rounding mode selection is conversionMode if used.
-        this.extension = 3;
+        this.baseExtend = ( ( this.opcode & 0x08 ) << 1 ) | ( ( this.opcode & 0x20 ) >> 2 ); //The B'B Bit base register extend combination 0 to 32.
+        this.indexExtend |= ( this.opcode & 0x0400 ) >> 6; //The X extends the sib Index by 8.
+        this.sizeAttrSelect = this.widthBit ? 2 : this.simd == 1 ? 0 : 1; //Regular arithmetic size handling.
+        this.apxFlags = ( this.opcode & 0xF0000 ) >> 16; //NF and scc.
+
+        //Note extension acts as the 4 separate NdNf modes under APX instructions for *mode* specific operation codes.
+        //apxNdNf is xor against extension zeroing out extension when indexing the APX instruction code.
+        //This allows APX instructions to act as arithmetic and vector extensions to act as vector extensions using minimal logic. 
+
+        this.extension = this.apxNdNf = ( ( this.opcode & 0x100000 ) >> 19 ) | ( ( this.apxFlags & 4 ) >> 2 );
+
+        if( this.apxNdNf < 2 ) { this.hRegister = ~this.hRegister; } //Deactivate hidden register if ND is not set.
       }
   
-      this.maskRegister = ( this.opcode & 0x070000 ) >> 16; //Mask to destination.
-      this.opcode = ( this.opcode & 0x03 ) << 8; //Change Operation code map.
+      this.opcode = ( this.opcode & 0x07 ) << 8; //Change Operation code map.
   
       //-------------------------------------------------------------------------------------------------------------------------
-      this.opcode = ( this.opcode & 0x300 ) | this.binCode[this.codePos]; //read the 8 bit opcode put them in the lower 8 bits away from opcode map extend bit's.
+      this.opcode = ( this.opcode & 0x700 ) | this.binCode[this.codePos]; //read the 8 bit opcode put them in the lower 8 bits away from opcode map extend bit's.
       this.nextByte(); //Move to the next byte.
       //-------------------------------------------------------------------------------------------------------------------------
   
@@ -4855,7 +4980,7 @@ core = {
   
     //Segment overrides
   
-    if ( ( this.opcode & 0x7E7 ) === 0x26 || ( this.opcode & 0x7FE ) === 0x64 )
+    if ( ( this.opcode & 0xFE7 ) === 0x26 || ( this.opcode & 0xFFE ) === 0x64 )
     {
       this.segOverride = this.mnemonics[ this.opcode ]; //Set the Left Bracket for the ModR/M memory address.
       return(this.decodePrefixAdjustments()); //restart function decode more prefix settings that can effect the decode instruction.
@@ -4960,7 +5085,7 @@ core = {
   
     if(this.instruction instanceof Array && this.instruction.length == 4)
     {
-      this.vect = true; //Set Vector Encoding true.
+      this.vect = !this.rex2Active; //Set Vector Encoding true. Note APX arithmetic instructions use SIMD modes for sizing but are not vectors.
   
       //Reset the prefix string G1 because prefix codes F2, and F3 are used with SSE which forum the repeat prefix.
       //Some SSE instructions can use the REP, RENP prefixes.
@@ -4979,10 +5104,14 @@ core = {
   
         if(this.instruction[this.extension] !== "") { this.instruction = this.instruction[this.extension]; this.insOperands = this.insOperands[this.extension]; }
         else{ this.instruction = "???"; this.insOperands = ""; }
+
+        //Note apxNdNf cancels out vector extension as APX instructions are not vector operations.
+        
+        this.extension ^= this.apxNdNf;
       }
       else if( this.extension === 3 ){ this.instruction = "???"; this.insOperands = ""; }
     }
-    else if( this.opcode >= 0x700 && this.simd > 0 ){ this.instruction = "???"; this.insOperands = ""; }
+    else if( this.opcode >= 0x800 && this.simd > 0 ){ this.instruction = "???"; this.insOperands = ""; }
   
     //if Any Mnemonic is an array 3 in size the instruction name goes by size.
   
@@ -5048,7 +5177,7 @@ core = {
         if(bySize) //Vector adjustment settings.
         {
           this.roundingSetting = ( setting & 0x03 ) << 3;
-          if( this.opcode >= 0x700 && this.roundingSetting >= 0x10 ){ this.roundMode |= 0x10; }
+          if( this.opcode >= 0x800 && this.roundingSetting >= 0x10 ){ this.roundMode |= 0x10; }
           this.vsib = ( setting >> 2 ) & 1;
           this.ignoresWidthbit = ( setting >> 3 ) & 1;
           this.vectS = ( setting >> 4 ) & 7;
@@ -5063,6 +5192,8 @@ core = {
           this.xAcquire = ( setting & 0x02 ) >> 1;
           this.ht = ( setting & 0x04 ) >> 2;
           this.bnd = ( setting & 0x08 ) >> 3;
+          this.apxNF = ( setting & 0x10 ) >> 4; //Not ALL APX instructions support NF mode.
+          this.apxCond = ( setting & 0x20 ) >> 5; //Determines if the APX instruction is a conditional type instruction.
         }
       }
   
@@ -5103,9 +5234,9 @@ core = {
   
       //Vector register. If the instruction uses this register it will not be decoded or displayed unless one of the vector extension codes are
       //decoded by the function ^decodePrefixAdjustments()^. The Vector extension codes also have a Vector register value that is stored into
-      //the variable vectorRegister. The variable vectorRegister is given to the function ^decodeRegValue()^.
+      //the variable hRegister. The variable hRegister is given to the function ^decodeRegValue()^.
   
-      else if( code === 9 && ( this.extension > 0 || this.opcode >= 0x700 ) )
+      else if( code === 9 && this.hRegister >= 0 )
       {
         this.x86Decoder[6].set( 0, bySize, setting, opNum++ );
       }
@@ -5121,7 +5252,7 @@ core = {
       //Else any other encoding type higher than 13 is an explicit operand selection.
       //And also there can only be an max of four explicit operands.
   
-      else if( code >= 11 && explicitOp <= 11)
+      else if( code >= 11 && explicitOp <= 11 )
       {
         this.x86Decoder[explicitOp].set( ( code - 11 ), bySize, setting, opNum++ );
         explicitOp++; //move to the next Explicit operand.
@@ -5239,9 +5370,9 @@ core = {
       {
         this.instruction = this.instruction.split(",");
   
-        if( ( this.extension >= 1 && this.extension <= 2 && this.opcode <= 0x400 && this.immValue < 0x20 ) || this.immValue < 0x08 )
+        if( ( this.extension >= 1 && this.extension <= 2 && this.opcode <= 0x500 && this.immValue < 0x20 ) || this.immValue < 0x08 )
         {
-          this.immValue |= ( ( ( this.opcode > 0x400 ) & 1 ) << 5 ); //XOP adjust.
+          this.immValue |= ( ( ( this.opcode > 0x500 ) & 1 ) << 5 ); //XOP adjust.
           this.instruction = this.instruction[0] + this.conditionCodes[ this.immValue ] + this.instruction[1];
         }
         else { this.instruction = this.instruction[0] + this.instruction[1]; out[ this.x86Decoder[3].opNum ] = t; }
@@ -5281,7 +5412,7 @@ core = {
     if( this.x86Decoder[6].active )
     {
         out[ this.x86Decoder[6].opNum ] = this.decodeRegValue(
-        this.vectorRegister, //Register value.
+        this.hRegister, //Register value.
         this.x86Decoder[6].bySizeAttrubute, //By size attribute or not.
         this.x86Decoder[6].size //Size settings.
       );
@@ -5417,15 +5548,15 @@ core = {
       //Intel Larrabee CCCCC condition codes.
       //-------------------------------------------------------------------------------------------------------------------------
   
-      if( this.opcode >= 0x700 && this.instruction.slice(-1) === "," )
+      if( this.opcode >= 0x800 && this.instruction.slice(-1) === "," )
       {
         this.instruction = this.instruction.split(",");
   
         //CMP conditions.
   
-        if( this.opcode >= 0x720 && this.opcode <= 0x72F )
+        if( this.opcode >= 0x820 && this.opcode <= 0x82F )
         {
-          this.immValue = this.vectorRegister >> 2;
+          this.immValue = this.hRegister >> 2;
   
           if( this.float || ( this.immValue !== 3 && this.immValue !== 7 ) )
           {
@@ -5433,14 +5564,14 @@ core = {
           }
           else { this.instruction = this.instruction[0] + this.instruction[1]; }
   
-          this.immValue = 0; this.vectorRegister &= 0x03;
+          this.immValue = 0; this.hRegister &= 0x03;
         }
   
         //Else High/Low.
   
         else
         {
-          this.instruction = this.instruction[0] + ( ( ( this.vectorRegister & 1 ) === 1 ) ? "H" : "L" ) + this.instruction[1];
+          this.instruction = this.instruction[0] + ( ( ( this.hRegister & 1 ) === 1 ) ? "H" : "L" ) + this.instruction[1];
         }
       }
   
@@ -5450,7 +5581,21 @@ core = {
   
       //Now only some instructions can vector extend, and that is only if the instruction is an SIMD Vector format instruction.
   
-      if( !this.vect && this.extension > 0 && this.opcode <= 0x400 ) { this.invalidOp = true; }
+      if( !this.vect && this.extension > 0 && this.opcode <= 0x500 ) { this.invalidOp = true; }
+
+      //Invalid bit combinations APX.
+
+      if( this.rex2Active )
+      {
+        //ND activates the third operand. If no third operand is active than invalid APX operation code.
+        //Additionaly the third operand can not be activated with conditional APX operation codes.
+
+        if( this.hRegister >= 0 && ( !this.x86Decoder[6].active || this.apxCond ) ){ this.invalidOp = true; }
+        
+        //The lower two bits are unused in APX ND/NF operation codes.
+
+        else if( !this.apxCond && ( this.apxFlags & 3 ) > 0  ) { this.invalidOp = true; }
+      }
   
       //The Width Bit setting must match the vector numbers size otherwise this create an invalid operation code in MVEX/EVEX unless the Width bit is ignored.
   
@@ -5458,11 +5603,11 @@ core = {
       {
         this.invalidOp = ( ( this.simd & 1 ) !== ( this.widthBit & 1 ) ); //Note use, and ignore width bit pastern EVEX.
       }
-      if( this.opcode >= 0x700 ) { this.widthBit ^= this.ignoresWidthbit; } //L1OM Width bit invert.
+      if( this.opcode >= 0x800 ) { this.widthBit ^= this.ignoresWidthbit; } //L1OM Width bit invert.
     }
 
-    //Special case instruction JUMABS.
-    //*Note if more instructions are added that overwrite other instructions we will need to add a seperation in the instruction map.
+    //Special case instruction JMPABS.
+    //*Note if more instructions are added that overwrite other instructions we will need to add a separation in the instruction map.
 
     else if(this.rex2Active && this.opcode == 0xA1){ this.instruction = "JMPABS"; this.x86Decoder[3].set( 0, 0, 8, 0 ); this.invalidOp = false; }
   
@@ -5579,9 +5724,22 @@ core = {
       {
         this.prefixG1 = "BND";
       }
+
+      //APX {NF}
+
+      if(!this.apxCond && ( this.apxFlags & 4 ) > 0 ) { this.prefixG1 = this.apxNF ? "{NF}" : "{BAD-NF}"; }
+
+      //APX Conitional.
+
+      if(this.apxCond)
+      {
+        this.insOperands = "{dfv=" + ([ (this.hRegister & 8) > 0 ? "OF" : false, (this.hRegister & 4) > 0 ? "SF" : false,
+        (this.hRegister & 2) > 0 ? "ZF" : false, (this.hRegister & 1) > 0 ? "CF" : false ]).filter(Boolean).join(",") + "} " + this.insOperands;
+        this.instruction += this.conditions[this.apxFlags ^ 8];
+      }
   
       //Before the instruction is put together check the length of the instruction if it is longer than 15 bytes the instruction is undefined.
-      //Note if rex2Active instructions are now allowed to be 17 bytes long.
+      //Note if rex2Active instructions are now allowed to be 17 bytes long. APX Additions.
   
       if ( this.instructionHex.length > (this.rex2Active ? 34 : 30) )
       {
@@ -5612,7 +5770,7 @@ core = {
   
       //Add error suppression if used.
   
-      if( this.opcode >= 0x700 || this.roundMode !== 0 )
+      if( this.opcode >= 0x800 || this.roundMode !== 0 )
       {
         out += this.roundModes[ this.roundMode ];
       }
@@ -5639,18 +5797,22 @@ core = {
   
     //Reset ModR/M.
   
-    this.rexActive = 0; this.rex2Active = 0; this.regExtend = 0; this.baseExtend = 0; this.indexExtend = 0;
+    this.rexActive = 0; this.rex2Active = 0; this.apxFlags = 0; this.regExtend = 0; this.baseExtend = 0; this.indexExtend = 0;
     this.segOverride = "["; this.addressOverride = false; this.farPointer = 0;
   
     //Reset Vector extensions controls.
   
     this.extension = 0; this.simd = 0; this.vect = false; this.conversionMode = 0; this.widthBit = false;
-    this.vectorRegister = 0; this.maskRegister = 0; this.hIntZeroMerg = false; this.roundMode = 0x00;
+    this.hRegister = -1; this.maskRegister = 0; this.hIntZeroMerg = false; this.roundMode = 0x00;
   
     //Reset vector format settings.
   
     this.ignoresWidthbit = false; this.vsib = false; this.roundingSetting = 0;
     this.swizzle = false; this.up = false; this.float = false; this.vectS = 0x00;
+
+    //Reset APX.
+
+    this.apxFlags = 0; this.apxNF = false; this.apxCond = false; this.apxNdNf = 0;
   
     //Reset immValue used for imm register encoding, and Condition codes.
   
@@ -5683,7 +5845,7 @@ core = {
   resetMap: function() { this.mapped_loc = []; this.data_off = []; this.linear = []; this.crawl = []; this.rows = 0; },
 
   /*-------------------------------------------------------------------------------------------------------------------------
-  Define custom disassemble rules, or additional scanning. Return true when dissasebly should stop.
+  Define custom disassemble rules, or additional scanning. Return true when disassembly should stop.
   -------------------------------------------------------------------------------------------------------------------------*/
 
   scan: function(crawl) { return(crawl && (this.instruction == "RET" || this.instruction == "JMP")); },
@@ -5702,7 +5864,7 @@ core = {
   {
     var instruction = ""; //Stores the Decoded instruction.
     var out = "";  //The Disassemble output.
-    var sc = false; //Full dissasemble within buffer.
+    var sc = false; //Full disassemble within buffer.
   
     //Disassemble binary code using an linear pass.
   
@@ -5786,7 +5948,7 @@ core = {
   new operand(), //Third Immediate if used (Note that the Larrabee vector instructions can use three immediate inputs).
   /*-------------------------------------------------------------------------------------------------------------------------
   Vector adjustment codes allow the selection of the vector register value that is stored into variable
-  vectorRegister that applies to the selected SSE instruction that is read after that uses it.
+  hRegister that applies to the selected SSE instruction that is read after that uses it.
   The adjusted vector value is given to the function ^decodeRegValue()^.
   -------------------------------------------------------------------------------------------------------------------------*/
   new operand(), //Vector register if used. And if vector adjustments are applied to the SSE instruction.
